@@ -64,11 +64,14 @@ The design should mix terminal/Linux utility with cute Tamagotchi-style personal
 
 Visual language:
 
-- Dark terminal base.
+- Dark terminal base as the default visual mood.
+- Light mode that keeps the same pocket-terminal identity instead of becoming generic.
 - Pixel-art details.
 - 8-bit accents.
 - Rounded pocket-device panels.
-- A readable monospace or semi-monospace type direction.
+- `IBM Plex Sans` for body/UI copy.
+- `JetBrains Mono` for code, command blocks, CLI examples, and terminal details.
+- `Pixelify Sans` for restrained pixel accents, badges, logo-adjacent labels, or tiny mascot moments.
 - Command blocks that look great on desktop and remain readable on mobile.
 - Simple layout, but with a distinct identity instead of a generic SaaS landing page.
 
@@ -79,6 +82,15 @@ Logo concept to reserve space for:
 - Must work as a favicon, nav mark, hero logo, and social preview element.
 
 Design should stay restrained. The mascot/logo can carry most of the cuteness; the rest of the site should remain clean, fast, and useful.
+
+Theme support:
+
+- Provide both dark and light themes.
+- Respect the user's system preference by default.
+- Provide a visible theme toggle button in the header.
+- Persist the user's explicit choice in local storage.
+- Keep both themes accessible, high-contrast, and recognizably Kickoutchi.
+- Do not treat light mode as an afterthought; light users deserve swamp rights too.
 
 ## Site Map
 
@@ -572,12 +584,27 @@ Use `src/styles/global.css` with:
 Define project tokens with `@theme`:
 
 - Terminal background.
+- Light and dark surface colors.
 - Device panel colors.
 - Pixel accent colors.
 - Warning/safety colors.
 - Font families.
 - Border radii.
 - Shadows/glow effects.
+
+Font direction:
+
+- Body/UI: `IBM Plex Sans`.
+- Code/commands: `JetBrains Mono`.
+- Pixel accents only: `Pixelify Sans`.
+
+Theme implementation:
+
+- Use CSS variables for color tokens.
+- Default to system preference before JavaScript loads.
+- Add a small inline script or early-loading component to avoid theme flash.
+- Toggle a root attribute or class such as `data-theme="dark"` / `data-theme="light"`.
+- Keep command blocks, screenshots, and status badges readable in both modes.
 
 Avoid overusing animations. If animation is added, it should be subtle and respect reduced-motion preferences.
 
@@ -644,7 +671,9 @@ tsconfig.json
 Baseline requirements:
 
 - Good contrast on dark theme.
+- Good contrast on light theme.
 - Keyboard-reachable navigation and copy buttons.
+- Keyboard-reachable theme toggle with clear accessible label.
 - Skip link.
 - Real headings in order.
 - Descriptive alt text for every screenshot.
