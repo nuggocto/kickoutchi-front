@@ -187,9 +187,10 @@ nix profile install github:nuggocto/kickoutchi
 
 ```sh
 yay -S kickoutchi-bin
+yay -S kickoutchi
 ```
 
-The AUR command should be shown with a clear `coming soon` badge until the packages are published.
+Both AUR commands should be shown with a clear `coming soon` badge until the packages are published. Explain that `kickoutchi-bin` will install the prebuilt GitHub Release archive, while `kickoutchi` will build from the release source archive with Cargo.
 
 The install page should also explain:
 
