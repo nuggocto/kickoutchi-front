@@ -18,3 +18,10 @@ pnpm-debug.log*
 .idea/
 # editor
 *.swp
+.eslintcache
+# local caches
+.cache/
+# cloudflare local state
+.wrangler/
+# windows-generated files
+Thumbs.db
