@@ -25,3 +25,5 @@ pnpm-debug.log*
 .wrangler/
 # windows-generated files
 Thumbs.db
+# mcp/browser automation artifacts
+.playwright-mcp/
