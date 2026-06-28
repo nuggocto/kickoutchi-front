@@ -1,0 +1,133 @@
+---
+import Layout from "../layouts/Layout.astro";
+import InstallMethodCard from "../components/InstallMethodCard.astro";
+import StatusBadge from "../components/StatusBadge.astro";
+import Callout from "../components/Callout.astro";
+import ButtonLink from "../components/ButtonLink.astro";
+import { INSTALL_METHODS } from "../data/install-methods";
+import { PLATFORM_SUPPORT, PACKAGE_STATUS } from "../data/package-status";
+import { LINKS, SITE } from "../data/links";
+
+const recommended = INSTALL_METHODS.filter((m) => m.group === "recommended");
+const source = INSTALL_METHODS.filter((m) => m.group === "source");
+const packages = INSTALL_METHODS.filter((m) => m.group === "package");
+const availablePackages = PACKAGE_STATUS.filter((pkg) => pkg.status === "available");
+const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available");
+---
+
+<Layout
+  title="Install"
+  description="Install Kickoutchi on Linux, macOS, or Windows • release installer, direct archives, Cargo, Nix, and AUR status."
+>
+  <section class="mx-auto max-w-5xl px-4 pt-14 pb-8">
+    <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">Install Kickoutchi</h1>
+    <p class="mt-4 max-w-2xl text-lg text-muted">
+      Pick your swamp path. Linux and macOS get a one-line installer, Windows gets a PowerShell
+      one, and there are direct archives, Cargo, and Nix if you'd rather.
+    </p>
+  </section>
+
+  <!-- Good to know -->
+  <section class="mx-auto max-w-5xl px-4 pb-4">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <Callout type="tip" title="Two names, one tool">
+        <code>kickoutchi</code> is the canonical binary; <code>kick</code> is the short shortcut for
+        daily use. Both ship together and behave identically.
+      </Callout>
+      <Callout type="note" title="No command? You get the TUI">
+        Running either binary with no subcommand opens the terminal UI. <code>list</code> and
+        <code>kill</code> run headless and never open it.
+      </Callout>
+      <Callout type="note" title="Requirements">
+        Building from source needs Rust 1.95.0+. Safe termination uses pidfd on Linux 5.3+; listing
+        ports works on older kernels too.
+      </Callout>
+      <Callout type="tip" title="Staying current">
+        Installer-based installs include <code>kickoutchi-update</code>. Installed before it existed?
+        Rerun the latest installer once to opt in.
+      </Callout>
+    </div>
+  </section>
+
+  <!-- Recommended -->
+  <section class="mx-auto max-w-5xl px-4 py-8">
+    <h2 class="mb-1 text-2xl font-bold tracking-tight">Recommended</h2>
+    <p class="mb-6 text-muted">The fastest way onto your machine, with updates included.</p>
+    <div class="grid gap-5 lg:grid-cols-2">
+      {recommended.map((method) => <InstallMethodCard method={method} />)}
+    </div>
+  </section>
+
+  <!-- From source -->
+  <section class="mx-auto max-w-5xl px-4 py-8">
+    <h2 class="mb-1 text-2xl font-bold tracking-tight">From source</h2>
+    <p class="mb-6 text-muted">For Rust and Nix users who'd rather build it themselves.</p>
+    <div class="grid gap-5 lg:grid-cols-2">
+      {source.map((method) => <InstallMethodCard method={method} />)}
+    </div>
+  </section>
+
+  <!-- Packages -->
+  <section class="mx-auto max-w-5xl px-4 py-8">
+    <h2 class="mb-1 text-2xl font-bold tracking-tight">Package managers</h2>
+    <p class="mb-6 text-muted">
+      Arch packages are on the way. Homebrew and winget aren't planned • use the installers or
+      archives there.
+    </p>
+    <Callout type="warning" title="AUR publication is paused" class="mb-6">
+      The <code>kickoutchi-bin</code> and <code>kickoutchi</code> templates are ready, but
+      publishing is blocked while AUR registration stays locked after recent AUR security
+      incidents. <code>kickoutchi-bin</code> installs the prebuilt release archive;
+      <code>kickoutchi</code> builds from the release source with Cargo. Templates live in
+      <a href={LINKS.aurPackaging} target="_blank" rel="noopener noreferrer">packaging/arch/</a>.
+    </Callout>
+    <div class="grid gap-5 lg:grid-cols-2">
+      {packages.map((method) => <InstallMethodCard method={method} />)}
+    </div>
+  </section>
+
+  <!-- Status -->
+  <section class="mx-auto max-w-5xl px-4 py-8">
+    <div class="pocket-panel p-6 sm:p-8">
+      <h2 class="text-2xl font-bold tracking-tight">Platform &amp; package status</h2>
+      <div class="mt-6 grid gap-4 sm:grid-cols-3">
+        {
+          PLATFORM_SUPPORT.map((p) => (
+            <div class="rounded-xl border border-border bg-surface-2/50 p-4">
+              <p class="font-semibold text-fg">{p.platform}</p>
+              <p class="mt-2 text-sm text-muted">{p.detail}</p>
+            </div>
+          ))
+        }
+      </div>
+      <div class="mt-6 rounded-xl border border-border bg-surface-2/50 p-4 text-sm">
+        <p class="font-semibold text-fg">Available packages</p>
+        <p class="mt-1 text-muted">{availablePackages.map((pkg) => pkg.name).join(", ")}</p>
+      </div>
+      <div class="mt-6 grid gap-2 sm:grid-cols-2">
+        {
+          pendingPackages.map((pkg) => (
+            <div class="flex items-center justify-between gap-3 border-b border-border py-2 text-sm">
+              <span class="font-medium text-fg">{pkg.name}</span>
+              <span class="flex items-center gap-2 text-muted">
+                <span class="hidden sm:inline">{pkg.detail}</span>
+                <StatusBadge status={pkg.status} />
+              </span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-5xl px-4 py-10">
+    <div class="flex flex-col items-center gap-4 text-center">
+      <h2 class="text-2xl font-bold tracking-tight">Installed? Meet your ports.</h2>
+      <p class="max-w-xl text-muted">Run <code class="font-mono text-fg">{SITE.shortBinary}</code> with no arguments to open the TUI, or jump into the docs.</p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <ButtonLink href="/docs">Read the docs</ButtonLink>
+        <ButtonLink href={LINKS.releases} variant="secondary" external>Browse releases</ButtonLink>
+      </div>
+    </div>
+  </section>
+</Layout>

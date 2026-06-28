@@ -1,0 +1,74 @@
+---
+title: Safety
+description: How Kickoutchi avoids killing the wrong thing • confirmations, guardrails, and last-moment re-checks.
+section: Safety
+order: 1
+mode: general
+related:
+  - config
+  - commands
+---
+
+import Callout from "../../components/Callout.astro";
+
+Terminating the wrong process is the scary part of a tool like this. Kickoutchi treats it that way.
+Every guarantee below is real behaviour, not a promise on a marketing page.
+
+## Confirmations
+
+Nothing is terminated without a confirmation step, and the prompt scales with the risk:
+
+- **Normal kill** • type `y`.
+- **Force kill** • type the word `force` (unless you set `confirm_force_kill = false`).
+- **Protected process** • type the **PID** or the **process name**.
+
+Before any prompt, Kickoutchi prints the target's identity, the affected ports, the equivalent
+shell command, and any warnings.
+
+<Callout type="safety" title="--yes skips the question, not the safety">
+  `--yes` skips the **normal** prompt for a target you trust. It still prints the banner and all
+  warnings, and it can never bypass protected-process confirmation. A protected target with `--yes`
+  exits `6` and signals nothing.
+</Callout>
+
+## Hard guardrails
+
+- **PID 0, PID 1, and Kickoutchi's own PID are blocked** outright • they can't be targeted at all.
+- **`kill --port` refuses ambiguous ports.** If two PIDs own the same port, Kickoutchi lists the
+  candidates and makes you choose with `--pid` instead of guessing.
+- **A port with no readable owner is not killable** • it exits `4` (permission denied) rather than
+  acting on incomplete information.
+
+## Protected processes
+
+Some swamp residents are load-bearing: init, your database, Docker, core OS services. These are
+marked **protected** and require typing the PID or name to confirm • force or `--yes` can't shortcut
+it. The list is built-in and [extensible via config](/docs/config#protected-processes).
+
+## The target can't wander off
+
+This is the important one. After you confirm, Kickoutchi **re-validates the target right before it
+signals**:
+
+- It re-collects ports and checks the confirmed target still matches.
+- If the port's owner changed, it aborts • **no termination is sent** (exit `3`).
+- If the owner became unreadable, it aborts as ownership-unavailable (exit `4`).
+- If the target became protected in the meantime, it aborts (exit `6`).
+
+Only the **confirmed PID** is ever signalled.
+
+## Platform specifics
+
+| Platform    | How termination stays honest                                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Linux**   | Uses `pidfd` on kernel 5.3+, so the final signal is tied to the prepared process handle • not a PID that could be recycled onto a different process. |
+| **macOS**   | No pidfd, so Kickoutchi re-checks process identity right before signalling and refuses if the PID has changed faces.                                 |
+| **Windows** | Terminates through a process **handle** so the target can't wander off after confirmation.                                                           |
+
+## After the kick
+
+On a successful termination, Kickoutchi does a best-effort re-collection and tells you whether the
+confirmed ports are actually gone • instead of just assuming success and leaving you to check.
+
+See the [exit codes](/docs/commands#exit-codes) for how each of these outcomes is reported to
+scripts.

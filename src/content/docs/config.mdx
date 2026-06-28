@@ -1,0 +1,100 @@
+---
+title: Configuration
+description: The optional config file • location, precedence, every key, and the protected-process list.
+section: Reference
+order: 2
+mode: general
+related:
+  - commands
+  - safety
+---
+
+import Callout from "../../components/Callout.astro";
+import CommandBlock from "../../components/CommandBlock.astro";
+
+Kickoutchi runs fine with **no config file at all**. When you want different defaults, drop a small
+TOML file in place.
+
+## Location
+
+By default Kickoutchi looks in your platform config directory:
+
+| Platform | Path                                                                                   |
+| -------- | -------------------------------------------------------------------------------------- |
+| Linux    | `$XDG_CONFIG_HOME/kickoutchi/config.toml` (usually `~/.config/kickoutchi/config.toml`) |
+| macOS    | `~/Library/Application Support/kickoutchi/config.toml`                                 |
+| Windows  | `%APPDATA%\kickoutchi\config.toml`                                                     |
+
+Point at a different file with the global `--config FILE` flag.
+
+<Callout type="note" title="Missing files, two different rules">
+  No file at the **default** path just means "use the built-in defaults" • that's the normal
+  first-run state. But a file you **explicitly** pass with `--config` must exist; a missing one is
+  an error, because you asked for that exact file.
+</Callout>
+
+## Precedence
+
+Settings stack like onions, like ogres: **built-in defaults** at the bottom, then the **config
+file**, then **CLI flags** on top. Most keys override their default; `protected_processes` extends
+it (see below).
+
+## Keys
+
+Every key is optional. Anything you leave out keeps its default.
+
+| Key                        | Type             | Default       | Meaning                                                                                           |
+| -------------------------- | ---------------- | ------------- | ------------------------------------------------------------------------------------------------- |
+| `refresh_interval_seconds` | integer (1–3600) | `3`           | How often the TUI re-collects ports.                                                              |
+| `default_sort`             | string           | `"port"`      | Default sort for the CLI and TUI. One of `port`, `pid`, `protocol`, `process`, `parent`, `scope`. |
+| `hide_system_processes`    | boolean          | `false`       | Hide conservative system/service rows from the default view.                                      |
+| `confirm_force_kill`       | boolean          | `true`        | Require the typed `force` confirmation for force kills (when `--yes` is absent).                  |
+| `protected_processes`      | string[]         | _(see below)_ | Extra process names that require stronger confirmation. **Added** to the built-in list.           |
+
+### Example
+
+<CommandBlock
+  lang="toml"
+  label="~/.config/kickoutchi/config.toml"
+  code={`refresh_interval_seconds = 5
+default_sort = "scope"
+hide_system_processes = true
+confirm_force_kill = true
+protected_processes = ["redis", "mysqld"]`}
+/>
+
+<Callout type="warning" title="Typos won't pass silently">
+  Unknown keys are **rejected**, not ignored • a misspelled key like `refresh_intreval_seconds`
+  fails to load and names the offending key. The same goes for out-of-range or mistyped values (e.g.
+  a bad `default_sort`). A broken file is a hard error (exit `1`) rather than a quiet fallback that
+  hides your mistake.
+</Callout>
+
+## Protected processes
+
+`protected_processes` is **additive**: your names are added on top of the built-in safety set, never
+instead of it. Adding `redis` can't accidentally strip protection from `systemd` or `postgres`.
+
+Matching is exact • **case-sensitive on Linux/macOS, case-insensitive on Windows** • and never a
+substring, so `postgres-backup-helper` doesn't inherit `postgres`'s protection.
+
+The built-in list covers the load-bearing residents whose accidental death takes your containers,
+database, init system, or desktop with them:
+
+```text
+docker, docker.exe, dockerd.exe, Docker Desktop.exe, com.docker.backend.exe,
+postgres, postgres.exe, systemd, System, smss.exe, csrss.exe, wininit.exe,
+services.exe, lsass.exe, svchost.exe, winlogon.exe, explorer.exe, dwm.exe,
+WindowServer
+```
+
+The list is capped at 256 entries and rejects empty names. See [Safety](/docs/safety) for what
+"protected" actually changes at kill time.
+
+## Hiding system processes
+
+With `hide_system_processes = true`, the default view drops conservative system/service rows: PID 0
+and 1, direct children of PID 1, and a short list of well-known OS process names (plus PID ≤ 4 and
+children of `services.exe` on Windows). It's deliberately cautious • a protected app like
+`postgres` is **not** treated as a system process just because it's protected; those are two
+different ideas.

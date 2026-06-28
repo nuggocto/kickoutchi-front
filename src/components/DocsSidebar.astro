@@ -1,0 +1,47 @@
+---
+import { docHref, type DocGroup } from "../lib/docs";
+
+interface Props {
+  groups: DocGroup[];
+  currentId?: string;
+  class?: string;
+}
+const { groups, currentId, class: className = "" } = Astro.props;
+
+const linkBase =
+  "block border-l-2 py-1.5 pl-3 text-sm transition-colors";
+const linkInactive = "border-transparent text-muted hover:border-border hover:text-fg";
+const linkActive = "border-accent font-medium text-accent";
+---
+
+<nav aria-label="Documentation" class:list={["space-y-5", className]}>
+  <a
+    href="/docs"
+    class:list={[linkBase, currentId === undefined ? linkActive : linkInactive]}
+    aria-current={currentId === undefined ? "page" : undefined}
+  >
+    Overview
+  </a>
+  {
+    groups.map((group) => (
+      <div>
+        <p class="mb-1 pl-3 text-xs font-semibold uppercase tracking-wider text-muted/80">
+          {group.section}
+        </p>
+        <ul>
+          {group.items.map((item) => (
+            <li>
+              <a
+                href={docHref(item)}
+                class:list={[linkBase, currentId === item.id ? linkActive : linkInactive]}
+                aria-current={currentId === item.id ? "page" : undefined}
+              >
+                {item.data.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))
+  }
+</nav>

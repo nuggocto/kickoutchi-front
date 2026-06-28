@@ -1,0 +1,328 @@
+@import "tailwindcss";
+
+/*
+  Kickoutchi design tokens.
+  The mascot is the design system: a pocket-terminal (Tamagotchi) device with a
+  sage LCD screen, a stubborn olive boot, and a tiny port-creature getting kicked
+  out. Dark terminal mood by default; light mode keeps the same pocket identity.
+*/
+
+/* `dark:` utilities key off the root `data-theme` attribute. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
+  --font-pixel: "Pixelify Sans", "IBM Plex Sans", system-ui, sans-serif;
+
+  /* Pocket-device geometry. */
+  --radius-pocket: 1.5rem;
+  --radius-screen: 0.75rem;
+
+  /* Signature LCD sage • same in both themes. */
+  --color-lcd: #a7b487;
+  --color-lcd-ink: #1b2114;
+  /* Stubborn boot olive. */
+  --color-boot: #3f5130;
+  --color-sole: #d9c9a3;
+}
+
+/* ---- Semantic colour tokens, switched per theme ---- */
+:root {
+  color-scheme: light;
+  --bg: #f1ede3;
+  --fg: #20241c;
+  --muted: #5f5e51;
+  --border: #d3cab4;
+  --surface: #e9e3d5;
+  --surface-2: #e0d8c6;
+  --accent: #3e5130;
+  --accent-hover: #324226;
+  --accent-fg: #f4f0e6;
+  --warning: #9a6b12;
+  --warning-soft: #f0e2c2;
+  --danger: #a93c28;
+  --danger-soft: #f1d9d2;
+  --ring: #3e5130;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111210;
+  --fg: #ece7da;
+  --muted: #9b988b;
+  --border: #2c2d28;
+  --surface: #1a1b18;
+  --surface-2: #232420;
+  --accent: #9fb87e;
+  --accent-hover: #b3c995;
+  --accent-fg: #11150c;
+  --warning: #d8a657;
+  --warning-soft: #2a2415;
+  --danger: #e0705a;
+  --danger-soft: #2c1a16;
+  --ring: #9fb87e;
+}
+
+/* No-JS fallback: honour the OS preference until the inline script runs. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111210;
+    --fg: #ece7da;
+    --muted: #9b988b;
+    --border: #2c2d28;
+    --surface: #1a1b18;
+    --surface-2: #232420;
+    --accent: #9fb87e;
+    --accent-hover: #b3c995;
+    --accent-fg: #11150c;
+    --warning: #d8a657;
+    --warning-soft: #2a2415;
+    --danger: #e0705a;
+    --danger-soft: #2c1a16;
+    --ring: #9fb87e;
+  }
+}
+
+/* Expose the semantic tokens to Tailwind utilities (bg-bg, text-fg, …). */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv05", "ss01";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Visible, theme-matched keyboard focus. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  /* Pixel-art assets should stay crisp, not blurry, when scaled. */
+  img[data-pixel] {
+    image-rendering: pixelated;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---- Dual-theme Shiki code blocks (MDX docs) ---- */
+:root[data-theme="light"] .astro-code,
+:root[data-theme="light"] .astro-code span {
+  color: var(--shiki-light);
+  background-color: transparent;
+  font-style: var(--shiki-light-font-style);
+  font-weight: var(--shiki-light-font-weight);
+  text-decoration: var(--shiki-light-text-decoration);
+}
+:root[data-theme="dark"] .astro-code,
+:root[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark);
+  background-color: transparent;
+  font-style: var(--shiki-dark-font-style);
+  font-weight: var(--shiki-dark-font-weight);
+  text-decoration: var(--shiki-dark-text-decoration);
+}
+
+/* ---- Reusable building blocks ---- */
+@utility pocket-panel {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pocket);
+}
+
+/* ---- Long-form docs typography ---- */
+.prose {
+  color: var(--fg);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+.prose > * + * {
+  margin-top: 1.1em;
+}
+.prose h2 {
+  margin-top: 2.4rem;
+  margin-bottom: 0.6rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  scroll-margin-top: 6rem;
+}
+.prose h3 {
+  margin-top: 1.8rem;
+  margin-bottom: 0.4rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  scroll-margin-top: 6rem;
+}
+.prose h4 {
+  margin-top: 1.4rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  scroll-margin-top: 6rem;
+}
+.prose h2 + *,
+.prose h3 + *,
+.prose h4 + * {
+  margin-top: 0.4rem;
+}
+.prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.prose a:hover {
+  text-decoration-thickness: 2px;
+}
+.prose strong {
+  color: var(--fg);
+  font-weight: 600;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.4rem;
+}
+.prose ul {
+  list-style: none;
+}
+.prose ul > li {
+  position: relative;
+}
+.prose ul > li::before {
+  content: "";
+  position: absolute;
+  left: -1.1rem;
+  top: 0.7em;
+  height: 0.35rem;
+  width: 0.35rem;
+  border-radius: 1px;
+  background-color: var(--accent);
+}
+.prose ol {
+  list-style: decimal;
+}
+.prose li + li {
+  margin-top: 0.4rem;
+}
+.prose li > ul,
+.prose li > ol {
+  margin-top: 0.4rem;
+}
+/* Inline code (not Shiki blocks). */
+.prose :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.35rem;
+  color: var(--fg);
+  white-space: nowrap;
+}
+.prose pre {
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background-color: var(--surface);
+  overflow-x: auto;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.prose pre code {
+  font-family: var(--font-mono);
+}
+.prose blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1rem;
+  color: var(--muted);
+  font-style: italic;
+}
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  display: block;
+  overflow-x: auto;
+}
+.prose th,
+.prose td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.prose thead th {
+  background-color: var(--surface-2);
+  font-weight: 600;
+}
+.prose code,
+.prose kbd {
+  word-break: break-word;
+}
+.prose .not-prose {
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}

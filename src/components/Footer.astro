@@ -1,0 +1,63 @@
+---
+import LogoMark from "./LogoMark.astro";
+import { FOOTER_NAV } from "../data/nav";
+import { LINKS, SITE } from "../data/links";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-24 border-t border-border bg-surface/40">
+  <div class="mx-auto max-w-6xl px-4 py-12">
+    <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="space-y-3">
+        <a href="/" class="flex items-center gap-2.5" aria-label={`${SITE.name} home`}>
+          <LogoMark alt="" width={32} height={32} class="size-8 object-contain" />
+          <span class="font-pixel text-lg leading-none tracking-wide">Kickoutchi</span>
+        </a>
+        <p class="max-w-xs text-sm text-muted">
+          A cross-platform TUI and CLI port janitor. See what owns each local port, then clear
+          the swamp safely.
+        </p>
+      </div>
+
+      {
+        FOOTER_NAV.map((group) => (
+          <div>
+            <h2 class="mb-3 text-sm font-semibold text-fg">{group.title}</h2>
+            <ul class="space-y-2">
+              {group.items.map((item) => (
+                <li>
+                  <a
+                    href={item.href}
+                    target={item.external ? "_blank" : undefined}
+                    rel={item.external ? "noopener noreferrer" : undefined}
+                    class="text-sm text-muted transition-colors hover:text-accent"
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+
+    <div
+      class="mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm text-muted sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p>
+        © {year} {SITE.name}. Released under the{" "}
+        <a href={LINKS.license} target="_blank" rel="noopener noreferrer" class="text-fg underline underline-offset-2 hover:text-accent">MIT License</a>.
+        Built in the swamp.
+      </p>
+      <p class="flex items-center gap-2">
+        <span class="font-mono text-xs text-muted">v{SITE.version}</span>
+        <span aria-hidden="true">•</span>
+        <a href={LINKS.github} target="_blank" rel="noopener noreferrer" class="hover:text-accent">
+          github.com/nuggocto/kickoutchi
+        </a>
+      </p>
+    </div>
+  </div>
+</footer>

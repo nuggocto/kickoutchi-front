@@ -1,0 +1,139 @@
+---
+title: Command reference
+description: A compact index of binaries, options, filters, sort modes, JSON fields, and exit codes.
+section: Reference
+order: 1
+mode: cli
+related:
+  - cli
+  - config
+---
+
+import CommandBlock from "../../components/CommandBlock.astro";
+
+The terse index for people who already know what they need. For worked examples, see the
+[CLI walkthrough](/docs/cli).
+
+## Binary names
+
+| Binary       | Use                                                         |
+| ------------ | ----------------------------------------------------------- |
+| `kickoutchi` | Canonical name. Matches the crate, the docs, and this site. |
+| `kick`       | Short alias for daily CLI use. Identical behaviour.         |
+
+Running either with **no subcommand** opens the TUI. `--version` reports `kickoutchi` under both names.
+
+## Global options
+
+These work with or without a subcommand.
+
+| Option                       | Description                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `--config FILE`              | Use an alternate config file instead of the platform default.                                |
+| `--refresh-interval SECONDS` | Override the configured refresh interval (1–3600). Out of range is a usage error (exit `2`). |
+
+## `list`
+
+Print open ports and exit.
+
+<CommandBlock code={"kick list [OPTIONS]"} lang="text" label="usage" />
+
+| Option           | Description                                                   |
+| ---------------- | ------------------------------------------------------------- |
+| `--port PORT`    | Only rows bound to this exact port.                           |
+| `--process TEXT` | Only rows whose process name contains the text.               |
+| `--filter TEXT`  | TUI-style search text or structured filters (below).          |
+| `--sort MODE`    | Sort order (below). Defaults to your config's `default_sort`. |
+| `--json`         | Print stable JSON instead of a table.                         |
+
+An empty **unfiltered** list exits `0`. An empty **filtered** result exits `3`.
+
+## `kill`
+
+Terminate the process owning a port or PID, after confirmation.
+
+<CommandBlock code={"kick kill <--pid PID | --port PORT> [OPTIONS]"} lang="text" label="usage" />
+
+Exactly one of `--pid` / `--port` is required.
+
+| Option        | Description                                                            |
+| ------------- | ---------------------------------------------------------------------- |
+| `--pid PID`   | Terminate a specific PID.                                              |
+| `--port PORT` | Terminate the process that owns this port. Refuses ambiguous ports.    |
+| `--force`     | Force kill where the platform distinguishes it (`kill -9` on Unix).    |
+| `--yes`       | Skip the normal prompt. Never bypasses protected-process confirmation. |
+
+The equivalent command shown before confirmation is `kill PID` (terminate) or `kill -9 PID` (force)
+on Linux/macOS, and `taskkill /F /PID PID` on Windows.
+
+## Filters
+
+Used by `list --filter` and the TUI search box. Multiple terms are combined with AND. Bare words
+are matched as substrings across the visible fields.
+
+| Filter                                            | Matches                                |
+| ------------------------------------------------- | -------------------------------------- |
+| `pid:18422`                                       | Exact PID                              |
+| `port:3000`                                       | Exact port                             |
+| `proto:tcp` / `proto:udp`                         | Protocol                               |
+| `scope:public` / `scope:local` / `scope:loopback` | Bind scope                             |
+| `protected:true` / `protected:false`              | Protected status                       |
+| `parent:node`                                     | Parent process name or PID (substring) |
+
+<CommandBlock
+  code={
+    "kick list --filter 3000\nkick list --filter port:3000\nkick list --filter proto:udp\nkick list --filter scope:public\nkick list --filter protected:true\nkick list --filter parent:node"
+  }
+  label="filter examples"
+/>
+
+An invalid structured value (e.g. `port:not-a-port`) is a usage error (exit `2`).
+
+## Sort modes
+
+`port` • `pid` • `protocol` • `process` • `parent` • `scope`
+
+Sorting by `scope` lists `public` binds first, then `local`, then `loopback`. Rows missing the sort
+key sink to the bottom. In the TUI, `s` cycles through these in order.
+
+## JSON output
+
+`list --json` emits an array of objects with this stable shape:
+
+| Field                 | Type                                  |
+| --------------------- | ------------------------------------- |
+| `protocol`            | `"tcp"` \| `"udp"`                    |
+| `local_addr`          | string                                |
+| `local_port`          | number                                |
+| `state`               | `"listen"` \| `"bound"`               |
+| `pid`                 | number \| `null`                      |
+| `process_name`        | string \| `null`                      |
+| `executable_path`     | string \| `null`                      |
+| `command_line`        | string \| `null`                      |
+| `parent_pid`          | number \| `null`                      |
+| `parent_process_name` | string \| `null`                      |
+| `child_pids`          | number[]                              |
+| `protected`           | boolean                               |
+| `platform`            | `"linux"` \| `"macos"` \| `"windows"` |
+| `permission`          | `"full"` \| `"partial"`               |
+
+Missing metadata is `null`. An empty result is `[]`.
+
+## Exit codes
+
+The script-facing contract • these numbers don't drift.
+
+| Code | Meaning                                   |
+| ---- | ----------------------------------------- |
+| `0`  | Success                                   |
+| `1`  | Failure                                   |
+| `2`  | Invalid arguments                         |
+| `3`  | No match                                  |
+| `4`  | Permission denied / ownership unavailable |
+| `5`  | Kill cancelled                            |
+| `6`  | Protected process needs confirmation      |
+
+## Config
+
+Defaults for sort, refresh interval, protected processes, and more live in a config file. See
+[Configuration](/docs/config).

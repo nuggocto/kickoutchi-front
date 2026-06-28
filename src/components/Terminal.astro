@@ -1,0 +1,106 @@
+---
+export interface TerminalLine {
+  text: string;
+  kind?: "command" | "output" | "comment" | "success" | "warning" | "muted";
+  /** Prompt shown before a command line (visual only). */
+  prompt?: string;
+}
+
+interface Props {
+  title?: string;
+  lines: TerminalLine[];
+  class?: string;
+}
+
+const { title = "kick • local ports", lines, class: className = "" } = Astro.props;
+---
+
+<div
+  class:list={["terminal overflow-hidden rounded-2xl border", className]}
+  role="img"
+  aria-label={`Terminal: ${title}`}
+>
+  <div class="chrome flex items-center gap-2 px-3 py-2 sm:gap-2.5 sm:px-4 sm:py-2.5">
+    <span class="terminal-icon" aria-hidden="true">
+      <span class="terminal-caret"></span>
+    </span>
+    <span class="font-mono text-xs">{title}</span>
+  </div>
+  <div class="screen overflow-hidden px-3 py-3 font-mono text-[0.72rem] leading-relaxed sm:px-4 sm:py-4 sm:text-sm">
+    <pre class="whitespace-pre-wrap">{lines.map((line) => (
+        <div class:list={["line", `is-${line.kind ?? "output"}`]}>{line.kind === "command" && <span class="prompt">{line.prompt ?? "$"} </span>}<span class="content">{line.text}</span></div>
+      ))}</pre>
+  </div>
+</div>
+
+<style>
+  /* A real terminal is dark • keep it that way in both site themes for an
+     authentic, consistent "device screen" focal point. */
+  .terminal {
+    --term-bg: #0c0e0a;
+    --term-chrome: #15180f;
+    --term-fg: #d7dcc4;
+    --term-prompt: #a7b487;
+    --term-comment: #7e8a6a;
+    --term-muted: #8a8f7e;
+    --term-success: #9fd07a;
+    --term-warning: #e0b357;
+    border-color: #23271b;
+    background-color: var(--term-bg);
+  }
+  .chrome {
+    background-color: var(--term-chrome);
+    color: var(--term-muted);
+    border-bottom: 1px solid #23271b;
+  }
+  .terminal-icon {
+    display: inline-flex;
+    height: 0.95rem;
+    width: 0.95rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #303725;
+    border-radius: 0.25rem;
+    background-color: #0d100a;
+  }
+  .terminal-caret {
+    height: 0.35rem;
+    width: 0.35rem;
+    border-right: 2px solid var(--term-prompt);
+    border-bottom: 2px solid var(--term-prompt);
+    transform: rotate(-45deg);
+  }
+  .screen {
+    color: var(--term-fg);
+  }
+  .screen pre {
+    margin: 0;
+    font: inherit;
+  }
+  .line {
+    white-space: pre-wrap;
+  }
+  .content {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .prompt {
+    color: var(--term-prompt);
+    font-weight: 600;
+  }
+  .is-command .content {
+    color: var(--term-fg);
+  }
+  .is-comment {
+    color: var(--term-comment);
+  }
+  .is-muted {
+    color: var(--term-muted);
+  }
+  .is-success {
+    color: var(--term-success);
+  }
+  .is-warning {
+    color: var(--term-warning);
+  }
+</style>

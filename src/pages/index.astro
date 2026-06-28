@@ -1,0 +1,232 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ButtonLink from "../components/ButtonLink.astro";
+import Terminal from "../components/Terminal.astro";
+import type { TerminalLine } from "../components/Terminal.astro";
+import ModeCard from "../components/ModeCard.astro";
+import FeatureCard from "../components/FeatureCard.astro";
+import StatusBadge from "../components/StatusBadge.astro";
+import LogoMark from "../components/LogoMark.astro";
+import { FEATURES } from "../data/features";
+import { PLATFORM_SUPPORT, PACKAGE_STATUS } from "../data/package-status";
+import { LINKS, RELEASE_ASSETS } from "../data/links";
+
+// A faithful session: list the swamp, then kick one resident out • banner,
+// prompt, and outcome all match the real CLI output.
+const demo: TerminalLine[] = [
+  { kind: "command", text: "kick list" },
+  { kind: "muted", text: "PROTO  ADDRESS    PORT  PID    PROCESS   STATE" },
+  { kind: "output", text: "TCP    127.0.0.1  3000  18422  node      LISTEN" },
+  { kind: "output", text: "TCP    127.0.0.1  5173  18510  vite      LISTEN" },
+  { kind: "output", text: "TCP    0.0.0.0    5432  1201   postgres  LISTEN" },
+  { kind: "output", text: "" },
+  { kind: "command", text: "kick kill --port 3000" },
+  { kind: "output", text: "Terminate PID 18422 (node)" },
+  { kind: "output", text: "Ports: TCP 127.0.0.1:3000" },
+  { kind: "output", text: "Command: kill 18422" },
+  { kind: "muted", text: "Type y to confirm, or press Enter to cancel: y" },
+  { kind: "success", text: "sent SIGTERM to PID 18422 (node)" },
+  { kind: "success", text: "confirmed target ports are no longer visible" },
+];
+
+const safety = [
+  "Every termination is confirmed • and --yes still prints the target banner and safety warnings.",
+  "PID 0, PID 1, and Kickoutchi's own PID are blocked outright.",
+  "kill --port refuses ambiguous ports instead of guessing which PID to hit.",
+  "Protected processes require typing the PID or process name to confirm.",
+  "Force kill needs stronger confirmation by default.",
+  "The target is re-checked right before the signal • only the confirmed PID is signalled.",
+];
+
+const availablePackages = PACKAGE_STATUS.filter((pkg) => pkg.status === "available");
+const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available");
+---
+
+<Layout>
+  <!-- Hero -->
+  <section class="mx-auto max-w-6xl px-4 pt-14 pb-10 sm:pt-20">
+    <div class="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+      <div class="text-center lg:text-left">
+        <p class="font-pixel text-sm uppercase tracking-[0.2em] text-accent">
+          Kickoutchi • port janitor
+        </p>
+        <h1 class="mt-3 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+          Kick stale dev servers out of your local ports.
+        </h1>
+        <p class="mt-5 max-w-xl text-lg leading-relaxed text-muted">
+          Kickoutchi shows which process owns each open TCP/UDP port, then lets you clear the
+          swamp safely • from a guided TUI or a script-friendly CLI.
+        </p>
+        <div class="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
+          <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
+          <ButtonLink href="/docs" variant="secondary">Read the docs</ButtonLink>
+          <ButtonLink href={LINKS.github} variant="ghost" external>View on GitHub</ButtonLink>
+        </div>
+        <p class="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted lg:justify-start">
+          <span>Works on Linux, macOS &amp; Windows.</span>
+          <span aria-hidden="true">•</span>
+          <span>Two binaries: <code class="font-mono text-fg">kickoutchi</code> and <code class="font-mono text-fg">kick</code>.</span>
+        </p>
+      </div>
+
+      <div class="relative mx-auto w-full max-w-md lg:max-w-none">
+        <LogoMark
+          alt="The Kickoutchi mascot: a pixel-art pocket device whose screen shows a boot kicking a little port-creature out."
+          class="relative mx-auto w-full max-w-[17rem] sm:max-w-[22rem]"
+          widths={[320, 480, 640]}
+          sizes="(min-width: 1024px) 22rem, 74vw"
+          priority
+        />
+      </div>
+    </div>
+  </section>
+
+  <!-- Terminal demo -->
+  <section class="mx-auto max-w-3xl px-4 py-12">
+    <div class="mb-5 text-center">
+      <h2 class="text-2xl font-bold tracking-tight">Two commands, clean swamp</h2>
+      <p class="mt-2 text-muted">See what's listening, then boot the stale one • with a confirm step.</p>
+    </div>
+    <Terminal title="kick • clearing port 3000" lines={demo} />
+  </section>
+
+  <!-- TUI vs CLI -->
+  <section class="mx-auto max-w-6xl px-4 py-12">
+    <div class="mb-8 max-w-2xl">
+      <h2 class="text-2xl font-bold tracking-tight">Two ways through the swamp</h2>
+      <p class="mt-2 text-muted">
+        Open the TUI when you want to look around. Reach for the CLI when you already know the target.
+      </p>
+    </div>
+    <div class="grid gap-5 md:grid-cols-2">
+      <ModeCard
+        icon="tui"
+        eyebrow="The cozy way"
+        title="Guided TUI"
+        description="Run either binary with no command to open the terminal UI. Browse, search, sort, and kick with confirmations and live details."
+        command="kickoutchi"
+        href="/docs/tui"
+        ctaLabel="Explore the TUI"
+      />
+      <ModeCard
+        icon="cli"
+        eyebrow="The goblin-speed way"
+        title="Scriptable CLI"
+        description="Print ports as a table or stable JSON, filter precisely, and kill by port or PID with a fixed exit-code contract."
+        command="kick list --json"
+        href="/docs/cli"
+        ctaLabel="Explore the CLI"
+      />
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="mx-auto max-w-6xl px-4 py-12">
+    <div class="mb-8 max-w-2xl">
+      <h2 class="text-2xl font-bold tracking-tight">A small tool that takes ports seriously</h2>
+      <p class="mt-2 text-muted">Practical first, playful second. Everything here is real behaviour.</p>
+    </div>
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      {FEATURES.map((feature) => <FeatureCard feature={feature} />)}
+    </div>
+  </section>
+
+  <!-- Safety -->
+  <section class="mx-auto max-w-6xl px-4 py-12">
+    <div class="pocket-panel grid gap-8 p-6 sm:p-10 lg:grid-cols-[0.9fr_1.1fr]">
+      <div>
+        <span class="inline-flex size-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
+          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <path d="M9 12l2 2 4-4"></path>
+          </svg>
+        </span>
+        <h2 class="mt-4 text-2xl font-bold tracking-tight">Safe by default</h2>
+        <p class="mt-3 text-muted">
+          Terminating the wrong process is the scary part. Kickoutchi treats it that way: lots of
+          guardrails, no silent surprises.
+        </p>
+        <ButtonLink href="/docs/safety" variant="secondary" size="sm" class="mt-5">
+          How termination stays safe
+        </ButtonLink>
+      </div>
+      <ul class="grid gap-3 self-center">
+        {
+          safety.map((item) => (
+            <li class="flex gap-3 text-sm leading-relaxed">
+              <svg class="mt-0.5 size-5 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 6 9 17l-5-5"></path>
+              </svg>
+              <span class="text-muted">{item}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- Install preview + status -->
+  <section class="mx-auto max-w-6xl px-4 py-12">
+    <div class="pocket-panel p-6 sm:p-8">
+      <div class="mx-auto max-w-5xl text-center">
+        <h2 class="text-2xl font-bold tracking-tight">Install in one line</h2>
+        <p class="mt-2 text-muted">Linux &amp; macOS get the release installer. Windows gets the PowerShell spell.</p>
+        <div class="mt-5 text-left">
+          <Terminal
+            title="Linux & macOS"
+            lines={[
+              { kind: "command", text: "curl --proto '=https' --tlsv1.2 -LsSf \\" },
+              { kind: "command", text: "  " + RELEASE_ASSETS.installerSh + " \\", prompt: " " },
+              { kind: "command", text: "  | sh", prompt: " " },
+            ]}
+          />
+        </div>
+        <ButtonLink href="/install" class="mt-5">All install methods</ButtonLink>
+      </div>
+
+      <div class="mt-8 border-t border-border pt-6 text-center">
+        <h3 class="text-xl font-bold tracking-tight">Platforms &amp; packages</h3>
+        <p class="mt-2 text-sm text-muted">Honest status, kept compact.</p>
+        <div class="mt-5 grid gap-3 sm:grid-cols-3">
+          {
+            PLATFORM_SUPPORT.map((p) => (
+              <div class="rounded-xl border border-border bg-surface-2/50 p-4 text-left">
+                <p class="font-medium text-fg">{p.platform}</p>
+                <p class="mt-2 text-xs leading-relaxed text-muted">{p.detail}</p>
+              </div>
+            ))
+          }
+        </div>
+        <div class="mt-5 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs text-muted">
+          <span class="inline-flex items-center gap-2">
+            <StatusBadge status="available" />
+            {availablePackages.map((pkg) => pkg.name).join(", ")}
+          </span>
+          {
+            pendingPackages.map((pkg) => (
+              <span class="inline-flex items-center gap-1.5 text-xs text-muted" title={pkg.detail}>
+                <StatusBadge status={pkg.status} />
+                {pkg.name}
+              </span>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing CTA -->
+  <section class="mx-auto max-w-6xl px-4 py-12">
+    <div class="pocket-panel flex flex-col items-center gap-5 p-10 text-center">
+      <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">Ready to clear the swamp?</h2>
+      <p class="max-w-xl text-muted">
+        Install Kickoutchi, run it once with no arguments, and meet the little creatures squatting
+        on your ports.
+      </p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
+        <ButtonLink href={LINKS.github} variant="secondary" external>Star on GitHub</ButtonLink>
+      </div>
+    </div>
+  </section>
+</Layout>

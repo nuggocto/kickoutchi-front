@@ -1,0 +1,63 @@
+---
+interface Props {
+  text: string;
+  class?: string;
+}
+const { text, class: className = "" } = Astro.props;
+---
+
+<button
+  type="button"
+  class:list={[
+    "copy-button inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-accent",
+    className,
+  ]}
+  data-clipboard={text}
+  aria-label="Copy to clipboard"
+>
+  <svg class="icon-copy size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+  </svg>
+  <svg class="icon-check hidden size-3.5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M20 6 9 17l-5-5"></path>
+  </svg>
+  <span class="copy-label">Copy</span>
+</button>
+
+<script>
+  function wireCopyButtons() {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(".copy-button:not([data-wired])");
+    for (const button of buttons) {
+      button.dataset.wired = "true";
+      button.addEventListener("click", async () => {
+        const text = button.dataset.clipboard ?? "";
+        try {
+          await navigator.clipboard.writeText(text);
+          showCopied(button);
+        } catch (error) {
+          // Clipboard blocked; leave the button as-is.
+        }
+      });
+    }
+  }
+
+  function showCopied(button: HTMLButtonElement) {
+    const copyIcon = button.querySelector(".icon-copy");
+    const checkIcon = button.querySelector(".icon-check");
+    const label = button.querySelector(".copy-label");
+    copyIcon?.classList.add("hidden");
+    checkIcon?.classList.remove("hidden");
+    if (label) label.textContent = "Copied";
+    button.classList.add("text-accent", "border-accent");
+    window.setTimeout(() => {
+      copyIcon?.classList.remove("hidden");
+      checkIcon?.classList.add("hidden");
+      if (label) label.textContent = "Copy";
+      button.classList.remove("text-accent", "border-accent");
+    }, 1600);
+  }
+
+  wireCopyButtons();
+  document.addEventListener("astro:page-load", wireCopyButtons);
+</script>

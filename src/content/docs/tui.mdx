@@ -1,0 +1,124 @@
+---
+title: TUI walkthrough
+description: The cozy way • open the terminal UI and let Kickoutchi walk you through the swamp.
+section: Guides
+order: 1
+mode: tui
+related:
+  - cli
+  - safety
+---
+
+import Callout from "../../components/Callout.astro";
+import CommandBlock from "../../components/CommandBlock.astro";
+
+The cozy way: open the TUI and let Kickoutchi walk you through the swamp. Run either binary
+**with no subcommand** and you land in the terminal UI.
+
+<CommandBlock code={"kickoutchi\nkick"} label="open the TUI" />
+
+Both names do the same thing • `kickoutchi` is canonical, `kick` is the short one.
+
+## The layout
+
+The screen is split into four regions, top to bottom:
+
+- **Header** • the title and a one-line key hint (`r refresh / search s sort x/X kill ? help q quit`).
+- **Open Ports table** • one row per confirmed socket, with a `>>` marker on the selected row.
+- **Details panel** • live context for whatever row is selected.
+- **Status line** • visible/total port counts, last refresh age, current sort, active filter, and the result of your last kill.
+
+### Table columns
+
+| Column    | What it shows                                   |
+| --------- | ----------------------------------------------- |
+| `PROTO`   | `TCP` (listening) or `UDP` (bound)              |
+| `ADDRESS` | The bound local address                         |
+| `PORT`    | The local port                                  |
+| `PID`     | Owning process ID, or `-` when the OS won't say |
+| `PROCESS` | Process name, or `-` when withheld              |
+| `STATE`   | `LISTEN` or `BOUND`                             |
+| `SCOPE`   | `public`, `local`, or `loopback`                |
+
+Rows are colour-coded: **protected** processes and rows with **partial metadata** (visible socket,
+unreadable owner) are tinted so you notice them before acting.
+
+## Moving around
+
+| Key             | Action                                      |
+| --------------- | ------------------------------------------- |
+| `j` / `↓`       | Move selection down                         |
+| `k` / `↑`       | Move selection up                           |
+| `Enter`         | Open the details modal for the selected row |
+| `?`             | Open the help modal                         |
+| `q` or `Ctrl+C` | Quit                                        |
+
+## Search and filter
+
+Press `/` to start editing the filter, then type. The table narrows on every keypress.
+
+- `Enter` keeps the filter and returns to the table.
+- `Esc` clears it.
+
+Plain text matches across port, address, PID, process, path, command line, and parent. You can
+also use the same structured filters as the CLI:
+
+<CommandBlock
+  code={"port:3000   proto:udp   scope:public   protected:true   parent:node"}
+  lang="text"
+  label="filter syntax"
+/>
+
+See the [command reference](/docs/commands#filters) for the full grammar.
+
+## Sorting
+
+Press `s` to cycle the sort mode. The order steps through **port → pid → protocol → process →
+parent → scope**, then wraps. Sorting by `scope` surfaces `public` binds first • the ones most
+worth a second look.
+
+## Refreshing
+
+Kickoutchi re-collects ports automatically (every few seconds by default • tune it with
+`refresh_interval_seconds` in your [config](/docs/config)). Press `r` to refresh immediately. The
+status line shows how long ago the last refresh happened.
+
+## Details
+
+The details panel always reflects the selected row. Press `Enter` for the full **details modal**,
+which also lazily loads the owner UID, the process's children, and any protected-process warnings.
+When the Docker CLI is available, Docker-owned ports show their container context here too.
+
+## Kicking a process out
+
+| Key               | Action                                  |
+| ----------------- | --------------------------------------- |
+| `x`               | Terminate the selected process (normal) |
+| `X` (`Shift`+`x`) | Force-kill the selected process         |
+
+Either opens the **Confirm Termination** modal showing the target identity, the affected ports, and
+the equivalent shell command (e.g. `kill 18422`, or `kill -9 18422` for a force kill).
+
+<Callout type="safety" title="Confirmations depend on the target">
+  - **Normal kill** • type `y` to confirm.
+  - **Force kill** • type the word `force` (unless you've turned that off in config).
+  - **Protected process** • type the **PID** or the **process name** to confirm. This can't be skipped.
+
+`Esc` cancels the confirmation. Kickoutchi re-checks the target right before signalling, so it
+only ever hits the PID you confirmed.
+
+</Callout>
+
+After a successful kick, the status line reports the outcome and the next refresh shows the port
+gone.
+
+## A few edge states
+
+- **`Esc` is context-aware** • it clears the search, closes an open modal, cancels a kill
+  confirmation, or quits, depending on what's on screen.
+- **Terminal too small** • below **80×20** the TUI shows a "Terminal too small" notice instead of a
+  cramped, unreadable table. Resize and it returns.
+
+## Next
+
+Already know which port to boot? The [CLI walkthrough](/docs/cli) is the goblin-speed path.

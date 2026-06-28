@@ -1,0 +1,44 @@
+---
+import CommandBlock from "./CommandBlock.astro";
+
+interface Props {
+  eyebrow: string;
+  title: string;
+  description: string;
+  command: string;
+  href: string;
+  ctaLabel: string;
+  icon: "tui" | "cli";
+}
+const { eyebrow, title, description, command, href, ctaLabel, icon } = Astro.props;
+
+const iconPaths: Record<Props["icon"], string[]> = {
+  tui: ["M3 4h18v16H3z", "M7 9l3 3-3 3", "M13 15h4"],
+  cli: ["M4 17l6-6-6-6", "M12 19h8"],
+};
+---
+
+<div class="pocket-panel flex flex-col gap-4 p-6">
+  <div class="flex items-center gap-3">
+    <span class="inline-flex size-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+      <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        {iconPaths[icon].map((d) => <path d={d}></path>)}
+      </svg>
+    </span>
+    <div>
+      <p class="font-pixel text-xs uppercase tracking-widest text-muted">{eyebrow}</p>
+      <h3 class="text-lg font-semibold text-fg">{title}</h3>
+    </div>
+  </div>
+  <p class="text-sm leading-relaxed text-muted">{description}</p>
+  <CommandBlock code={command} />
+  <a
+    href={href}
+    class="mt-auto inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
+  >
+    {ctaLabel}
+    <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M5 12h14M12 5l7 7-7 7"></path>
+    </svg>
+  </a>
+</div>

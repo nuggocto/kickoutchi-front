@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kickoutchi.com/sitemap-index.xml

@@ -1,0 +1,85 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ButtonLink from "../components/ButtonLink.astro";
+import { parseChangelog, inlineMarkdown } from "../lib/changelog";
+import { LINKS } from "../data/links";
+import changelogRaw from "../data/CHANGELOG.md?raw";
+
+const releases = parseChangelog(changelogRaw).filter(
+  (release) => !release.unreleased || release.groups.length > 0,
+);
+
+const categoryStyles: Record<string, string> = {
+  Added: "border-accent/40 bg-accent/10 text-accent",
+  Changed: "border-warning/45 bg-warning-soft text-warning",
+  Fixed: "border-accent/40 bg-accent/10 text-accent",
+  Removed: "border-danger/45 bg-danger-soft text-danger",
+  Security: "border-danger/45 bg-danger-soft text-danger",
+};
+const styleFor = (category: string) =>
+  categoryStyles[category] ?? "border-border bg-surface-2 text-muted";
+---
+
+<Layout
+  title="Changelog"
+  description="Release notes for Kickoutchi • what changed in each version."
+>
+  <section class="mx-auto max-w-3xl px-4 pt-14 pb-8">
+    <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">Changelog</h1>
+    <p class="mt-4 text-lg text-muted">
+      What changed in each release. The full notes also live on{" "}
+      <a href={LINKS.releases} target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">GitHub Releases</a>.
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-3xl px-4 pb-16">
+    <div class="space-y-5">
+      {
+        releases.map((release) => (
+          <article
+            id={`v${release.version}`}
+            class="pocket-panel scroll-mt-24 p-6"
+          >
+            <header class="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-border pb-4">
+              <h2 class="font-mono text-xl font-bold text-fg">
+                {release.unreleased ? "Unreleased" : `v${release.version}`}
+              </h2>
+              {release.date && <time class="text-sm text-muted">{release.date}</time>}
+            </header>
+
+            <div class="space-y-5">
+              {release.groups.map((group) => (
+                <div>
+                  <span
+                    class:list={[
+                      "inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                      styleFor(group.category),
+                    ]}
+                  >
+                    {group.category}
+                  </span>
+                  <ul class="mt-3 space-y-2">
+                    {group.items.map((item) => (
+                      <li class="flex gap-2.5 text-sm leading-relaxed text-muted">
+                        <span class="mt-2 size-1.5 shrink-0 rounded-[1px] bg-accent" aria-hidden="true" />
+                        <span
+                          class="[&_a]:text-accent [&_a:hover]:underline [&_code]:rounded [&_code]:border [&_code]:border-border [&_code]:bg-surface-2 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-fg"
+                          set:html={inlineMarkdown(item)}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))
+      }
+    </div>
+
+    <div class="mt-10 flex flex-wrap items-center gap-3">
+      <ButtonLink href={LINKS.releases} variant="secondary" external>All releases on GitHub</ButtonLink>
+      <ButtonLink href="/install" variant="ghost">Install the latest</ButtonLink>
+    </div>
+  </section>
+</Layout>

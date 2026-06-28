@@ -1,0 +1,83 @@
+---
+title: Troubleshooting
+description: Common situations and what they mean • missing ports, withheld metadata, permissions, and more.
+section: Help
+order: 1
+mode: general
+related:
+  - safety
+  - install
+---
+
+import Callout from "../../components/Callout.astro";
+
+Most "problems" with Kickoutchi are actually the OS being cautious. Here's how to read the common
+ones.
+
+## A port shows in another tool but not in Kickoutchi
+
+Kickoutchi lists **listening TCP** sockets and **bound UDP** sockets • the things squatting on a
+port. It doesn't list established/outbound connections, so a port you see in a connection-oriented
+tool may simply not be a listener. It also uses native collectors rather than parsing `ss`,
+`netstat`, or `lsof`, so output can differ from those tools by design.
+
+## Process metadata is missing (shows `-`)
+
+The socket is visible but some process metadata wasn't readable • usually because the process
+belongs to another user. The row still appears, tagged with **partial** permission so the blank is
+explained rather than hidden. Re-run with higher privileges to fill it in.
+
+## Permission denied when killing
+
+You don't have the rights to signal that process (exit `4`). On Linux/macOS, try `sudo`; on Windows,
+use an **elevated terminal**. If a `--port` target has no readable owning PID, Kickoutchi reports
+permission denied rather than guessing.
+
+## A protected process asks for stronger confirmation
+
+That's protection working. Type the **PID** or the **process name** to confirm. If a process is
+protected that you'd rather treat normally, adjust your
+[`protected_processes`](/docs/config#protected-processes) • but the built-in safety names are there
+for good reasons.
+
+## `kill --port` says the target is ambiguous
+
+Two or more PIDs own that port, so Kickoutchi refuses to guess. It prints the candidates; re-run
+with `--pid` and the one you mean.
+
+## Docker-owned port details are partial or unavailable
+
+Docker context is **enrichment**, shown when the Docker CLI is available • it's never required for
+normal port listing. Without the Docker CLI, you'll still see the port and process, just not the
+container mapping.
+
+## Linux: kernel too old for pidfd termination
+
+Listing ports works on older kernels, but safe `pidfd`-based termination needs **Linux 5.3+**. On a
+newer kernel, the signal is tied to a process handle so a recycled PID can't be hit by mistake.
+
+## Windows: some processes need an elevated terminal
+
+Higher-privilege processes can hide metadata or reject termination from a normal shell. Re-open your
+terminal **as administrator** and try again.
+
+## macOS: process identity changed before termination
+
+macOS has no pidfd, so Kickoutchi re-checks the process identity right before signalling. If the PID
+was reused by a different process between your confirmation and the signal, it refuses and sends
+nothing. Re-list and try again.
+
+## The TUI says "Terminal too small"
+
+The table needs at least **80×20**. Resize the window (or zoom out your terminal font) and the UI
+comes back.
+
+## `kickoutchi-update` is missing
+
+The updater shipped with the installer starting at a certain release. If you installed earlier,
+rerun the latest installer once to opt in • future upgrades can then use `kickoutchi-update`.
+
+<Callout type="note" title="Still stuck?">
+  If something here doesn't match what you're seeing, it's worth a bug report. Include your OS, the
+  exact command, and what you expected.
+</Callout>

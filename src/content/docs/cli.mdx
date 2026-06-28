@@ -1,0 +1,133 @@
+---
+title: CLI walkthrough
+description: The goblin-speed way • print ports, filter precisely, and kick by port or PID from scripts.
+section: Guides
+order: 2
+mode: cli
+related:
+  - tui
+  - commands
+---
+
+import Callout from "../../components/Callout.astro";
+import CommandBlock from "../../components/CommandBlock.astro";
+import Terminal from "../../components/Terminal.astro";
+
+The goblin-speed way: use the CLI when you already know which port needs a tiny boot. CLI
+commands **never** open the TUI • they print to stdout/stderr and exit with a
+[stable code](/docs/commands#exit-codes).
+
+There are two subcommands: `list` and `kill`. Use whichever binary you like • `kick` is shorter.
+
+## Listing ports
+
+<Terminal
+  title="kick list"
+  lines={[
+    { kind: "command", text: "kick list" },
+    { kind: "muted", text: "PROTO  ADDRESS    PORT  PID    PROCESS   STATE" },
+    { kind: "output", text: "TCP    127.0.0.1  3000  18422  node      LISTEN" },
+    { kind: "output", text: "TCP    127.0.0.1  5173  18510  vite      LISTEN" },
+    { kind: "output", text: "TCP    0.0.0.0    5432  1201   postgres  LISTEN" },
+  ]}
+/>
+
+The table is plain, whitespace-separated text with no box-drawing • so it stays friendly to
+`grep` and `awk`. Withheld metadata shows as `-`.
+
+### Narrowing the list
+
+<CommandBlock
+  code={
+    "kick list --port 3000\nkick list --process node\nkick list --filter scope:public\nkick list --sort pid"
+  }
+  label="list options"
+/>
+
+- `--port PORT` • only the rows bound to one exact port.
+- `--process TEXT` • rows whose process name contains the text.
+- `--filter TEXT` • TUI-style search text or structured filters (see [filters](/docs/commands#filters)).
+- `--sort MODE` • `port`, `pid`, `protocol`, `process`, `parent`, or `scope`.
+
+## JSON for scripts
+
+`list --json` prints a stable, documented shape • the field names and enum casing are a contract,
+so it's safe to parse.
+
+<Terminal
+  title="kick list --port 3000 --json"
+  lines={[{ kind: "command", text: "kick list --port 3000 --json" }]}
+/>
+
+```json
+[
+  {
+    "protocol": "tcp",
+    "local_addr": "127.0.0.1",
+    "local_port": 3000,
+    "state": "listen",
+    "pid": 18422,
+    "process_name": "node",
+    "executable_path": "/usr/bin/node",
+    "command_line": "node server.js",
+    "parent_pid": 18001,
+    "parent_process_name": "cursor-agent",
+    "child_pids": [],
+    "protected": false,
+    "platform": "linux",
+    "permission": "full"
+  }
+]
+```
+
+Missing metadata is `null`, never an empty string. An empty result is always `[]`.
+
+## Killing by port or PID
+
+`kill` needs **exactly one** target • a `--port` or a `--pid` • and asks before it does anything.
+
+<Terminal
+  title="kick kill --port 3000"
+  lines={[
+    { kind: "command", text: "kick kill --port 3000" },
+    { kind: "output", text: "Terminate PID 18422 (node)" },
+    { kind: "output", text: "Ports: TCP 127.0.0.1:3000" },
+    { kind: "output", text: "Command: kill 18422" },
+    { kind: "muted", text: "Type y to confirm, or press Enter to cancel: y" },
+    { kind: "success", text: "sent SIGTERM to PID 18422 (node)" },
+    { kind: "success", text: "confirmed target ports are no longer visible" },
+  ]}
+/>
+
+<CommandBlock
+  code={
+    "kick kill --port 3000\nkick kill --pid 18422\nkick kill --port 3000 --yes\nkick kill --pid 18422 --force"
+  }
+  label="kill examples"
+/>
+
+- `--force` • force kill where the platform distinguishes it (`kill -9` on Unix).
+- `--yes` • skip the **normal** prompt for a target you already trust.
+
+<Callout type="safety" title="What --yes does and doesn't do">
+  `--yes` opts out of being *asked*, not of being *told*. The target banner and every safety warning
+  still print, and it **cannot** bypass protected-process confirmation. Protected targets with
+  `--yes` exit with code `6` and signal nothing.
+</Callout>
+
+## How the CLI behaves
+
+- **An empty unfiltered list is success** (exit `0`) • a quiet machine isn't an error.
+- **An empty filtered result is no-match** (exit `3`) • so `kick list --port 3000 && echo busy`
+  works as an occupancy probe.
+- **`kill --port` refuses ambiguous ports** • if two PIDs own one port, it lists the candidates and
+  asks you to pick with `--pid` instead of guessing.
+- **A port with no readable owner** exits `4` (permission denied) rather than pretending it can act.
+
+When a `--port` lookup finds no socket but a process _mentions_ that port on its command line,
+Kickoutchi prints a "possible related process" hint to **stderr** so JSON on stdout stays clean.
+
+## Next
+
+Want the terse index of every flag, filter, and exit code? See the
+[command reference](/docs/commands).

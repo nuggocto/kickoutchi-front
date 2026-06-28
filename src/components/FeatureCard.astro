@@ -1,0 +1,49 @@
+---
+import type { Feature } from "../data/features";
+
+interface Props {
+  feature: Feature;
+  class?: string;
+}
+const { feature, class: className = "" } = Astro.props;
+
+// Lucide-style icon paths, one entry per icon name in the feature schema.
+const ICONS: Record<Feature["icon"], string[]> = {
+  ports: [
+    "M9 2h6a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z",
+    "M12 8v3a2 2 0 0 1-2 2H7a2 2 0 0 0-2 2v2",
+    "M12 8v3a2 2 0 0 0 2 2h3a2 2 0 0 1 2 2v2",
+    "M4 17h4v4H4zM16 17h4v4h-4z",
+  ],
+  process: [
+    "M6 6h12v12H6z",
+    "M10 10h4v4h-4z",
+    "M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2",
+  ],
+  modes: ["M3 4h18v16H3z", "M12 4v16"],
+  safety: ["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", "M9 12l2 2 4-4"],
+  platform: ["M2 4h20v12H2z", "M8 20h8M12 16v4"],
+  docker: [
+    "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z",
+    "M3.3 7 12 12l8.7-5M12 22V12",
+  ],
+  filter: ["M22 3H2l8 9.46V19l4 2v-8.54L22 3z"],
+  script: ["M4 4h16v16H4z", "M8 9l2.5 2.5L8 14", "M13 15h3"],
+};
+const paths = ICONS[feature.icon];
+---
+
+<div
+  class:list={[
+    "pocket-panel group flex flex-col gap-3 p-5 transition-colors hover:border-accent/50",
+    className,
+  ]}
+>
+  <span class="inline-flex size-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+    <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      {paths.map((d) => <path d={d}></path>)}
+    </svg>
+  </span>
+  <h3 class="font-semibold text-fg">{feature.title}</h3>
+  <p class="text-sm leading-relaxed text-muted">{feature.description}</p>
+</div>
