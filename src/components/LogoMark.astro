@@ -1,13 +1,10 @@
 ---
-import { Image } from "astro:assets";
 import markDark from "../assets/logo/mark-dark.png";
 import markWhite from "../assets/logo/mark-white.png";
 
 interface Props {
   alt?: string;
   class?: string;
-  widths?: number[];
-  sizes?: string;
   width?: number;
   height?: number;
   priority?: boolean;
@@ -16,35 +13,31 @@ interface Props {
 const {
   alt = "",
   class: className = "",
-  widths,
-  sizes,
   width,
   height,
   priority = false,
 } = Astro.props;
-const imageProps = {
-  widths,
-  sizes,
-  width,
-  height,
-  loading: priority ? "eager" : undefined,
-  fetchpriority: priority ? "high" : undefined,
-} as const;
 ---
 
-<Image
-  src={markDark}
+<img
+  src={markDark.src}
   alt={alt}
   class:list={["logo-mark logo-mark--light", className]}
   data-pixel
-  {...imageProps}
+  width={width ?? markDark.width}
+  height={height ?? markDark.height}
+  loading={priority ? "eager" : "lazy"}
+  fetchpriority={priority ? "high" : undefined}
 />
-<Image
-  src={markWhite}
+<img
+  src={markWhite.src}
   alt={alt}
   class:list={["logo-mark logo-mark--dark", className]}
   data-pixel
-  {...imageProps}
+  width={width ?? markWhite.width}
+  height={height ?? markWhite.height}
+  loading={priority ? "eager" : "lazy"}
+  fetchpriority={priority ? "high" : undefined}
 />
 
 <style>
