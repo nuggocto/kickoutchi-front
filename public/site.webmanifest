@@ -1,7 +1,7 @@
 {
   "name": "Kickoutchi",
   "short_name": "Kickoutchi",
-  "description": "A cross-platform TUI and CLI port janitor for finding open local ports and safely kicking stale dev servers out.",
+  "description": "A TUI and CLI port janitor for finding open local ports, inspecting process families, and safely kicking stale dev servers out.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#111210",

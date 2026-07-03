@@ -1,11 +1,12 @@
 ---
 title: Troubleshooting
-description: Common situations and what they mean • missing ports, withheld metadata, permissions, and more.
+description: Common situations and what they mean • missing ports, withheld metadata, scoped-kill refusals, permissions, and more.
 section: Help
 order: 1
 mode: general
 related:
   - safety
+  - scoped-kills
   - install
 ---
 
@@ -16,8 +17,8 @@ ones.
 
 ## A port shows in another tool but not in Kickoutchi
 
-Kickoutchi lists **listening TCP** sockets and **bound UDP** sockets • the things squatting on a
-port. It doesn't list established/outbound connections, so a port you see in a connection-oriented
+Kickoutchi lists **listening TCP** sockets and **bound UDP** sockets • the socket states that occupy
+a local port. It doesn't list established/outbound connections, so a port you see in a connection-oriented
 tool may simply not be a listener. It also uses native collectors rather than parsing `ss`,
 `netstat`, or `lsof`, so output can differ from those tools by design.
 
@@ -66,6 +67,18 @@ terminal **as administrator** and try again.
 macOS has no pidfd, so Kickoutchi re-checks the process identity right before signalling. If the PID
 was reused by a different process between your confirmation and the signal, it refuses and sends
 nothing. Re-list and try again.
+
+## Tree/group kill says it thawed everything
+
+That means the scoped kill hit a safety refusal after freezing began: permission denied, identity
+drift, protected descendant, incomplete metadata, cap overflow, or a sweep that would not converge.
+Kickoutchi sent `SIGCONT` to every member it had stopped and sent no termination signal.
+
+## `--tree`, `--group`, or `inspect` is unknown on Windows
+
+That's expected in 1.0. Scoped cleanup is Linux/macOS-only while the Windows Job Object design goes
+through implementation and real Windows QA. Windows still supports listing and safe single-process
+kill by PID or port.
 
 ## The TUI says "Terminal too small"
 

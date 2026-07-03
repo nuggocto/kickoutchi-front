@@ -1,0 +1,116 @@
+---
+title: Scoped kills
+description: Linux/macOS tree kill, process-group kill, and read-only inspect for cleaning process families safely.
+section: Guides
+order: 3
+mode: cli
+related:
+  - cli
+  - tui
+  - safety
+---
+
+import Callout from "../../components/Callout.astro";
+import CommandBlock from "../../components/CommandBlock.astro";
+
+Most port janitors kill one PID. That is still Kickoutchi's default. Scoped kill is the explicit
+Linux/macOS 1.0 path for the cases where one PID is not the whole mess: dev servers with workers,
+package runners, agent shells, file watchers, and process groups that leave orphans behind.
+
+<Callout type="safety" title="Default kill is unchanged">
+  `kick kill --port 3000` and `kick kill --pid 18422` still target exactly one confirmed PID. You
+  only get broader scope when you ask for `--tree`, `--group`, or the TUI `t`/`T` tree action.
+</Callout>
+
+## Inspect first
+
+`inspect` is read-only. It never signals anything. Use it when you need to see whether the port
+owner is the real root, whether a parent is supervising it, and whether process-group members sit
+outside the descendant tree.
+
+<CommandBlock
+  code={"kick inspect --port 3000\nkick inspect --pid 18422"}
+  label="read-only family view"
+/>
+
+The report shows:
+
+- The target PID, command line, visible ports, and process group.
+- Ancestors nearest-first, so supervisors and package runners are visible.
+- Siblings under the same parent.
+- The bounded descendant tree, with ports on members that own sockets.
+- Process-group members, marking members outside the tree.
+- A suggested `kick kill --pid <root> --tree` command, and a `--group` command only when group scope
+  would catch processes the tree would leave alive.
+
+## Tree kill
+
+Tree kill targets the confirmed root and its descendants. It is the right tool when a stale dev
+server owns the port and has workers underneath it.
+
+<CommandBlock
+  code={
+    "kick kill --port 3000 --tree\nkick kill --pid 18422 --tree\nkick kill --pid 18422 --tree --force"
+  }
+  label="tree scope"
+/>
+
+Interactive tree kill requires typing `tree` for normal termination or `force` for force kill. A
+protected root still requires the PID/name confirmation first. A protected descendant refuses the
+whole tree.
+
+On Linux and macOS, the execution path is freeze-first:
+
+- Re-check the confirmed root right before acting.
+- Count the tree before any signal; over the cap refuses with zero side effects.
+- `SIGSTOP` the root first, then sweep descendants to a fixed point.
+- Verify each stopped member's identity while PID reuse is impossible.
+- Send `SIGTERM`, then `SIGCONT`, leaves first and root last. `--force` sends `SIGKILL` instead.
+- If anything becomes uncertain, thaw every stopped process and send no termination.
+
+## Process-group kill
+
+Group kill targets every visible process sharing the target's POSIX process group. It is CLI-only in
+1.0 and exists for cases a descendant tree cannot cover: double-forked helpers, reparented workers,
+or runaway trees where group membership is the more honest blast radius.
+
+<CommandBlock
+  code={
+    "kick kill --pid 18422 --group\nkick kill --port 3000 --group\nkick kill --pid 18422 --group --force"
+  }
+  label="group scope"
+/>
+
+Group scope is stronger than tree scope:
+
+- It conflicts with `--tree`.
+- It lists every visible member before confirmation.
+- It warns that process groups can include unrelated commands from the same shell.
+- It requires typing `group` or `force` unless `--yes` passes the strict all-clear group gate.
+- During normal termination, every `SIGTERM` is queued before any stopped member is continued, so a
+  parent-like member cannot wake up and spawn survivors while siblings are still frozen.
+
+## TUI support
+
+The TUI exposes tree scope on Linux/macOS:
+
+| Key | Action                               |
+| --- | ------------------------------------ |
+| `x` | Terminate the selected process only  |
+| `X` | Force-kill the selected process only |
+| `t` | Terminate the selected process tree  |
+| `T` | Force-kill the selected process tree |
+
+Tree preview runs on a background worker so the table stays responsive. The preview is informational:
+execution re-collects the tree fresh, re-checks the root, and refuses if the fresh tree no longer
+passes the same gates.
+
+## Windows status
+
+Windows keeps the existing safe single-process behavior in 1.0: native IP Helper listing and
+handle-based `TerminateProcess` delivery. `--tree`, `--group`, `inspect`, and TUI `t`/`T` are not
+shown on Windows builds yet.
+
+Windows scoped cleanup is next. The design uses process handles to pin PIDs and Job Objects for
+containment, but the copy will stay honest: Windows has no supported `SIGSTOP`
+equivalent, so it cannot claim the same freeze-first guarantee as Linux/macOS.

@@ -27,25 +27,39 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
       "Shows PID, process name, parent, path, command line, bind scope, and permission status whenever the OS lets it through.",
   },
   {
+    id: "scoped-cleanup",
+    icon: "safety",
+    title: "Tree and group cleanup",
+    description:
+      "On Linux and macOS, opt in to --tree for descendants or --group for the whole process group when a stale dev stack has more than one PID.",
+  },
+  {
+    id: "inspect-first",
+    icon: "process",
+    title: "Inspect before you kick",
+    description:
+      "Read-only inspect shows ancestors, descendants, siblings, process group members, command lines, ports, and the exact scoped kill command to run.",
+  },
+  {
     id: "tui-or-cli",
     icon: "modes",
     title: "TUI or CLI",
     description:
-      "Open the guided terminal UI for a cozy walk through the swamp, or drive the script-friendly CLI when you already know the target.",
+      "Open the guided terminal UI for a Donkey-style tour of open ports, or drive the script-friendly CLI when you already know the target.",
   },
   {
     id: "safe-kills",
     icon: "safety",
     title: "Safe by default",
     description:
-      "Every termination is confirmed. Protected processes need typed confirmation, ambiguous ports are refused, and only the confirmed PID is signalled.",
+      "Every termination is confirmed. Scoped kills freeze and verify on Unix, protected descendants refuse, and ambiguous ports are never guessed.",
   },
   {
     id: "cross-platform",
     icon: "platform",
     title: "Linux, macOS, Windows",
     description:
-      "Native collection per OS: /proc on Linux, libproc/sysctl on macOS, IP Helper on Windows • with platform-correct termination.",
+      "Native collection per OS. Linux/macOS have scoped tree and group kill in 1.0; Windows single-process kill is live, scoped cleanup comes next.",
   },
   {
     id: "docker-aware",
@@ -66,6 +80,6 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "script",
     title: "Built for scripts",
     description:
-      "Stable JSON output and a fixed exit-code contract (0–6) make Kickoutchi safe to wire into shell pipelines and CI.",
+      "Stable JSON, fixed exit codes, --yes gates that re-check fresh scope, and explicit CLI-only inspect/group commands make automation predictable.",
   },
 ]);

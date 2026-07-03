@@ -14,17 +14,18 @@ export const PLATFORM_SUPPORT: PlatformSupport[] = z.array(platformSupportSchema
   {
     platform: "Linux",
     status: "available",
-    detail: "Native /proc collection. Termination uses pidfd on kernel 5.3+.",
+    detail: "Native /proc collection. 1.0 adds pidfd-backed tree/group kill and inspect.",
   },
   {
     platform: "macOS",
     status: "available",
-    detail: "Native libproc / sysctl collection. Identity re-checked before signalling.",
+    detail: "Native libproc / sysctl collection. 1.0 adds tree/group kill and inspect.",
   },
   {
     platform: "Windows",
     status: "available",
-    detail: "Native IP Helper collection and process-handle termination.",
+    detail:
+      "Native IP Helper listing and handle-based single-process kill. Scoped cleanup is next.",
   },
 ]);
 

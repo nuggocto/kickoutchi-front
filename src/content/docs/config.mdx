@@ -35,7 +35,7 @@ Point at a different file with the global `--config FILE` flag.
 
 ## Precedence
 
-Settings stack like onions, like ogres: **built-in defaults** at the bottom, then the **config
+Like onions and ogres, settings have layers: **built-in defaults** at the bottom, then the **config
 file**, then **CLI flags** on top. Most keys override their default; `protected_processes` extends
 it (see below).
 
@@ -78,7 +78,7 @@ instead of it. Adding `redis` can't accidentally strip protection from `systemd`
 Matching is exact • **case-sensitive on Linux/macOS, case-insensitive on Windows** • and never a
 substring, so `postgres-backup-helper` doesn't inherit `postgres`'s protection.
 
-The built-in list covers the load-bearing residents whose accidental death takes your containers,
+The built-in list covers load-bearing processes whose accidental termination takes your containers,
 database, init system, or desktop with them:
 
 ```text

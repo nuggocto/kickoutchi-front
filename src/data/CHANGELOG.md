@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-03
+
+### Added
+
+- Linux and macOS `kick kill --port <PORT> --tree` / `--pid <PID> --tree` now
+  terminates the whole descendant tree rooted at the confirmed target, not just
+  one process. Normal `kick kill` is unchanged and still signals exactly one PID.
+- Linux and macOS `kick kill --port <PORT> --group` / `--pid <PID> --group` now
+  terminates every visible member of the target's POSIX process group. This is
+  the explicit tool for reparented workers, double-forked helpers, and cases
+  where tree scope would leave survivors behind.
+- Linux and macOS `kick inspect --port <PORT>` / `--pid <PID>` now prints a
+  read-only family report: target command line, visible ports, ancestor chain,
+  siblings, bounded descendant tree, process-group members, and the matching
+  `--tree` or `--group` command when useful.
+- The TUI now supports tree cleanup on Linux/macOS: `t` terminates the selected
+  process tree and `T` force-kills it. The preview runs in the background, shows
+  the bounded tree before confirmation, and execution always re-collects fresh.
+
+### Safety
+
+- Tree/group kill use a freeze-first Unix pipeline: stop the root first, sweep to
+  a fixed point, verify every stopped member's identity, refuse uncertain scopes,
+  and thaw everything on every abort path.
+- Linux tree/group delivery opens pidfds before `SIGSTOP` and reuses them for
+  thaw and final signal delivery, keeping every member pinned from freeze to
+  finish.
+- Normal group termination queues every `SIGTERM` before any stopped member is
+  continued, so parent-like group members cannot wake up and spawn survivors
+  while other members are still frozen.
+- `--yes` is stricter for scoped kills: it can skip only all-clear prompts, never
+  protected-root confirmation, and fresh execution-time scans can still refuse if
+  the scope grew or warnings appeared after the original preview.
+
+### Platform notes
+
+- Windows keeps the existing safe single-process behavior in 1.0: native IP
+  Helper listing and handle-based `TerminateProcess` delivery. `--tree`,
+  `--group`, `inspect`, and TUI `t`/`T` are intentionally Linux/macOS-only until
+  the Windows Job Object containment design receives implementation and manual
+  Windows QA.
+- Release metadata now targets `1.0.0`, including Cargo and Nix package version
+  metadata.
+
 ## [0.1.2] - 2026-06-28
 
 ### Added
@@ -76,7 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/proc/<pid>/stat` through confirmation and pre-signal revalidation. The raw
   tick value is not rendered or serialized, but it lets Kickoutchi refuse a kill
   if PID reuse is detected before the signal boundary.
-- Post-Phase-6 internal cleanup, no external behavior change: collapsed the
+- Internal cleanup, no external behavior change: collapsed the
   duplicate `KillTarget` constructor into a single `from_entries`, switched the
   confirmation modal's force-mode check from a signal-label string comparison to
   `KillMode` equality, and narrowed `current_user_id` to private.
@@ -207,8 +251,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI `list` now prints `no open ports visible` when `hide_system_processes`
   suppresses every collected row, instead of implying the machine has no open
   ports at all.
-- TUI help modal title now reads `Kickoutchi` instead of an outdated
-  phase-specific title.
+- TUI help modal title now reads `Kickoutchi` instead of an outdated numbered
+  title.
 - TUI status bar, borders, titles, and muted text now use terminal-default or
   bold-reversed styles instead of fixed dark-gray/black combinations, so the
   interface remains readable in both light and dark terminal themes.
@@ -424,7 +468,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/nuggocto/kickoutchi/compare/v0.1.2...v1.0.0
 [0.1.2]: https://github.com/nuggocto/kickoutchi/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/nuggocto/kickoutchi/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/nuggocto/kickoutchi/releases/tag/v0.1.0

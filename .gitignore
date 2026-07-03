@@ -21,6 +21,8 @@ pnpm-debug.log*
 .eslintcache
 # local caches
 .cache/
+# scratch/temp files
+tmp/
 # cloudflare local state
 .wrangler/
 # windows-generated files

@@ -1,10 +1,11 @@
 ---
 title: Safety
-description: How Kickoutchi avoids killing the wrong thing • confirmations, guardrails, and last-moment re-checks.
+description: How Kickoutchi avoids killing the wrong thing • confirmations, guardrails, scoped freeze-first checks, and last-moment re-checks.
 section: Safety
 order: 1
 mode: general
 related:
+  - scoped-kills
   - config
   - commands
 ---
@@ -20,6 +21,8 @@ Nothing is terminated without a confirmation step, and the prompt scales with th
 
 - **Normal kill** • type `y`.
 - **Force kill** • type the word `force` (unless you set `confirm_force_kill = false`).
+- **Tree kill** • type `tree` for normal scoped termination, or `force` for force tree kill.
+- **Group kill** • type `group` for normal scoped termination, or `force` for force group kill.
 - **Protected process** • type the **PID** or the **process name**.
 
 Before any prompt, Kickoutchi prints the target's identity, the affected ports, the equivalent
@@ -27,8 +30,9 @@ shell command, and any warnings.
 
 <Callout type="safety" title="--yes skips the question, not the safety">
   `--yes` skips the **normal** prompt for a target you trust. It still prints the banner and all
-  warnings, and it can never bypass protected-process confirmation. A protected target with `--yes`
-  exits `6` and signals nothing.
+  warnings, and it can never bypass protected-process confirmation. For tree/group kills, the fresh
+  execution-time scan must still be all-clear; if the scope changed into something that needs
+  review, Kickoutchi refuses and signals nothing.
 </Callout>
 
 ## Hard guardrails
@@ -38,10 +42,12 @@ shell command, and any warnings.
   candidates and makes you choose with `--pid` instead of guessing.
 - **A port with no readable owner is not killable** • it exits `4` (permission denied) rather than
   acting on incomplete information.
+- **Scoped kills are bounded.** Over-cap or non-converging trees/groups refuse instead of partially
+  killing a moving target.
 
 ## Protected processes
 
-Some swamp residents are load-bearing: init, your database, Docker, core OS services. These are
+Some processes are load-bearing: init, your database, Docker, core OS services. These are
 marked **protected** and require typing the PID or name to confirm • force or `--yes` can't shortcut
 it. The list is built-in and [extensible via config](/docs/config#protected-processes).
 
@@ -51,19 +57,35 @@ This is the important one. After you confirm, Kickoutchi **re-validates the targ
 signals**:
 
 - It re-collects ports and checks the confirmed target still matches.
-- If the port's owner changed, it aborts • **no termination is sent** (exit `3`).
+- If the port's owner changed, it aborts • **no termination is sent**.
 - If the owner became unreadable, it aborts as ownership-unavailable (exit `4`).
 - If the target became protected in the meantime, it aborts (exit `6`).
 
-Only the **confirmed PID** is ever signalled.
+For normal process scope, only the **confirmed PID** is ever signalled. For tree/group scope, only
+the explicitly confirmed scope is signalled, after a fresh scan and verification.
+
+## Scoped-kill safety on Linux/macOS
+
+Tree and group kill are Shrek-sized controls: broader than one PID, so they use a stricter pipeline:
+
+- They are opt-in: `--tree`, `--group`, or TUI `t`/`T` for tree scope.
+- They count before signalling; cap refusals happen with zero side effects.
+- They freeze the root first, then sweep members to a fixed point.
+- They verify every stopped member's identity where PID reuse is impossible.
+- They thaw everything on any refusal, permission problem, identity drift, protected descendant, or
+  partial metadata.
+- Group termination queues every `SIGTERM` before any `SIGCONT`, so parent-like members cannot wake
+  up early and spawn survivors.
+
+Read the full flow in [Scoped kills](/docs/scoped-kills).
 
 ## Platform specifics
 
-| Platform    | How termination stays honest                                                                                                                         |
-| ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Linux**   | Uses `pidfd` on kernel 5.3+, so the final signal is tied to the prepared process handle • not a PID that could be recycled onto a different process. |
-| **macOS**   | No pidfd, so Kickoutchi re-checks process identity right before signalling and refuses if the PID has changed faces.                                 |
-| **Windows** | Terminates through a process **handle** so the target can't wander off after confirmation.                                                           |
+| Platform    | How termination stays honest                                                                                                                             |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Linux**   | Uses `pidfd` on kernel 5.3+ for delivery. Tree/group kill opens pidfds before `SIGSTOP`, then reuses them for thaw/final signals.                        |
+| **macOS**   | No pidfd, so tree/group kill uses stop-verify: once a process is stopped, its verified PID cannot be recycled before the signal lands.                   |
+| **Windows** | Terminates one process through a process **handle** so the target can't wander off after confirmation. Tree/group/inspect are coming in a later release. |
 
 ## After the kick
 

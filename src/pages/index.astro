@@ -11,31 +11,45 @@ import { FEATURES } from "../data/features";
 import { PLATFORM_SUPPORT, PACKAGE_STATUS } from "../data/package-status";
 import { LINKS, RELEASE_ASSETS } from "../data/links";
 
-// A faithful session: list the swamp, then kick one resident out • banner,
-// prompt, and outcome all match the real CLI output.
+// A faithful 1.0-style session: inspect the family, then use explicit tree scope.
 const demo: TerminalLine[] = [
-  { kind: "command", text: "kick list" },
-  { kind: "muted", text: "PROTO  ADDRESS    PORT  PID    PROCESS   STATE" },
-  { kind: "output", text: "TCP    127.0.0.1  3000  18422  node      LISTEN" },
-  { kind: "output", text: "TCP    127.0.0.1  5173  18510  vite      LISTEN" },
-  { kind: "output", text: "TCP    0.0.0.0    5432  1201   postgres  LISTEN" },
+  { kind: "command", text: "kick inspect --port 3000" },
+  { kind: "output", text: "Target: PID 18422 (node)" },
+  { kind: "output", text: "  Ports: TCP 127.0.0.1:3000" },
+  { kind: "output", text: "  Process group: 18400" },
+  { kind: "output", text: "Ancestors (nearest first):" },
+  { kind: "output", text: "  PID 18190 (pnpm) — pnpm dev" },
+  { kind: "output", text: "Tree (3 processes):" },
+  { kind: "output", text: "  PID 18422 (node) [TCP 127.0.0.1:3000]" },
+  { kind: "output", text: "    PID 18431 (vite)" },
+  { kind: "output", text: "    PID 18444 (esbuild)" },
+  { kind: "output", text: "Process group 18400 (3 members, 0 outside the tree):" },
+  { kind: "output", text: "  PID 18422 (node)" },
+  { kind: "output", text: "  PID 18431 (vite)" },
+  { kind: "output", text: "  PID 18444 (esbuild)" },
+  { kind: "muted", text: "To terminate this tree: kick kill --pid 18422 --tree" },
+  { kind: "muted", text: "(different root? rerun inspect on an ancestor PID first)" },
   { kind: "output", text: "" },
-  { kind: "command", text: "kick kill --port 3000" },
-  { kind: "output", text: "Terminate PID 18422 (node)" },
+  { kind: "command", text: "kick kill --pid 18422 --tree" },
+  { kind: "output", text: "Terminate process tree from PID 18422 (node)" },
+  { kind: "output", text: "Scope: tree (3 processes)" },
   { kind: "output", text: "Ports: TCP 127.0.0.1:3000" },
-  { kind: "output", text: "Command: kill 18422" },
-  { kind: "muted", text: "Type y to confirm, or press Enter to cancel: y" },
-  { kind: "success", text: "sent SIGTERM to PID 18422 (node)" },
+  { kind: "output", text: "Command: kick kill --pid 18422 --tree" },
+  { kind: "output", text: "  PID 18422 (node)" },
+  { kind: "output", text: "    PID 18431 (vite)" },
+  { kind: "output", text: "    PID 18444 (esbuild)" },
+  { kind: "muted", text: "Type tree to terminate all 3 processes, or press Enter to cancel: tree" },
+  { kind: "success", text: "sent SIGTERM to 3 process(es) in the tree rooted at PID 18422 (node)" },
   { kind: "success", text: "confirmed target ports are no longer visible" },
 ];
 
 const safety = [
-  "Every termination is confirmed • and --yes still prints the target banner and safety warnings.",
+  "Every termination is confirmed • and --yes still prints the banner, warnings, and fresh-scan refusals.",
   "PID 0, PID 1, and Kickoutchi's own PID are blocked outright.",
   "kill --port refuses ambiguous ports instead of guessing which PID to hit.",
   "Protected processes require typing the PID or process name to confirm.",
-  "Force kill needs stronger confirmation by default.",
-  "The target is re-checked right before the signal • only the confirmed PID is signalled.",
+  "Tree/group scope is opt-in, typed, bounded, and Linux/macOS-only in 1.0.",
+  "Unix scoped kills freeze first, verify while stopped, and thaw everything on refusal.",
 ];
 
 const availablePackages = PACKAGE_STATUS.filter((pkg) => pkg.status === "available");
@@ -54,8 +68,8 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
           Kick stale dev servers out of your local ports.
         </h1>
         <p class="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted lg:mx-0">
-          Kickoutchi shows which process owns each open TCP/UDP port, then lets you clear the
-          swamp safely • from a guided TUI or a script-friendly CLI.
+          Kickoutchi shows which process owns each open TCP/UDP port, lets you inspect the family
+          around it, then terminates stale port-owning processes safely • from a guided TUI or a script-friendly CLI.
         </p>
         <div class="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
           <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
@@ -63,7 +77,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
           <ButtonLink href={LINKS.github} variant="ghost" external>View on GitHub</ButtonLink>
         </div>
         <p class="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted lg:justify-start">
-          <span>Works on Linux, macOS &amp; Windows.</span>
+          <span>1.0 scoped kill on Linux &amp; macOS. Windows scoped cleanup is next.</span>
           <span aria-hidden="true">•</span>
           <span>Two binaries: <code class="font-mono text-fg">kickoutchi</code> and <code class="font-mono text-fg">kick</code>.</span>
         </p>
@@ -71,7 +85,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
 
       <div class="relative mx-auto w-full max-w-md lg:max-w-none">
         <LogoMark
-          alt="The Kickoutchi mascot: a pixel-art pocket device whose screen shows a boot kicking a little port-creature out."
+          alt="The Kickoutchi mascot: a pixel-art pocket device with a boot icon kicking out a port mascot."
           class="relative mx-auto w-full max-w-[17rem] sm:max-w-[22rem]"
           priority
         />
@@ -82,16 +96,16 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
   <!-- Terminal demo -->
   <section class="mx-auto max-w-3xl px-4 py-12">
     <div class="mb-5 text-center">
-      <h2 class="text-2xl font-bold tracking-tight">Two commands, clean swamp</h2>
-      <p class="mt-2 text-muted">See what's listening, then boot the stale one • with a confirm step.</p>
+      <h2 class="text-2xl font-bold tracking-tight">Inspect first, then choose the scope</h2>
+      <p class="mt-2 text-muted">See the parent, tree, and process group before you kick more than one PID.</p>
     </div>
-    <Terminal title="kick • clearing port 3000" lines={demo} />
+    <Terminal title="kick • clearing a dev-server tree" lines={demo} />
   </section>
 
   <!-- TUI vs CLI -->
   <section class="mx-auto max-w-6xl px-4 py-12">
     <div class="mx-auto mb-8 max-w-2xl text-center lg:mx-0 lg:text-left">
-      <h2 class="text-2xl font-bold tracking-tight">Two ways through the swamp</h2>
+      <h2 class="text-2xl font-bold tracking-tight">Two ways to clear the swamp</h2>
       <p class="mt-2 text-muted">
         Open the TUI when you want to look around. Reach for the CLI when you already know the target.
       </p>
@@ -99,18 +113,18 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
     <div class="grid gap-5 md:grid-cols-2">
       <ModeCard
         icon="tui"
-        eyebrow="The cozy way"
+        eyebrow="Donkey's guided tour"
         title="Guided TUI"
-        description="Run either binary with no command to open the terminal UI. Browse, search, sort, and kick with confirmations and live details."
+        description="Run either binary with no command to open the terminal UI. Browse, search, sort, inspect details, and use x/X for one PID or t/T for Linux/macOS tree cleanup."
         command="kickoutchi"
         href="/docs/tui"
         ctaLabel="Explore the TUI"
       />
       <ModeCard
         icon="cli"
-        eyebrow="The goblin-speed way"
+        eyebrow="Dragon-speed route"
         title="Scriptable CLI"
-        description="Print ports as a table or stable JSON, filter precisely, and kill by port or PID with a fixed exit-code contract."
+        description="Print ports as a table or stable JSON, inspect process families, and choose process, tree, or group scope with a fixed exit-code contract."
         command="kick list --json"
         href="/docs/cli"
         ctaLabel="Explore the CLI"
@@ -168,7 +182,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
     <div class="pocket-panel p-6 sm:p-8">
       <div class="mx-auto max-w-5xl text-center">
         <h2 class="text-2xl font-bold tracking-tight">Install in one line</h2>
-        <p class="mt-2 text-muted">Linux &amp; macOS get the release installer. Windows gets the PowerShell spell.</p>
+        <p class="mt-2 text-muted">Linux &amp; macOS get 1.0 scoped cleanup. Windows gets the PowerShell installer and scoped cleanup later.</p>
         <div class="mt-5 text-left">
           <Terminal
             title="Linux & macOS"
@@ -218,8 +232,8 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
     <div class="pocket-panel flex flex-col items-center gap-5 p-10 text-center">
       <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">Ready to clear the swamp?</h2>
       <p class="max-w-xl text-muted">
-        Install Kickoutchi, run it once with no arguments, and meet the little creatures squatting
-        on your ports.
+        Install Kickoutchi, run it once with no arguments, and see the processes and process
+        families using your local ports.
       </p>
       <div class="flex flex-wrap justify-center gap-3">
         <ButtonLink href="/install">Install Kickoutchi</ButtonLink>

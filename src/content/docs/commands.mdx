@@ -1,18 +1,19 @@
 ---
 title: Command reference
-description: A compact index of binaries, options, filters, sort modes, JSON fields, and exit codes.
+description: A compact index of binaries, list/inspect/kill options, scoped kill flags, filters, JSON fields, and exit codes.
 section: Reference
 order: 1
 mode: cli
 related:
   - cli
+  - scoped-kills
   - config
 ---
 
 import CommandBlock from "../../components/CommandBlock.astro";
 
 The terse index for people who already know what they need. For worked examples, see the
-[CLI walkthrough](/docs/cli).
+[CLI walkthrough](/docs/cli) and [Scoped kills](/docs/scoped-kills).
 
 ## Binary names
 
@@ -56,15 +57,36 @@ Terminate the process owning a port or PID, after confirmation.
 
 Exactly one of `--pid` / `--port` is required.
 
-| Option        | Description                                                            |
-| ------------- | ---------------------------------------------------------------------- |
-| `--pid PID`   | Terminate a specific PID.                                              |
-| `--port PORT` | Terminate the process that owns this port. Refuses ambiguous ports.    |
-| `--force`     | Force kill where the platform distinguishes it (`kill -9` on Unix).    |
-| `--yes`       | Skip the normal prompt. Never bypasses protected-process confirmation. |
+| Option        | Description                                                                                                |
+| ------------- | ---------------------------------------------------------------------------------------------------------- |
+| `--pid PID`   | Terminate a specific PID.                                                                                  |
+| `--port PORT` | Terminate the process that owns this port. Refuses ambiguous ports.                                        |
+| `--force`     | Force kill where the platform distinguishes it (`kill -9` on Unix).                                        |
+| `--yes`       | Skip eligible prompts. Never bypasses protected-process confirmation or fresh scoped-kill safety gates.    |
+| `--tree`      | Linux/macOS only: terminate the target's whole descendant tree. Conflicts with `--group`.                  |
+| `--group`     | Linux/macOS only: terminate every visible member of the target's POSIX process group. Conflicts with tree. |
 
 The equivalent command shown before confirmation is `kill PID` (terminate) or `kill -9 PID` (force)
 on Linux/macOS, and `taskkill /F /PID PID` on Windows.
+
+Scoped kill confirmations use stronger words: `tree`, `group`, or `force`. The command preview is
+always re-collected fresh at execution time; stale previews are not trusted.
+
+## `inspect`
+
+Linux/macOS only. Show a process family without signalling anything.
+
+<CommandBlock code={"kick inspect <--pid PID | --port PORT>"} lang="text" label="usage" />
+
+Exactly one of `--pid` / `--port` is required.
+
+| Option        | Description                                                                 |
+| ------------- | --------------------------------------------------------------------------- |
+| `--pid PID`   | Show this PID's ancestors, descendants, siblings, process group, and ports. |
+| `--port PORT` | Show the family of the process that owns this port. Refuses ambiguity.      |
+
+`inspect --pid` is read-only and can inspect a portless supervisor. `inspect --port` follows the
+same target-resolution rules as `kill --port`.
 
 ## Filters
 

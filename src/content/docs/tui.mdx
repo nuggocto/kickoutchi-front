@@ -1,18 +1,19 @@
 ---
 title: TUI walkthrough
-description: The cozy way • open the terminal UI and let Kickoutchi walk you through the swamp.
+description: Donkey's guided tour • open the terminal UI and let Kickoutchi walk you through open ports.
 section: Guides
 order: 1
 mode: tui
 related:
   - cli
+  - scoped-kills
   - safety
 ---
 
 import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 
-The cozy way: open the TUI and let Kickoutchi walk you through the swamp. Run either binary
+Donkey's guided tour: open the TUI and let Kickoutchi walk you through open ports. Run either binary
 **with no subcommand** and you land in the terminal UI.
 
 <CommandBlock code={"kickoutchi\nkick"} label="open the TUI" />
@@ -23,7 +24,7 @@ Both names do the same thing • `kickoutchi` is canonical, `kick` is the short 
 
 The screen is split into four regions, top to bottom:
 
-- **Header** • the title and a one-line key hint (`r refresh / search s sort x/X kill ? help q quit`).
+- **Header** • the title and a one-line key hint (`r refresh / search s sort x/X kill t/T tree ? help q quit` on Linux/macOS; Windows omits the tree keys).
 - **Open Ports table** • one row per confirmed socket, with a `>>` marker on the selected row.
 - **Details panel** • live context for whatever row is selected.
 - **Status line** • visible/total port counts, last refresh age, current sort, active filter, and the result of your last kill.
@@ -91,17 +92,24 @@ When the Docker CLI is available, Docker-owned ports show their container contex
 
 ## Kicking a process out
 
-| Key               | Action                                  |
-| ----------------- | --------------------------------------- |
-| `x`               | Terminate the selected process (normal) |
-| `X` (`Shift`+`x`) | Force-kill the selected process         |
+| Key               | Action                                             |
+| ----------------- | -------------------------------------------------- |
+| `x`               | Terminate the selected process (normal)            |
+| `X` (`Shift`+`x`) | Force-kill the selected process                    |
+| `t`               | Terminate the selected process tree (Linux/macOS)  |
+| `T` (`Shift`+`t`) | Force-kill the selected process tree (Linux/macOS) |
 
 Either opens the **Confirm Termination** modal showing the target identity, the affected ports, and
 the equivalent shell command (e.g. `kill 18422`, or `kill -9 18422` for a force kill).
 
+Tree kill opens a separate **Confirm Tree Termination** modal. Kickoutchi enumerates the bounded tree
+on a background worker, shows the process count and preview, then requires typing `tree` (or `force`
+for `T`). Execution always re-runs the tree scan fresh before the first freeze signal.
+
 <Callout type="safety" title="Confirmations depend on the target">
   - **Normal kill** • type `y` to confirm.
   - **Force kill** • type the word `force` (unless you've turned that off in config).
+  - **Tree kill** • type `tree`; force tree kill still uses `force`.
   - **Protected process** • type the **PID** or the **process name** to confirm. This can't be skipped.
 
 `Esc` cancels the confirmation. Kickoutchi re-checks the target right before signalling, so it
@@ -112,6 +120,9 @@ only ever hits the PID you confirmed.
 After a successful kick, the status line reports the outcome and the next refresh shows the port
 gone.
 
+For process-group cleanup, use the CLI `--group` flow. The TUI intentionally exposes tree scope only
+in 1.0 so the broader process-group blast radius is reviewed in a full CLI banner.
+
 ## A few edge states
 
 - **`Esc` is context-aware** • it clears the search, closes an open modal, cancels a kill
@@ -121,4 +132,5 @@ gone.
 
 ## Next
 
-Already know which port to boot? The [CLI walkthrough](/docs/cli) is the goblin-speed path.
+Already know which port to clear? The [CLI walkthrough](/docs/cli) is the dragon-speed route.
+Need Shrek's big green button? Read [Scoped kills](/docs/scoped-kills).

@@ -8,12 +8,12 @@ export const SITE = {
   url: "https://kickoutchi.com",
   tagline: "Kick stale dev servers out of your local ports.",
   description:
-    "Kickoutchi is a cross-platform TUI and CLI port janitor for finding open local ports and safely kicking stale dev servers out.",
+    "Kickoutchi is a TUI and CLI port janitor for finding open local ports, inspecting process families, and safely kicking stale dev servers out.",
   /** Canonical binary name; `kick` is the short daily-use shortcut. */
   binary: "kickoutchi",
   shortBinary: "kick",
-  /** Latest published release; mirrors the real crate version. */
-  version: "0.1.2",
+  /** Latest published release; mirrors the repository release version. */
+  version: "1.0.0",
   author: "nugget",
 } as const;
 
@@ -27,7 +27,6 @@ const linksSchema = z.object({
   issues: z.url(),
   license: z.url(),
   readme: z.url(),
-  crate: z.url(),
   aurPackaging: z.url(),
 });
 
@@ -38,7 +37,6 @@ export const LINKS = linksSchema.parse({
   issues: `${REPO}/issues`,
   license: `${REPO}/blob/${REPO_BRANCH}/LICENSE`,
   readme: `${REPO}/blob/${REPO_BRANCH}/README.md`,
-  crate: "https://crates.io/crates/kickoutchi",
   aurPackaging: `${REPO}/tree/${REPO_BRANCH}/packaging/arch`,
 });
 

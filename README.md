@@ -1,8 +1,8 @@
 # kickoutchi.com
 
-The public website for [Kickoutchi](https://github.com/nuggocto/kickoutchi) • a cross-platform TUI
-and CLI port janitor that shows what's squatting on your local ports and helps you kick stale dev
-servers out safely.
+The public website for [Kickoutchi](https://github.com/nuggocto/kickoutchi) • a TUI and CLI port
+janitor that shows what owns your local ports, inspects process families, and helps you terminate
+stale dev servers safely.
 
 Built with **Astro v7**, **Tailwind CSS v4**, MDX content collections, and a dark/light
 pocket-terminal theme. Static-first, deployed to **Cloudflare Pages**.
@@ -44,8 +44,9 @@ astro.config.mjs
 
 ## Content accuracy
 
-Docs are grounded in the real `kickoutchi` source (CLI parser, TUI keys, config, exit codes) • not
-invented. The bundled `src/data/CHANGELOG.md` drives `/changelog`.
+Docs are grounded in the real `kickoutchi` source (CLI parser, TUI keys, scoped Linux/macOS kill
+behavior, config, exit codes) • not invented. The bundled `src/data/CHANGELOG.md` drives
+`/changelog`.
 
 ## Deploy (Cloudflare Pages)
 

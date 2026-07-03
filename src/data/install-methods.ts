@@ -40,14 +40,14 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     status: "available",
     platforms: ["windows"],
     group: "recommended",
-    summary: "The PowerShell spell • same release installer, Windows edition.",
+    summary: "The PowerShell installer • same release flow, Windows edition.",
     commands: [
       {
         code: "irm https://github.com/nuggocto/kickoutchi/releases/latest/download/kickoutchi-installer.ps1 | iex",
         lang: "powershell",
       },
     ],
-    note: "Use an elevated terminal if higher-privilege processes hide metadata or reject termination.",
+    note: "Use an elevated terminal if higher-privilege processes hide metadata or reject termination. Tree/group cleanup is coming later on Windows.",
   },
   {
     id: "update",
@@ -69,7 +69,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     summary:
       "If installers make you nervous: grab the archive, verify the hash, and run kickoutchi or kick. Every release ships archives for all three platforms plus matching .sha256 files and a release-wide sha256.sum.",
     commands: [],
-    note: "Download archives and checksums from the GitHub Releases page.",
+    note: "Download archives and checksums from the GitHub Releases page. Linux/macOS archives include 1.0 scoped kill; Windows scoped cleanup is still in design/QA.",
   },
   {
     id: "cargo",
