@@ -31,14 +31,14 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "safety",
     title: "Tree and group cleanup",
     description:
-      "On Linux and macOS, opt in to --tree for descendants or --group for the whole process group when a stale dev stack has more than one PID.",
+      "Opt in to --tree for descendants when a stale dev stack has more than one PID. POSIX process-group cleanup stays Linux/macOS-only.",
   },
   {
     id: "inspect-first",
     icon: "process",
     title: "Inspect before you kick",
     description:
-      "Read-only inspect shows ancestors, descendants, siblings, process group members, command lines, ports, and the exact scoped kill command to run.",
+      "Read-only inspect shows ancestors, descendants, siblings, command lines, ports, and scoped kill hints. Linux/macOS also show process groups.",
   },
   {
     id: "tui-or-cli",
@@ -52,14 +52,14 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "safety",
     title: "Safe by default",
     description:
-      "Every termination is confirmed. Scoped kills freeze and verify on Unix, protected descendants refuse, and ambiguous ports are never guessed.",
+      "Every termination is confirmed. Unix scoped kills freeze and verify; Windows tree kill contains via Job Objects; ambiguous ports are never guessed.",
   },
   {
     id: "cross-platform",
     icon: "platform",
     title: "Linux, macOS, Windows",
     description:
-      "Native collection per OS. Linux/macOS have scoped tree and group kill; Windows single-process kill is live, scoped cleanup comes next.",
+      "Native collection per OS. Linux/macOS support tree and group scope; Windows supports inspect and CLI tree kill, with --group unavailable.",
   },
   {
     id: "docker-aware",

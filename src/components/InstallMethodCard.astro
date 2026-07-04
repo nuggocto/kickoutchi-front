@@ -13,6 +13,7 @@ const { method, class: className = "" } = Astro.props;
 const dimmed = method.status === "not-planned";
 const platformLabels = method.platforms.map((p) => PLATFORM_LABELS[p]).join(" • ");
 const showStatus = method.status !== "available";
+const noteType = method.status === "coming-soon" || method.status === "paused" ? "warning" : "note";
 ---
 
 <article
@@ -45,7 +46,7 @@ const showStatus = method.status !== "available";
 
   {
     method.note && (
-      <Callout type={method.status === "coming-soon" ? "warning" : "note"} class="mt-4">
+      <Callout type={noteType} class="mt-4">
         {method.note}
       </Callout>
     )

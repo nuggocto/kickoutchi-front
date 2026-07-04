@@ -44,9 +44,8 @@ astro.config.mjs
 
 ## Content accuracy
 
-Docs are grounded in the real `kickoutchi` source (CLI parser, TUI keys, scoped Linux/macOS kill
-behavior, config, exit codes) • not invented. The bundled `src/data/CHANGELOG.md` drives
-`/changelog`.
+Docs are grounded in the real `kickoutchi` source (CLI parser, TUI keys, scoped kill behavior,
+config, exit codes) • not invented. The bundled `src/data/CHANGELOG.md` drives `/changelog`.
 
 ## Deploy (Cloudflare Pages)
 

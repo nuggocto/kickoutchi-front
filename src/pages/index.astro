@@ -45,11 +45,11 @@ const demo: TerminalLine[] = [
 
 const safety = [
   "Every termination is confirmed • and --yes still prints the banner, warnings, and fresh-scan refusals.",
-  "PID 0, PID 1, and Kickoutchi's own PID are blocked outright.",
+  "PID 0, PID 1, Kickoutchi's own PID, and Windows PID 4 are blocked outright.",
   "kill --port refuses ambiguous ports instead of guessing which PID to hit.",
   "Protected processes require typing the PID or process name to confirm.",
-  "Tree/group scope is opt-in, typed, bounded, and Linux/macOS-only.",
-  "Unix scoped kills freeze first, verify while stopped, and thaw everything on refusal.",
+  "Tree scope is opt-in, typed, and bounded; group scope stays Linux/macOS-only.",
+  "Unix scoped kills freeze first; Windows tree kill uses Job Object containment.",
 ];
 
 const availablePackages = PACKAGE_STATUS.filter((pkg) => pkg.status === "available");
@@ -77,7 +77,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
           <ButtonLink href={LINKS.github} variant="ghost" external>View on GitHub</ButtonLink>
         </div>
         <p class="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted lg:justify-start">
-          <span>Scoped kill on Linux &amp; macOS. Windows scoped cleanup is next.</span>
+          <span>Scoped tree kill on Linux, macOS, and Windows CLI. Group scope stays Unix-only.</span>
           <span aria-hidden="true">•</span>
           <span>Two binaries: <code class="font-mono text-fg">kickoutchi</code> and <code class="font-mono text-fg">kick</code>.</span>
         </p>
@@ -124,7 +124,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         icon="cli"
         eyebrow="Dragon-speed route"
         title="Scriptable CLI"
-        description="Print ports as a table or stable JSON, inspect process families, and choose process, tree, or group scope with a fixed exit-code contract."
+        description="Print ports as a table or stable JSON, inspect process families, and choose process, tree, or Unix group scope with a fixed exit-code contract."
         command="kick list --json"
         href="/docs/cli"
         ctaLabel="Explore the CLI"
@@ -182,7 +182,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
     <div class="pocket-panel p-6 sm:p-8">
       <div class="mx-auto max-w-5xl text-center">
         <h2 class="text-2xl font-bold tracking-tight">Install in one line</h2>
-        <p class="mt-2 text-muted">Linux &amp; macOS get scoped cleanup. Windows gets the PowerShell installer and scoped cleanup later.</p>
+        <p class="mt-2 text-muted">Linux, macOS, and Windows get installers, archives, inspect, and explicit tree cleanup. Group scope stays Unix-only.</p>
         <div class="mt-5 text-left">
           <Terminal
             title="Linux & macOS"

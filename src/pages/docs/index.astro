@@ -50,8 +50,8 @@ const groups = await getDocGroups();
           <p class="font-pixel text-xs uppercase tracking-widest text-muted">Shrek's big green button</p>
           <h2 class="mt-1 text-xl font-semibold text-fg group-hover:text-accent">Scoped kills</h2>
           <p class="mt-2 text-sm text-muted">
-            Linux/macOS include inspect, tree kill, and process-group kill for dev stacks that leave
-            workers behind. Windows scoped cleanup is next.
+            Inspect first, then use tree kill for dev stacks that leave workers behind. Linux/macOS
+            also include process-group kill for POSIX groups.
           </p>
         </a>
       </div>

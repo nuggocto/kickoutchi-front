@@ -1,6 +1,6 @@
 ---
 title: Scoped kills
-description: Linux/macOS tree kill, process-group kill, and read-only inspect for cleaning process families safely.
+description: Tree kill, process-group kill, and read-only inspect for cleaning process families safely.
 section: Guides
 order: 3
 mode: cli
@@ -14,19 +14,20 @@ import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 
 Most port janitors kill one PID. That is still Kickoutchi's default. Scoped kill is the explicit
-Linux/macOS path for the cases where one PID is not the whole mess: dev servers with workers,
-package runners, agent shells, file watchers, and process groups that leave orphans behind.
+path for the cases where one PID is not the whole mess: dev servers with workers, package runners,
+agent shells, file watchers, and process groups that leave orphans behind.
 
 <Callout type="safety" title="Default kill is unchanged">
   `kick kill --port 3000` and `kick kill --pid 18422` still target exactly one confirmed PID. You
-  only get broader scope when you ask for `--tree`, `--group`, or the TUI `t`/`T` tree action.
+  only get broader scope when you ask for `--tree`, Linux/macOS `--group`, or the Linux/macOS TUI
+  `t`/`T` tree action.
 </Callout>
 
 ## Inspect first
 
 `inspect` is read-only. It never signals anything. Use it when you need to see whether the port
-owner is the real root, whether a parent is supervising it, and whether process-group members sit
-outside the descendant tree.
+owner is the real root, whether a parent is supervising it, and on Linux/macOS whether
+process-group members sit outside the descendant tree.
 
 <CommandBlock
   code={"kick inspect --port 3000\nkick inspect --pid 18422"}
@@ -35,13 +36,13 @@ outside the descendant tree.
 
 The report shows:
 
-- The target PID, command line, visible ports, and process group.
+- The target PID, command line, visible ports, and on Linux/macOS the process group.
 - Ancestors nearest-first, so supervisors and package runners are visible.
 - Siblings under the same parent.
 - The bounded descendant tree, with ports on members that own sockets.
-- Process-group members, marking members outside the tree.
-- A suggested `kick kill --pid <root> --tree` command, and a `--group` command only when group scope
-  would catch processes the tree would leave alive.
+- Process-group members on Linux/macOS, marking members outside the tree.
+- A suggested `kick kill --pid <root> --tree` command, and on Linux/macOS a `--group` command only
+  when group scope would catch processes the tree would leave alive.
 
 ## Tree kill
 
@@ -68,11 +69,24 @@ On Linux and macOS, the execution path is freeze-first:
 - Send `SIGTERM`, then `SIGCONT`, leaves first and root last. `--force` sends `SIGKILL` instead.
 - If anything becomes uncertain, thaw every stopped process and send no termination.
 
+On Windows, tree kill uses Job Object containment instead of pretending there is a `SIGSTOP`
+equivalent:
+
+- Re-check the confirmed root and tree before the Job Object commit.
+- Refuse before commit for unsafe PIDs, protected descendants, incomplete metadata, identity drift,
+  or an over-cap tree.
+- Assign the root to a Job Object as the irreversible commit boundary, then converge descendants
+  into the same containment.
+- Terminate contained members with `TerminateJobObject`. Windows tree termination is hard
+  termination only.
+- Report partial containment, fallback termination, and not-terminated members honestly instead of
+  collapsing them into success.
+
 ## Process-group kill
 
-Group kill targets every visible process sharing the target's POSIX process group. It is CLI-only and
-exists for cases a descendant tree cannot cover: double-forked helpers, reparented workers,
-or runaway trees where group membership is the more honest blast radius.
+Group kill targets every visible process sharing the target's POSIX process group. It is Linux/macOS
+CLI-only and exists for cases a descendant tree cannot cover: double-forked helpers, reparented
+workers, or runaway trees where group membership is the more honest blast radius.
 
 <CommandBlock
   code={
@@ -92,7 +106,8 @@ Group scope is stronger than tree scope:
 
 ## TUI support
 
-The TUI exposes tree scope on Linux/macOS:
+The TUI exposes tree scope on Linux/macOS. Windows supports CLI `--tree`, but the Windows TUI still
+omits these keys:
 
 | Key | Action                               |
 | --- | ------------------------------------ |
@@ -105,12 +120,13 @@ Tree preview runs on a background worker so the table stays responsive. The prev
 execution re-collects the tree fresh, re-checks the root, and refuses if the fresh tree no longer
 passes the same gates.
 
-## Windows status
+## Windows specifics
 
-Windows keeps the existing safe single-process behavior: native IP Helper listing and
-handle-based `TerminateProcess` delivery. `--tree`, `--group`, `inspect`, and TUI `t`/`T` are not
-shown on Windows builds yet.
+Windows supports read-only `inspect` and CLI `kill --tree`. It keeps normal `kick kill` precise to
+one confirmed PID, and it keeps `--group` unavailable because Windows has no POSIX process-group
+analog.
 
-Windows scoped cleanup is next. The design uses process handles to pin PIDs and Job Objects for
-containment, but the copy will stay honest: Windows has no supported `SIGSTOP`
-equivalent, so it cannot claim the same freeze-first guarantee as Linux/macOS.
+Windows parent links are accepted only after creation-time sanity checks. If metadata is missing and
+could hide a descendant inside the confirmed tree, `--tree` fails closed as incomplete metadata
+instead of silently omitting that process. Native Windows collection also cannot see individual Linux
+processes inside WSL2; use the Linux build inside WSL2 for those trees.

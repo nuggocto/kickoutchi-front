@@ -68,17 +68,24 @@ macOS has no pidfd, so Kickoutchi re-checks the process identity right before si
 was reused by a different process between your confirmation and the signal, it refuses and sends
 nothing. Re-list and try again.
 
-## Tree/group kill says it thawed everything
+## Linux/macOS tree/group kill says it thawed everything
 
 That means the scoped kill hit a safety refusal after freezing began: permission denied, identity
 drift, protected descendant, incomplete metadata, cap overflow, or a sweep that would not converge.
 Kickoutchi sent `SIGCONT` to every member it had stopped and sent no termination signal.
 
-## `--tree`, `--group`, or `inspect` is unknown on Windows
+## Windows tree kill reports incomplete metadata or partial containment
 
-That's expected. Scoped cleanup is Linux/macOS-only while the Windows Job Object design goes
-through implementation and real Windows QA. Windows still supports listing and safe single-process
-kill by PID or port.
+Windows tree kill has no `SIGSTOP` equivalent. It preflights before the Job Object commit and fails
+closed if missing creation-time metadata could hide a descendant. After commit, it reports partial
+containment, fallback termination, and not-terminated PIDs instead of calling the kill fully
+successful.
+
+## Windows: `--group` or TUI `t`/`T` is unavailable
+
+That's expected. Windows supports read-only `inspect` and CLI `--tree`, but `--group` is a POSIX
+process-group feature and the Windows TUI still omits the tree keys. If `inspect` or CLI `--tree` is
+unknown on Windows, run `kick --version` and update to v1.1.0 or newer.
 
 ## The TUI says "Terminal too small"
 

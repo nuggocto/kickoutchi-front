@@ -25,7 +25,7 @@ export const PLATFORM_SUPPORT: PlatformSupport[] = z.array(platformSupportSchema
     platform: "Windows",
     status: "available",
     detail:
-      "Native IP Helper listing and handle-based single-process kill. Scoped cleanup is next.",
+      "Native IP Helper listing, inspect, single-process kill, and CLI tree kill via Job Objects.",
   },
 ]);
 
@@ -41,7 +41,7 @@ export const PACKAGE_STATUS: PackageStatus[] = z.array(packageStatusSchema).pars
   { name: "Release archives", status: "available", detail: "All platforms + checksums" },
   { name: "Cargo", status: "available", detail: "cargo install --git" },
   { name: "Nix flake", status: "available", detail: "nix run / nix profile" },
-  { name: "AUR", status: "coming-soon", detail: "kickoutchi-bin & kickoutchi" },
+  { name: "AUR", status: "paused", detail: "Publication blocked; templates ready" },
   { name: "Homebrew", status: "not-planned", detail: "Use installer or archive" },
   { name: "winget", status: "not-planned", detail: "Use installer or archive" },
 ]);

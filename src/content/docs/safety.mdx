@@ -1,6 +1,6 @@
 ---
 title: Safety
-description: How Kickoutchi avoids killing the wrong thing • confirmations, guardrails, scoped freeze-first checks, and last-moment re-checks.
+description: How Kickoutchi avoids killing the wrong thing • confirmations, guardrails, scoped checks, and last-moment re-checks.
 section: Safety
 order: 1
 mode: general
@@ -37,7 +37,8 @@ shell command, and any warnings.
 
 ## Hard guardrails
 
-- **PID 0, PID 1, and Kickoutchi's own PID are blocked** outright • they can't be targeted at all.
+- **PID 0, PID 1, Kickoutchi's own PID, and Windows PID 4 are blocked** outright • they can't be
+  targeted at all.
 - **`kill --port` refuses ambiguous ports.** If two PIDs own the same port, Kickoutchi lists the
   candidates and makes you choose with `--pid` instead of guessing.
 - **A port with no readable owner is not killable** • it exits `4` (permission denied) rather than
@@ -79,13 +80,26 @@ Tree and group kill are Shrek-sized controls: broader than one PID, so they use 
 
 Read the full flow in [Scoped kills](/docs/scoped-kills).
 
+## Scoped-kill safety on Windows
+
+Windows tree kill uses Job Object containment rather than a freeze-first signal pipeline:
+
+- It preflights the confirmed root and observed tree before any Job Object assignment.
+- It refuses before commit for unsafe PIDs, protected descendants, incomplete metadata, identity
+  drift, or an over-cap tree.
+- It treats assigning the root to the Job Object as the irreversible commit boundary.
+- It terminates contained members with hard termination and reports partial containment,
+  fallback-terminated, and not-terminated members honestly.
+- It fails closed when missing creation-time metadata could hide a descendant inside the confirmed
+  tree.
+
 ## Platform specifics
 
-| Platform    | How termination stays honest                                                                                                                             |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Linux**   | Uses `pidfd` on kernel 5.3+ for delivery. Tree/group kill opens pidfds before `SIGSTOP`, then reuses them for thaw/final signals.                        |
-| **macOS**   | No pidfd, so tree/group kill uses stop-verify: once a process is stopped, its verified PID cannot be recycled before the signal lands.                   |
-| **Windows** | Terminates one process through a process **handle** so the target can't wander off after confirmation. Tree/group/inspect are coming in a later release. |
+| Platform    | How termination stays honest                                                                                                                          |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Linux**   | Uses `pidfd` on kernel 5.3+ for delivery. Tree/group kill opens pidfds before `SIGSTOP`, then reuses them for thaw/final signals.                     |
+| **macOS**   | No pidfd, so tree/group kill uses stop-verify: once a process is stopped, its verified PID cannot be recycled before the signal lands.                |
+| **Windows** | Uses process handles for precise single-PID termination and Job Objects for CLI tree kill. `inspect` is available; `--group` and TUI `t`/`T` are not. |
 
 ## After the kick
 

@@ -22,8 +22,8 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
   <section class="mx-auto max-w-5xl px-4 pt-14 pb-8">
     <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">Install Kickoutchi</h1>
     <p class="mt-4 max-w-2xl text-lg text-muted">
-      Pick your swamp path: installer, archive, Cargo, or Nix. Linux and macOS get scoped cleanup;
-      Windows gets native listing plus safe single-process kill while scoped cleanup is next.
+      Pick your swamp path: installer, archive, Cargo, or Nix. Linux, macOS, and Windows get native
+      listing, inspect, and explicit tree cleanup; process-group cleanup stays Unix-only.
     </p>
   </section>
 
@@ -35,12 +35,12 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         daily use. Both ship together and behave identically.
       </Callout>
       <Callout type="note" title="No command? You get the TUI">
-        Running either binary with no subcommand opens the terminal UI. <code>list</code> and
-        <code>kill</code> run headless and never open it.
+        Running either binary with no subcommand opens the terminal UI. <code>list</code>,
+        <code>inspect</code>, and <code>kill</code> run headless and never open it.
       </Callout>
       <Callout type="note" title="Requirements">
-        Building from source needs Rust 1.95.0+. Linux termination and scoped cleanup use pidfd on
-        kernel 5.3+; listing ports works on older kernels too.
+        Building from source needs Rust 1.95.0+. Linux termination uses pidfd on kernel 5.3+;
+        listing ports works on older kernels too.
       </Callout>
       <Callout type="tip" title="Staying current">
         Installer-based installs include <code>kickoutchi-update</code>. Installed before it existed?
@@ -71,8 +71,8 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
   <section class="mx-auto max-w-5xl px-4 py-8">
     <h2 class="mb-1 text-2xl font-bold tracking-tight">Package managers</h2>
     <p class="mb-6 text-muted">
-      Arch packages are on the way. Homebrew and winget aren't planned • use the installers or
-      archives there.
+      Arch package templates are ready, but publication is paused. Homebrew and winget aren't
+      planned • use the installers or archives there.
     </p>
     <Callout type="warning" title="AUR publication is paused" class="mb-6">
       The <code>kickoutchi-bin</code> and <code>kickoutchi</code> templates are ready, but

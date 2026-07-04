@@ -47,7 +47,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
         lang: "powershell",
       },
     ],
-    note: "Use an elevated terminal if higher-privilege processes hide metadata or reject termination. Tree/group cleanup is coming later on Windows.",
+    note: "Use an elevated terminal if higher-privilege processes hide metadata or reject termination. Windows supports CLI tree kill; --group is Unix-only.",
   },
   {
     id: "update",
@@ -69,7 +69,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     summary:
       "If installers make you nervous: grab the archive, verify the hash, and run kickoutchi or kick. Every release ships archives for all three platforms plus matching .sha256 files and a release-wide sha256.sum.",
     commands: [],
-    note: "Download archives and checksums from the GitHub Releases page. Linux/macOS archives include scoped kill; Windows scoped cleanup is still in design/QA.",
+    note: "Download archives and checksums from the GitHub Releases page. Archives include Windows inspect and CLI tree kill; --group stays Linux/macOS-only.",
   },
   {
     id: "cargo",
@@ -100,7 +100,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
   {
     id: "aur-bin",
     name: "AUR • kickoutchi-bin",
-    status: "coming-soon",
+    status: "paused",
     platforms: ["linux"],
     group: "package",
     summary:
@@ -111,7 +111,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
   {
     id: "aur-source",
     name: "AUR • kickoutchi",
-    status: "coming-soon",
+    status: "paused",
     platforms: ["linux"],
     group: "package",
     summary: "Builds from the release source archive with Cargo.",

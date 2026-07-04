@@ -12,11 +12,13 @@ const { status, class: className = "" } = Astro.props;
 const styles: Record<Status, string> = {
   available: "border-accent/40 bg-accent/10 text-accent",
   "coming-soon": "border-warning/45 bg-warning-soft text-warning",
+  paused: "border-warning/45 bg-warning-soft text-warning",
   "not-planned": "border-border bg-surface-2 text-muted",
 };
 const marks: Record<Status, string> = {
   available: "●",
   "coming-soon": "◔",
+  paused: "Ⅱ",
   "not-planned": "○",
 };
 ---

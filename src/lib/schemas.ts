@@ -13,15 +13,16 @@ export const PLATFORM_LABELS: Record<Platform, string> = {
 };
 
 /**
- * Install / package availability. `not-planned` is a real, honest state here •
- * Homebrew and winget are explicitly out of scope for now.
+ * Install / package availability. `paused` is for package work blocked outside the project, while
+ * `not-planned` means explicitly out of scope for now.
  */
-export const statusSchema = z.enum(["available", "coming-soon", "not-planned"]);
+export const statusSchema = z.enum(["available", "coming-soon", "paused", "not-planned"]);
 export type Status = z.infer<typeof statusSchema>;
 
 export const STATUS_LABELS: Record<Status, string> = {
   available: "Available",
   "coming-soon": "Coming soon",
+  paused: "Paused",
   "not-planned": "Not planned",
 };
 

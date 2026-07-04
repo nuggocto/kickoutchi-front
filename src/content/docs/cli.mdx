@@ -18,9 +18,9 @@ Dragon-speed route: use the CLI when you already know which port to clear. CLI
 commands **never** open the TUI • they print to stdout/stderr and exit with a
 [stable code](/docs/commands#exit-codes).
 
-There are three Linux/macOS subcommands: `list`, `inspect`, and `kill`. Windows currently exposes
-`list` and single-process `kill`; scoped cleanup is coming later. Use whichever binary you like •
-`kick` is shorter.
+There are three subcommands on every platform: `list`, `inspect`, and `kill`. Windows supports
+read-only `inspect` and CLI `--tree`; `--group` stays Linux/macOS-only. Use whichever binary you
+like • `kick` is shorter.
 
 ## Listing ports
 
@@ -109,7 +109,8 @@ Missing metadata is `null`, never an empty string. An empty result is always `[]
   label="kill examples"
 />
 
-- `--force` • force kill where the platform distinguishes it (`kill -9` on Unix).
+- `--force` • stronger force confirmation; Unix uses `kill -9`, while Windows delivery is hard
+  termination either way.
 - `--yes` • skip the **normal** prompt for a target you already trust.
 
 <Callout type="safety" title="What --yes does and doesn't do">
@@ -120,9 +121,9 @@ Missing metadata is `null`, never an empty string. An empty result is always `[]
 
 ## Inspecting a process family
 
-On Linux/macOS, `inspect` is the read-only way to choose the right root before a scoped kill. It
-shows ancestors, descendants, siblings, process-group members, command lines, ports, and suggested
-tree/group commands.
+`inspect` is the read-only way to choose the right root before a scoped kill. It shows ancestors,
+descendants, siblings, command lines, ports, and suggested tree commands. Linux/macOS also show
+process-group members and `--group` hints.
 
 <CommandBlock
   code={"kick inspect --port 3000\nkick inspect --pid 18422"}
@@ -131,7 +132,8 @@ tree/group commands.
 
 ## Tree and group scope
 
-Normal kill still targets one PID. Linux/macOS add two explicit broader scopes:
+Normal kill still targets one PID. `--tree` adds descendant cleanup on Linux, macOS, and Windows;
+`--group` is the Linux/macOS-only POSIX process-group scope:
 
 <CommandBlock
   code={"kick kill --port 3000 --tree\nkick kill --pid 18422 --tree\nkick kill --pid 18422 --group"}
@@ -143,9 +145,11 @@ Normal kill still targets one PID. Linux/macOS add two explicit broader scopes:
 - `--group` • terminate every visible member of the target's POSIX process group. Type `group` to
   confirm, or `force` with `--force`.
 - `--tree` and `--group` conflict; pick one scope.
-- Windows builds reject these flags for now and do not show them in `--help`.
+- Windows rejects `--group` and does not expose TUI `t`/`T` tree keys. Windows CLI `--tree` uses
+  Job Object containment and hard termination.
 
-See [Scoped kills](/docs/scoped-kills) for the freeze-first safety details.
+See [Scoped kills](/docs/scoped-kills) for the Unix freeze-first and Windows Job Object safety
+details.
 
 ## How the CLI behaves
 
