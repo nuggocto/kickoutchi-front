@@ -14,7 +14,7 @@ import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 
 Most port janitors kill one PID. That is still Kickoutchi's default. Scoped kill is the explicit
-Linux/macOS 1.0 path for the cases where one PID is not the whole mess: dev servers with workers,
+Linux/macOS path for the cases where one PID is not the whole mess: dev servers with workers,
 package runners, agent shells, file watchers, and process groups that leave orphans behind.
 
 <Callout type="safety" title="Default kill is unchanged">
@@ -70,8 +70,8 @@ On Linux and macOS, the execution path is freeze-first:
 
 ## Process-group kill
 
-Group kill targets every visible process sharing the target's POSIX process group. It is CLI-only in
-1.0 and exists for cases a descendant tree cannot cover: double-forked helpers, reparented workers,
+Group kill targets every visible process sharing the target's POSIX process group. It is CLI-only and
+exists for cases a descendant tree cannot cover: double-forked helpers, reparented workers,
 or runaway trees where group membership is the more honest blast radius.
 
 <CommandBlock
@@ -107,7 +107,7 @@ passes the same gates.
 
 ## Windows status
 
-Windows keeps the existing safe single-process behavior in 1.0: native IP Helper listing and
+Windows keeps the existing safe single-process behavior: native IP Helper listing and
 handle-based `TerminateProcess` delivery. `--tree`, `--group`, `inspect`, and TUI `t`/`T` are not
 shown on Windows builds yet.
 

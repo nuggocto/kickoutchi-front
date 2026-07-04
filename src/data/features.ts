@@ -59,7 +59,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "platform",
     title: "Linux, macOS, Windows",
     description:
-      "Native collection per OS. Linux/macOS have scoped tree and group kill in 1.0; Windows single-process kill is live, scoped cleanup comes next.",
+      "Native collection per OS. Linux/macOS have scoped tree and group kill; Windows single-process kill is live, scoped cleanup comes next.",
   },
   {
     id: "docker-aware",

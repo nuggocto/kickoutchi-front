@@ -69,7 +69,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     summary:
       "If installers make you nervous: grab the archive, verify the hash, and run kickoutchi or kick. Every release ships archives for all three platforms plus matching .sha256 files and a release-wide sha256.sum.",
     commands: [],
-    note: "Download archives and checksums from the GitHub Releases page. Linux/macOS archives include 1.0 scoped kill; Windows scoped cleanup is still in design/QA.",
+    note: "Download archives and checksums from the GitHub Releases page. Linux/macOS archives include scoped kill; Windows scoped cleanup is still in design/QA.",
   },
   {
     id: "cargo",

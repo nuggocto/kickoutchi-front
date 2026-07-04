@@ -14,12 +14,12 @@ export const PLATFORM_SUPPORT: PlatformSupport[] = z.array(platformSupportSchema
   {
     platform: "Linux",
     status: "available",
-    detail: "Native /proc collection. 1.0 adds pidfd-backed tree/group kill and inspect.",
+    detail: "Native /proc collection with pidfd-backed tree/group kill and inspect.",
   },
   {
     platform: "macOS",
     status: "available",
-    detail: "Native libproc / sysctl collection. 1.0 adds tree/group kill and inspect.",
+    detail: "Native libproc / sysctl collection with tree/group kill and inspect.",
   },
   {
     platform: "Windows",
