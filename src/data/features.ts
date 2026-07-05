@@ -66,7 +66,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "docker",
     title: "Docker-aware",
     description:
-      "Explains Docker-owned or partial-metadata ports in details when the Docker CLI is available. Docker is optional, never required.",
+      "Explains Docker-owned or partial-metadata ports in details when the Docker CLI is available. Docker owners are protected by default; Docker itself is optional.",
   },
   {
     id: "filters",

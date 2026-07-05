@@ -9,7 +9,7 @@ import StatusBadge from "../components/StatusBadge.astro";
 import LogoMark from "../components/LogoMark.astro";
 import { FEATURES } from "../data/features";
 import { PLATFORM_SUPPORT, PACKAGE_STATUS } from "../data/package-status";
-import { LINKS, RELEASE_ASSETS } from "../data/links";
+import { LINKS, RELEASE_ASSETS, SITE } from "../data/links";
 
 // A faithful scoped-kill session: inspect the family, then use explicit tree scope.
 const demo: TerminalLine[] = [
@@ -47,9 +47,10 @@ const safety = [
   "Every termination is confirmed • and --yes still prints the banner, warnings, and fresh-scan refusals.",
   "PID 0, PID 1, Kickoutchi's own PID, and Windows PID 4 are blocked outright.",
   "kill --port refuses ambiguous ports instead of guessing which PID to hit.",
-  "Protected processes require typing the PID or process name to confirm.",
+  "Protected processes, including Docker owners, require typing the PID or process name to confirm.",
   "Tree scope is opt-in, typed, and bounded; group scope stays Linux/macOS-only.",
   "Unix scoped kills freeze first; Windows tree kill uses Job Object containment.",
+  "Names, paths, and status text are sanitized against control, ANSI, bidi, and zero-width tricks.",
 ];
 
 const availablePackages = PACKAGE_STATUS.filter((pkg) => pkg.status === "available");
@@ -76,6 +77,10 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
           <ButtonLink href="/docs" variant="secondary">Read the docs</ButtonLink>
           <ButtonLink href={LINKS.github} variant="ghost" external>View on GitHub</ButtonLink>
         </div>
+        <p class="mx-auto mt-5 inline-flex max-w-xl flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm text-muted lg:mx-0 lg:justify-start">
+          <span class="font-mono text-xs text-accent">v{SITE.version}</span>
+          <span>hardens Docker protection, terminal-output sanitization, broken-pipe exits, and inspect tree rendering.</span>
+        </p>
         <p class="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted lg:justify-start">
           <span>Scoped tree kill on Linux, macOS, and Windows CLI. Group scope stays Unix-only.</span>
           <span aria-hidden="true">•</span>

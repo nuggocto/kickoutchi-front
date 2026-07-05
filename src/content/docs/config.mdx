@@ -76,16 +76,18 @@ protected_processes = ["redis", "mysqld"]`}
 instead of it. Adding `redis` can't accidentally strip protection from `systemd` or `postgres`.
 
 Matching is exact • **case-sensitive on Linux/macOS, case-insensitive on Windows** • and never a
-substring, so `postgres-backup-helper` doesn't inherit `postgres`'s protection.
+substring, so `postgres-backup-helper` doesn't inherit `postgres`'s protection. Linux also accepts
+the kernel's 15-byte `/proc/<pid>/comm` truncation for longer protected names when that is the only
+process name available.
 
 The built-in list covers load-bearing processes whose accidental termination takes your containers,
 database, init system, or desktop with them:
 
 ```text
-docker, docker.exe, dockerd.exe, Docker Desktop.exe, com.docker.backend.exe,
-postgres, postgres.exe, systemd, System, smss.exe, csrss.exe, wininit.exe,
-services.exe, lsass.exe, svchost.exe, winlogon.exe, explorer.exe, dwm.exe,
-WindowServer
+docker, docker.exe, dockerd, dockerd.exe, docker-proxy, docker-proxy.exe,
+Docker Desktop.exe, com.docker.backend, com.docker.backend.exe, postgres,
+postgres.exe, systemd, System, smss.exe, csrss.exe, wininit.exe, services.exe,
+lsass.exe, svchost.exe, winlogon.exe, explorer.exe, dwm.exe, WindowServer
 ```
 
 The list is capped at 256 entries and rejects empty names. See [Safety](/docs/safety) for what

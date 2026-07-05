@@ -50,7 +50,11 @@ shell command, and any warnings.
 
 Some processes are load-bearing: init, your database, Docker, core OS services. These are
 marked **protected** and require typing the PID or name to confirm • force or `--yes` can't shortcut
-it. The list is built-in and [extensible via config](/docs/config#protected-processes).
+it. The built-in list includes Docker owners such as `dockerd`, `docker-proxy`, and
+`com.docker.backend`, and it is [extensible via config](/docs/config#protected-processes).
+
+Human-facing output also sanitizes OS-provided names, paths, and status text before rendering them,
+including control bytes, ANSI escapes, bidi controls, and zero-width display controls.
 
 ## The target can't wander off
 
