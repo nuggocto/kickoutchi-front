@@ -1,87 +1,105 @@
 @import "tailwindcss";
 
 /*
-  Kickoutchi design tokens.
-  The mascot is the design system: a pocket-terminal (Tamagotchi) device with a
-  sage LCD screen, a stubborn olive boot, and a tiny port-creature getting kicked
-  out. Dark terminal mood by default; light mode keeps the same pocket identity.
+  Kickoutchi design system — "pocket device" edition.
+
+  The mascot IS the design language: a Tamagotchi-style pocket terminal with a
+  sage LCD screen, a stubborn olive boot, and a little port-squatter getting
+  kicked out. The site borrows the hardware's vocabulary:
+
+  - chunky ink outlines + hard offset shadows (moulded-plastic sticker look)
+  - a sage LCD green that glows in the dark theme
+  - one hot "kick" orange reserved for the boot / the act of kicking
+  - pixel type for labels, a grotesk for headlines, mono for the truth
 */
 
 /* `dark:` utilities key off the root `data-theme` attribute. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
-  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
-  --font-pixel: "Pixelify Sans", "IBM Plex Sans", system-ui, sans-serif;
+  --font-pixel: "Pixelify Sans", "Space Grotesk", system-ui, sans-serif;
 
-  /* Pocket-device geometry. */
-  --radius-pocket: 1.5rem;
-  --radius-screen: 0.75rem;
-
-  /* Signature LCD sage • same in both themes. */
+  /* Signature LCD sage — same in both themes, like real hardware. */
   --color-lcd: #a7b487;
   --color-lcd-ink: #1b2114;
-  /* Stubborn boot olive. */
-  --color-boot: #3f5130;
-  --color-sole: #d9c9a3;
+  /* Moulded shell plastic for the device mock. */
+  --color-shell: #e9e4d1;
+  --color-shell-deep: #d4cdb4;
 }
 
 /* ---- Semantic colour tokens, switched per theme ---- */
 :root {
   color-scheme: light;
-  --bg: #f1ede3;
-  --fg: #20241c;
-  --muted: #5f5e51;
-  --border: #d3cab4;
-  --surface: #e9e3d5;
-  --surface-2: #e0d8c6;
-  --accent: #3e5130;
-  --accent-hover: #324226;
-  --accent-fg: #f4f0e6;
+  --bg: #f1edde;
+  --fg: #21251a;
+  --muted: #626550;
+  --border: #d2cbb0;
+  --border-strong: #2c3021;
+  --surface: #f8f5e9;
+  --surface-2: #e9e4cf;
+  --accent: #47602e;
+  --accent-hover: #364d22;
+  --accent-fg: #f5f2e4;
+  --kick: #cf4a26;
+  --kick-soft: #f4d9cc;
   --warning: #9a6b12;
   --warning-soft: #f0e2c2;
   --danger: #a93c28;
   --danger-soft: #f1d9d2;
-  --ring: #3e5130;
+  --ring: #47602e;
+  /* Hard offset shadow = printed ink. */
+  --chunk-shadow: #2c3021;
+  --glow-opacity: 0.05;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #111210;
-  --fg: #ece7da;
-  --muted: #9b988b;
-  --border: #2c2d28;
-  --surface: #1a1b18;
-  --surface-2: #232420;
-  --accent: #9fb87e;
-  --accent-hover: #b3c995;
-  --accent-fg: #11150c;
+  --bg: #0c0e09;
+  --fg: #eaecdb;
+  --muted: #9aa287;
+  --border: #262b1c;
+  --border-strong: #3d4629;
+  --surface: #12150c;
+  --surface-2: #1a1e11;
+  --accent: #b7d073;
+  --accent-hover: #cade8f;
+  --accent-fg: #11150a;
+  --kick: #ff7a52;
+  --kick-soft: #2f180f;
   --warning: #d8a657;
   --warning-soft: #2a2415;
   --danger: #e0705a;
   --danger-soft: #2c1a16;
-  --ring: #9fb87e;
+  --ring: #b7d073;
+  --chunk-shadow: #04050299;
+  --glow-opacity: 0.1;
 }
 
 /* No-JS fallback: honour the OS preference until the inline script runs. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #111210;
-    --fg: #ece7da;
-    --muted: #9b988b;
-    --border: #2c2d28;
-    --surface: #1a1b18;
-    --surface-2: #232420;
-    --accent: #9fb87e;
-    --accent-hover: #b3c995;
-    --accent-fg: #11150c;
+    --bg: #0c0e09;
+    --fg: #eaecdb;
+    --muted: #9aa287;
+    --border: #262b1c;
+    --border-strong: #3d4629;
+    --surface: #12150c;
+    --surface-2: #1a1e11;
+    --accent: #b7d073;
+    --accent-hover: #cade8f;
+    --accent-fg: #11150a;
+    --kick: #ff7a52;
+    --kick-soft: #2f180f;
     --warning: #d8a657;
     --warning-soft: #2a2415;
     --danger: #e0705a;
     --danger-soft: #2c1a16;
-    --ring: #9fb87e;
+    --ring: #b7d073;
+    --chunk-shadow: #04050299;
+    --glow-opacity: 0.1;
   }
 }
 
@@ -91,11 +109,14 @@
   --color-fg: var(--fg);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-fg: var(--accent-fg);
+  --color-kick: var(--kick);
+  --color-kick-soft: var(--kick-soft);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
@@ -119,9 +140,23 @@
     background-color: var(--bg);
     color: var(--fg);
     font-family: var(--font-sans);
-    font-feature-settings: "cv05", "ss01";
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    position: relative;
+  }
+
+  /* Ambient swamp glow, fixed behind everything. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(52rem 34rem at 12% -6%, var(--accent), transparent 62%),
+      radial-gradient(44rem 30rem at 96% 42%, var(--kick), transparent 58%),
+      radial-gradient(40rem 30rem at 40% 110%, var(--accent), transparent 60%);
+    opacity: var(--glow-opacity);
   }
 
   /* Visible, theme-matched keyboard focus. */
@@ -181,10 +216,119 @@
 }
 
 /* ---- Reusable building blocks ---- */
+
+/* The moulded-plastic panel: chunky outline + hard offset shadow. Every card
+   on the site is one of these, so the old name keeps working everywhere. */
 @utility pocket-panel {
   background-color: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pocket);
+  border: 2px solid var(--border-strong);
+  border-radius: 0.625rem;
+  box-shadow: 5px 5px 0 0 var(--chunk-shadow);
+}
+
+/* Interactive variant: lifts against its shadow on hover. */
+@utility pocket-panel-hover {
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+  &:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0 0 var(--chunk-shadow);
+    border-color: var(--accent);
+  }
+}
+
+/* Pixel-type section eyebrow: "01 · INSPECT FIRST" */
+@utility pixel-label {
+  font-family: var(--font-pixel);
+  font-size: 0.85rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* LCD surfaces: sage glass with scanlines, like the device screen. */
+@utility lcd-screen {
+  position: relative;
+  background-color: var(--color-lcd);
+  color: var(--color-lcd-ink);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgb(27 33 20 / 0.09) 0px,
+      rgb(27 33 20 / 0.09) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+}
+
+/* Dark terminal glass with scanlines (the CLI demo). */
+@utility crt-overlay {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      rgb(0 0 0 / 0.16) 0px,
+      rgb(0 0 0 / 0.16) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+}
+
+/* ---- Command ticker (marquee divider strip) ---- */
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 36s linear infinite;
+}
+.ticker:hover .ticker-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+}
+
+/* Blinking block cursor for terminal / LCD status lines. */
+@keyframes cursor-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.blink {
+  animation: cursor-blink 1.1s steps(1) infinite;
+}
+/* Typing-replay cursor injected by Terminal.astro's script (global on purpose:
+   the element is created at runtime, so it never gets Astro's scope class). */
+.type-cursor {
+  display: inline-block;
+  width: 0.55em;
+  animation: cursor-blink 1s steps(1) infinite;
 }
 
 /* ---- Long-form docs typography ---- */

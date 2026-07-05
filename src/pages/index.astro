@@ -6,7 +6,7 @@ import type { TerminalLine } from "../components/Terminal.astro";
 import ModeCard from "../components/ModeCard.astro";
 import FeatureCard from "../components/FeatureCard.astro";
 import StatusBadge from "../components/StatusBadge.astro";
-import LogoMark from "../components/LogoMark.astro";
+import PocketDevice from "../components/PocketDevice.astro";
 import { FEATURES } from "../data/features";
 import { PLATFORM_SUPPORT, PACKAGE_STATUS } from "../data/package-status";
 import { LINKS, RELEASE_ASSETS, SITE } from "../data/links";
@@ -23,18 +23,12 @@ const demo: TerminalLine[] = [
   { kind: "output", text: "  PID 18422 (node) [TCP 127.0.0.1:3000]" },
   { kind: "output", text: "    PID 18431 (vite)" },
   { kind: "output", text: "    PID 18444 (esbuild)" },
-  { kind: "output", text: "Process group 18400 (3 members, 0 outside the tree):" },
-  { kind: "output", text: "  PID 18422 (node)" },
-  { kind: "output", text: "  PID 18431 (vite)" },
-  { kind: "output", text: "  PID 18444 (esbuild)" },
   { kind: "muted", text: "To terminate this tree: kick kill --pid 18422 --tree" },
-  { kind: "muted", text: "(different root? rerun inspect on an ancestor PID first)" },
   { kind: "output", text: "" },
   { kind: "command", text: "kick kill --pid 18422 --tree" },
   { kind: "output", text: "Terminate process tree from PID 18422 (node)" },
   { kind: "output", text: "Scope: tree (3 processes)" },
   { kind: "output", text: "Ports: TCP 127.0.0.1:3000" },
-  { kind: "output", text: "Command: kick kill --pid 18422 --tree" },
   { kind: "output", text: "  PID 18422 (node)" },
   { kind: "output", text: "    PID 18431 (vite)" },
   { kind: "output", text: "    PID 18444 (esbuild)" },
@@ -44,7 +38,7 @@ const demo: TerminalLine[] = [
 ];
 
 const safety = [
-  "Every termination is confirmed • and --yes still prints the banner, warnings, and fresh-scan refusals.",
+  "Every termination is confirmed — and --yes still prints the banner, warnings, and fresh-scan refusals.",
   "PID 0, PID 1, Kickoutchi's own PID, and Windows PID 4 are blocked outright.",
   "kill --port refuses ambiguous ports instead of guessing which PID to hit.",
   "Protected processes, including Docker owners, require typing the PID or process name to confirm.",
@@ -53,72 +47,140 @@ const safety = [
   "Names, paths, and status text are sanitized against control, ANSI, bidi, and zero-width tricks.",
 ];
 
+const ticker = [
+  "kick inspect --port 3000",
+  "SQUATTER FOUND",
+  "kick kill --pid 18422 --tree",
+  "SIGTERM → 3 procs",
+  "port :3000 free ✓",
+  "exit 0",
+  "kick list --json",
+  "no guessed PIDs",
+  "PID 1 is off-limits",
+  "tree scope: opt-in",
+  "kick kill --port 5173",
+  "confirmed, always",
+];
+
+// Bento spans: 4-col grid on lg, mixed widths so the wall has a rhythm.
+const bentoSpan: Record<string, string> = {
+  "see-ports": "sm:col-span-2",
+  "safe-kills": "sm:col-span-2",
+};
+
 const availablePackages = PACKAGE_STATUS.filter((pkg) => pkg.status === "available");
 const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available");
 ---
 
 <Layout>
   <!-- Hero -->
-  <section class="mx-auto max-w-6xl px-4 pt-14 pb-10 sm:pt-20">
-    <div class="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+  <section class="relative mx-auto max-w-6xl px-4 pt-14 pb-16 sm:pt-20">
+    <div class="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
       <div class="text-center lg:text-left">
-        <p class="font-pixel text-sm uppercase tracking-[0.2em] text-accent">
-          Kickoutchi • port janitor
+        <p class="pixel-label inline-flex items-center gap-2">
+          <span class="inline-block size-2 bg-kick" aria-hidden="true"></span>
+          Port janitor · v{SITE.version}
         </p>
-        <h1 class="mt-3 text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-          Kick stale dev servers out of your local ports.
+        <h1 class="mt-4 text-[2.7rem] leading-[1.02] font-bold tracking-tight sm:text-6xl">
+          Your ports have squatters.
+          <span class="mt-3 block font-pixel font-medium tracking-tight text-kick">
+            Kick them out.
+          </span>
         </h1>
-        <p class="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-muted lg:mx-0">
+        <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted lg:mx-0">
           Kickoutchi shows which process owns each open TCP/UDP port, lets you inspect the family
-          around it, then terminates stale port-owning processes safely • from a guided TUI or a script-friendly CLI.
+          around it, then terminates stale port-owning processes safely — from a guided TUI or a
+          script-friendly CLI.
         </p>
         <div class="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
           <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
           <ButtonLink href="/docs" variant="secondary">Read the docs</ButtonLink>
-          <ButtonLink href={LINKS.github} variant="ghost" external>View on GitHub</ButtonLink>
+          <ButtonLink href={LINKS.github} variant="ghost" external>GitHub ↗</ButtonLink>
         </div>
-        <p class="mx-auto mt-5 inline-flex max-w-xl flex-wrap items-center justify-center gap-2 rounded-full border border-border bg-surface px-4 py-2 text-sm text-muted lg:mx-0 lg:justify-start">
-          <span class="font-mono text-xs text-accent">v{SITE.version}</span>
-          <span>hardens Docker protection, terminal-output sanitization, broken-pipe exits, and inspect tree rendering.</span>
-        </p>
-        <p class="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm text-muted lg:justify-start">
-          <span>Scoped tree kill on Linux, macOS, and Windows CLI. Group scope stays Unix-only.</span>
-          <span aria-hidden="true">•</span>
-          <span>Two binaries: <code class="font-mono text-fg">kickoutchi</code> and <code class="font-mono text-fg">kick</code>.</span>
+        <p class="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-xs text-muted lg:justify-start">
+          <span>linux · macos · windows</span>
+          <span class="text-border-strong" aria-hidden="true">▮</span>
+          <span>two binaries: <code class="text-fg">kickoutchi</code> &amp; <code class="text-fg">kick</code></span>
+          <span class="text-border-strong" aria-hidden="true">▮</span>
+          <span>MIT</span>
         </p>
       </div>
 
-      <div class="relative mx-auto w-full max-w-md lg:max-w-none">
-        <LogoMark
-          alt="The Kickoutchi mascot: a pixel-art pocket device with a boot icon kicking out a port mascot."
-          class="relative mx-auto w-full max-w-[17rem] sm:max-w-[22rem]"
-          priority
-        />
+      <PocketDevice />
+    </div>
+  </section>
+
+  <!-- Command ticker -->
+  <div class="ticker overflow-hidden border-y-2 border-border-strong bg-surface py-2.5" aria-hidden="true">
+    <div class="ticker-track">
+      {
+        [0, 1].map(() => (
+          <div class="flex shrink-0 items-center">
+            {ticker.map((item) => (
+              <span class="flex items-center whitespace-nowrap font-mono text-sm text-muted">
+                <span class="px-4 text-accent">◆</span>
+                {item}
+              </span>
+            ))}
+          </div>
+        ))
+      }
+    </div>
+  </div>
+
+  <!-- 01 · Inspect first -->
+  <section class="mx-auto max-w-6xl px-4 pt-20 pb-12">
+    <div class="mb-10 flex items-center gap-4">
+      <h2 class="pixel-label shrink-0 !text-base">01 · Inspect first</h2>
+      <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
+    </div>
+    <div class="grid items-start gap-10 lg:grid-cols-[0.85fr_1.15fr]">
+      <div class="lg:sticky lg:top-24">
+        <h3 class="text-3xl font-bold tracking-tight">
+          See the whole family before you swing the boot.
+        </h3>
+        <p class="mt-4 leading-relaxed text-muted">
+          A stale dev server is rarely one process. <code class="font-mono text-sm text-fg">kick inspect</code>
+          shows ancestors, descendants, and the process group — read-only — then tells you the exact
+          command for the scope you choose. Nothing dies until you type it.
+        </p>
+        <ul class="mt-6 space-y-4">
+          {
+            [
+              ["01", "Inspect the PID or port — who spawned it, what it spawned."],
+              ["02", "Pick a scope: one process, the tree, or the Unix process group."],
+              ["03", "Type the scope word to confirm. Kickoutchi verifies the port is really free."],
+            ].map(([step, text]) => (
+              <li class="flex gap-3">
+                <span class="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-md border-2 border-border-strong bg-surface font-pixel text-xs text-accent">
+                  {step}
+                </span>
+                <span class="text-sm leading-relaxed text-muted">{text}</span>
+              </li>
+            ))
+          }
+        </ul>
       </div>
+      <Terminal title="kick • clearing a dev-server tree" lines={demo} animate />
     </div>
   </section>
 
-  <!-- Terminal demo -->
-  <section class="mx-auto max-w-3xl px-4 py-12">
-    <div class="mb-5 text-center">
-      <h2 class="text-2xl font-bold tracking-tight">Inspect first, then choose the scope</h2>
-      <p class="mt-2 text-muted">See the parent, tree, and process group before you kick more than one PID.</p>
-    </div>
-    <Terminal title="kick • clearing a dev-server tree" lines={demo} />
-  </section>
-
-  <!-- TUI vs CLI -->
+  <!-- 02 · Two ways in -->
   <section class="mx-auto max-w-6xl px-4 py-12">
+    <div class="mb-10 flex items-center gap-4">
+      <h2 class="pixel-label shrink-0 !text-base">02 · Two ways in</h2>
+      <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
+    </div>
     <div class="mx-auto mb-8 max-w-2xl text-center lg:mx-0 lg:text-left">
-      <h2 class="text-2xl font-bold tracking-tight">Two ways to clear the swamp</h2>
+      <h3 class="text-3xl font-bold tracking-tight">Two ways to clear the swamp</h3>
       <p class="mt-2 text-muted">
         Open the TUI when you want to look around. Reach for the CLI when you already know the target.
       </p>
     </div>
-    <div class="grid gap-5 md:grid-cols-2">
+    <div class="grid gap-6 md:grid-cols-2">
       <ModeCard
         icon="tui"
-        eyebrow="Donkey's guided tour"
+        eyebrow="The swamp tour"
         title="Guided TUI"
         description="Run either binary with no command to open the terminal UI. Browse, search, sort, inspect details, and use x/X for one PID or t/T for Linux/macOS tree cleanup."
         command="kickoutchi"
@@ -127,7 +189,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
       />
       <ModeCard
         icon="cli"
-        eyebrow="Dragon-speed route"
+        eyebrow="The swamp shortcut"
         title="Scriptable CLI"
         description="Print ports as a table or stable JSON, inspect process families, and choose process, tree, or Unix group scope with a fixed exit-code contract."
         command="kick list --json"
@@ -137,57 +199,80 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
     </div>
   </section>
 
-  <!-- Features -->
+  <!-- 03 · The arsenal -->
   <section class="mx-auto max-w-6xl px-4 py-12">
+    <div class="mb-10 flex items-center gap-4">
+      <h2 class="pixel-label shrink-0 !text-base">03 · The arsenal</h2>
+      <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
+    </div>
     <div class="mx-auto mb-8 max-w-2xl text-center lg:mx-0 lg:text-left">
-      <h2 class="text-2xl font-bold tracking-tight">A small tool that takes ports seriously</h2>
+      <h3 class="text-3xl font-bold tracking-tight">A small tool that takes ports seriously</h3>
       <p class="mt-2 text-muted">Practical first, playful second. Everything here is real behaviour.</p>
     </div>
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {FEATURES.map((feature) => <FeatureCard feature={feature} />)}
+      {FEATURES.map((feature) => <FeatureCard feature={feature} class={bentoSpan[feature.id]} />)}
     </div>
   </section>
 
-  <!-- Safety -->
+  <!-- 04 · Guardrails -->
   <section class="mx-auto max-w-6xl px-4 py-12">
-    <div class="pocket-panel grid gap-8 p-6 text-center sm:p-10 lg:grid-cols-[0.9fr_1.1fr] lg:text-left">
-      <div class="mx-auto max-w-xl lg:mx-0">
-        <span class="inline-flex size-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
-          <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            <path d="M9 12l2 2 4-4"></path>
-          </svg>
-        </span>
-        <h2 class="mt-4 text-2xl font-bold tracking-tight">Safe by default</h2>
-        <p class="mt-3 text-muted">
-          Terminating the wrong process is the scary part. Kickoutchi treats it that way: lots of
-          guardrails, no silent surprises.
-        </p>
-        <ButtonLink href="/docs/safety" variant="secondary" size="sm" class="mt-5">
-          How termination stays safe
-        </ButtonLink>
+    <div class="mb-10 flex items-center gap-4">
+      <h2 class="pixel-label shrink-0 !text-base">04 · Guardrails</h2>
+      <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
+    </div>
+    <div class="pocket-panel relative overflow-hidden">
+      <!-- hazard stripe -->
+      <div
+        class="h-2.5 w-full border-b-2 border-border-strong bg-[repeating-linear-gradient(-45deg,var(--warning)_0_10px,transparent_10px_20px)]"
+        aria-hidden="true"
+      >
       </div>
-      <ul class="grid gap-3 self-center">
-        {
-          safety.map((item) => (
-            <li class="flex gap-3 text-sm leading-relaxed">
-              <svg class="mt-0.5 size-5 shrink-0 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M20 6 9 17l-5-5"></path>
-              </svg>
-              <span class="text-muted">{item}</span>
-            </li>
-          ))
-        }
-      </ul>
+      <div class="grid gap-8 p-6 sm:p-10 lg:grid-cols-[0.9fr_1.1fr]">
+        <div class="mx-auto max-w-xl text-center lg:mx-0 lg:text-left">
+          <span class="inline-flex size-11 items-center justify-center rounded-md border-2 border-border-strong bg-accent/10 text-accent">
+            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <path d="M9 12l2 2 4-4"></path>
+            </svg>
+          </span>
+          <h3 class="mt-4 text-3xl font-bold tracking-tight">Safe by default</h3>
+          <p class="mt-3 text-muted">
+            Terminating the wrong process is the scary part. Kickoutchi treats it that way: lots of
+            guardrails, no silent surprises.
+          </p>
+          <ButtonLink href="/docs/safety" variant="secondary" size="sm" class="mt-5">
+            How termination stays safe
+          </ButtonLink>
+        </div>
+        <ol class="grid gap-3 self-center">
+          {
+            safety.map((item, i) => (
+              <li class="flex gap-3 text-sm leading-relaxed">
+                <span class="mt-0.5 shrink-0 font-mono text-xs font-bold text-kick">
+                  {String(i).padStart(2, "0")}
+                </span>
+                <span class="text-muted">{item}</span>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
     </div>
   </section>
 
-  <!-- Install preview + status -->
+  <!-- 05 · Get it -->
   <section class="mx-auto max-w-6xl px-4 py-12">
+    <div class="mb-10 flex items-center gap-4">
+      <h2 class="pixel-label shrink-0 !text-base">05 · Get it</h2>
+      <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
+    </div>
     <div class="pocket-panel p-6 sm:p-8">
       <div class="mx-auto max-w-5xl text-center">
-        <h2 class="text-2xl font-bold tracking-tight">Install in one line</h2>
-        <p class="mt-2 text-muted">Linux, macOS, and Windows get installers, archives, inspect, and explicit tree cleanup. Group scope stays Unix-only.</p>
+        <h3 class="text-3xl font-bold tracking-tight">Install in one line</h3>
+        <p class="mt-2 text-muted">
+          Linux, macOS, and Windows get installers, archives, inspect, and explicit tree cleanup.
+          Group scope stays Unix-only.
+        </p>
         <div class="mt-5 text-left">
           <Terminal
             title="Linux & macOS"
@@ -198,17 +283,17 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
             ]}
           />
         </div>
-        <ButtonLink href="/install" class="mt-5">All install methods</ButtonLink>
+        <ButtonLink href="/install" class="mt-6">All install methods</ButtonLink>
       </div>
 
-      <div class="mt-8 border-t border-border pt-6 text-center">
-        <h3 class="text-xl font-bold tracking-tight">Platforms &amp; packages</h3>
+      <div class="mt-8 border-t-2 border-border pt-6 text-center">
+        <h4 class="font-pixel text-lg tracking-wide">Platforms &amp; packages</h4>
         <p class="mt-2 text-sm text-muted">Honest status, kept compact.</p>
-        <div class="mt-5 grid gap-3 md:grid-cols-3">
+        <div class="mt-5 grid gap-4 md:grid-cols-3">
           {
             PLATFORM_SUPPORT.map((p) => (
-              <div class="rounded-xl border border-border bg-surface-2/50 p-4 text-left">
-                <p class="font-medium text-fg">{p.platform}</p>
+              <div class="rounded-lg border-2 border-border-strong bg-surface-2/50 p-4 text-left">
+                <p class="font-mono text-sm font-bold text-fg">{p.platform}</p>
                 <p class="mt-2 text-xs leading-relaxed text-muted">{p.detail}</p>
               </div>
             ))
@@ -233,9 +318,11 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
   </section>
 
   <!-- Closing CTA -->
-  <section class="mx-auto max-w-6xl px-4 py-12">
-    <div class="pocket-panel flex flex-col items-center gap-5 p-10 text-center">
-      <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">Ready to clear the swamp?</h2>
+  <section class="mx-auto max-w-6xl px-4 pt-16 pb-4">
+    <div class="flex flex-col items-center gap-6 text-center">
+      <p class="font-pixel text-[clamp(2.2rem,6.5vw,4.5rem)] leading-[0.95] tracking-tight">
+        CLEAR THE <span class="text-accent">SWAMP.</span>
+      </p>
       <p class="max-w-xl text-muted">
         Install Kickoutchi, run it once with no arguments, and see the processes and process
         families using your local ports.
@@ -244,6 +331,10 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
         <ButtonLink href={LINKS.github} variant="secondary" external>Star on GitHub</ButtonLink>
       </div>
+      <p class="font-mono text-xs text-muted">
+        <span class="text-accent">$</span> kickoutchi
+        <span class="blink text-accent" aria-hidden="true">▮</span>
+      </p>
     </div>
   </section>
 </Layout>

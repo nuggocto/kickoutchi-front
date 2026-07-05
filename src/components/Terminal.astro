@@ -9,24 +9,33 @@ export interface TerminalLine {
 interface Props {
   title?: string;
   lines: TerminalLine[];
+  /** Type the session out when it scrolls into view (falls back to static). */
+  animate?: boolean;
   class?: string;
 }
 
-const { title = "kick • local ports", lines, class: className = "" } = Astro.props;
+const { title = "kick • local ports", lines, animate = false, class: className = "" } =
+  Astro.props;
 ---
 
 <div
-  class:list={["terminal overflow-hidden rounded-2xl border", className]}
+  class:list={["terminal overflow-hidden rounded-lg border-2 border-border-strong", className]}
+  data-animate={animate ? "true" : undefined}
   role="img"
   aria-label={`Terminal: ${title}`}
 >
-  <div class="chrome flex items-center gap-2 px-3 py-2 sm:gap-2.5 sm:px-4 sm:py-2.5">
-    <span class="terminal-icon" aria-hidden="true">
-      <span class="terminal-caret"></span>
+  <div class="chrome flex items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-2.5">
+    <div class="flex items-center gap-2 sm:gap-2.5">
+      <span class="terminal-icon" aria-hidden="true">
+        <span class="terminal-caret"></span>
+      </span>
+      <span class="font-mono text-xs">{title}</span>
+    </div>
+    <span class="hidden font-mono text-[0.65rem] tracking-wider opacity-60 sm:inline" aria-hidden="true">
+      80×24
     </span>
-    <span class="font-mono text-xs">{title}</span>
   </div>
-  <div class="screen overflow-hidden px-3 py-3 font-mono text-[0.72rem] leading-relaxed sm:px-4 sm:py-4 sm:text-sm">
+  <div class="screen crt-overlay overflow-hidden px-3 py-3 font-mono text-[0.72rem] leading-relaxed sm:px-4 sm:py-4 sm:text-sm">
     <pre class="whitespace-pre-wrap">{lines.map((line) => (
         <div class:list={["line", `is-${line.kind ?? "output"}`]}>{line.kind === "command" && <span class="prompt">{line.prompt ?? "$"} </span>}<span class="content">{line.text}</span></div>
       ))}</pre>
@@ -34,24 +43,24 @@ const { title = "kick • local ports", lines, class: className = "" } = Astro.p
 </div>
 
 <style>
-  /* A real terminal is dark • keep it that way in both site themes for an
+  /* A real terminal is dark — keep it that way in both site themes for an
      authentic, consistent "device screen" focal point. */
   .terminal {
-    --term-bg: #0c0e0a;
-    --term-chrome: #15180f;
+    --term-bg: #0b0d08;
+    --term-chrome: #141810;
     --term-fg: #d7dcc4;
-    --term-prompt: #a7b487;
+    --term-prompt: #b7d073;
     --term-comment: #7e8a6a;
     --term-muted: #8a8f7e;
     --term-success: #9fd07a;
     --term-warning: #e0b357;
-    border-color: #23271b;
     background-color: var(--term-bg);
+    box-shadow: 5px 5px 0 0 var(--chunk-shadow);
   }
   .chrome {
     background-color: var(--term-chrome);
     color: var(--term-muted);
-    border-bottom: 1px solid #23271b;
+    border-bottom: 2px solid var(--border-strong);
   }
   .terminal-icon {
     display: inline-flex;
@@ -72,6 +81,10 @@ const { title = "kick • local ports", lines, class: className = "" } = Astro.p
   }
   .screen {
     color: var(--term-fg);
+    /* Soft phosphor glow behind the text. */
+    background:
+      radial-gradient(120% 90% at 50% 0%, rgb(183 208 115 / 0.06), transparent 70%),
+      var(--term-bg);
   }
   .screen pre {
     margin: 0;
@@ -79,6 +92,10 @@ const { title = "kick • local ports", lines, class: className = "" } = Astro.p
   }
   .line {
     white-space: pre-wrap;
+  }
+  /* Lines hidden only once the typing script takes over (no-JS stays static). */
+  .line[data-pending] {
+    display: none;
   }
   .content {
     overflow-wrap: anywhere;
@@ -104,3 +121,92 @@ const { title = "kick • local ports", lines, class: className = "" } = Astro.p
     color: var(--term-warning);
   }
 </style>
+
+<script>
+  // Progressive "someone is typing" replay for terminals marked data-animate.
+  // The static markup stays intact for no-JS and reduced-motion visitors.
+  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function animateTerminal(terminal: HTMLElement) {
+    const lineEls = [...terminal.querySelectorAll<HTMLElement>(".line")];
+    if (lineEls.length === 0) return;
+
+    const steps = lineEls.map((el) => {
+      const content = el.querySelector<HTMLElement>(".content");
+      return {
+        el,
+        content,
+        text: content?.textContent ?? "",
+        isCommand: el.classList.contains("is-command"),
+      };
+    });
+
+    for (const step of steps) {
+      step.el.setAttribute("data-pending", "");
+      if (step.isCommand && step.content) step.content.textContent = "";
+    }
+
+    const cursor = document.createElement("span");
+    cursor.className = "type-cursor";
+    cursor.textContent = "▮";
+    cursor.setAttribute("aria-hidden", "true");
+
+    let index = 0;
+
+    function nextStep() {
+      if (index >= steps.length) {
+        cursor.remove();
+        return;
+      }
+      const step = steps[index++];
+      step.el.removeAttribute("data-pending");
+
+      if (step.isCommand && step.content) {
+        step.content.textContent = "";
+        step.content.appendChild(cursor);
+        let chars = 0;
+        const typeChar = () => {
+          chars += 1;
+          step.content!.textContent = step.text.slice(0, chars);
+          step.content!.appendChild(cursor);
+          if (chars < step.text.length) {
+            window.setTimeout(typeChar, 14 + Math.random() * 26);
+          } else {
+            window.setTimeout(nextStep, 240);
+          }
+        };
+        window.setTimeout(typeChar, 260);
+      } else {
+        // Output arrives in quick bursts, like a real program printing.
+        window.setTimeout(nextStep, 34 + Math.random() * 46);
+      }
+    }
+
+    nextStep();
+  }
+
+  function wireTerminals() {
+    const terminals = document.querySelectorAll<HTMLElement>(
+      ".terminal[data-animate]:not([data-wired])",
+    );
+    for (const terminal of terminals) {
+      terminal.dataset.wired = "true";
+      if (REDUCED || !("IntersectionObserver" in window)) continue;
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              observer.disconnect();
+              animateTerminal(terminal);
+            }
+          }
+        },
+        { threshold: 0.35 },
+      );
+      observer.observe(terminal);
+    }
+  }
+
+  wireTerminals();
+  document.addEventListener("astro:page-load", wireTerminals);
+</script>

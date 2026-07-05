@@ -45,7 +45,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "modes",
     title: "TUI or CLI",
     description:
-      "Open the guided terminal UI for a Donkey-style tour of open ports, or drive the script-friendly CLI when you already know the target.",
+      "Open the guided terminal UI for a tour of open ports, or drive the script-friendly CLI when you already know the target.",
   },
   {
     id: "safe-kills",

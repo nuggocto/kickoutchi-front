@@ -18,15 +18,15 @@ const iconPaths: Record<Props["icon"], string[]> = {
 };
 ---
 
-<div class="pocket-panel flex flex-col gap-4 p-6">
+<div class="pocket-panel pocket-panel-hover flex flex-col gap-4 p-6">
   <div class="flex items-center gap-3">
-    <span class="inline-flex size-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+    <span class="inline-flex size-10 items-center justify-center rounded-md border-2 border-border-strong bg-accent/10 text-accent">
       <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         {iconPaths[icon].map((d) => <path d={d}></path>)}
       </svg>
     </span>
     <div>
-      <p class="font-pixel text-xs uppercase tracking-widest text-muted">{eyebrow}</p>
+      <p class="font-pixel text-xs uppercase tracking-widest text-accent">{eyebrow}</p>
       <h3 class="text-lg font-semibold text-fg">{title}</h3>
     </div>
   </div>

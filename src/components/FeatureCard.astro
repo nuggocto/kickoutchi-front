@@ -35,11 +35,11 @@ const paths = ICONS[feature.icon];
 
 <div
   class:list={[
-    "pocket-panel group flex flex-col gap-3 p-5 transition-colors hover:border-accent/50",
+    "pocket-panel pocket-panel-hover group flex flex-col gap-3 p-5",
     className,
   ]}
 >
-  <span class="inline-flex size-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+  <span class="inline-flex size-10 items-center justify-center rounded-md border-2 border-border-strong bg-accent/10 text-accent transition-colors group-hover:bg-accent group-hover:text-accent-fg">
     <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       {paths.map((d) => <path d={d}></path>)}
     </svg>

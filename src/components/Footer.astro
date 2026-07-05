@@ -6,7 +6,7 @@ import { LINKS, SITE } from "../data/links";
 const year = new Date().getFullYear();
 ---
 
-<footer class="mt-24 border-t border-border bg-surface/40">
+<footer class="mt-24 border-t-2 border-border-strong bg-surface/40">
   <div class="mx-auto max-w-6xl px-4 py-12">
     <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
       <div class="space-y-3">
@@ -18,12 +18,16 @@ const year = new Date().getFullYear();
           A cross-platform TUI and CLI port janitor. See what owns each local port, then clear
           the swamp safely.
         </p>
+        <p class="font-mono text-xs text-muted">
+          <span class="text-accent">$</span> kick list
+          <span class="blink text-accent" aria-hidden="true">▮</span>
+        </p>
       </div>
 
       {
         FOOTER_NAV.map((group) => (
           <div>
-            <h2 class="mb-3 text-sm font-semibold text-fg">{group.title}</h2>
+            <h2 class="pixel-label mb-3 !text-xs">{group.title}</h2>
             <ul class="space-y-2">
               {group.items.map((item) => (
                 <li>
@@ -59,5 +63,12 @@ const year = new Date().getFullYear();
         </a>
       </p>
     </div>
+  </div>
+
+  <!-- Giant pixel sign-off, clipped at the page edge like a stamp. -->
+  <div class="pointer-events-none select-none overflow-hidden" aria-hidden="true">
+    <p class="mx-auto max-w-6xl px-4 text-center font-pixel text-[clamp(3.4rem,12vw,9.5rem)] leading-[0.72] tracking-tight text-fg/[0.07] whitespace-nowrap translate-y-[0.16em]">
+      KICKOUTCHI
+    </p>
   </div>
 </footer>

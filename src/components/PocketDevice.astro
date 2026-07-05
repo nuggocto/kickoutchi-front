@@ -1,0 +1,492 @@
+---
+/**
+ * The hero toy: a working pocket device. Its monochrome LCD replays the real
+ * kick workflow (scan → found → inspect → confirm → kick → port free) as an
+ * attract loop, and the three shell buttons actually drive it.
+ *
+ * Everything on screen is single-colour ink on sage, like real LCD hardware.
+ * No JS → the device parks on the "squatter found" scene; reduced motion →
+ * no attract loop, buttons still switch scenes instantly.
+ */
+
+interface Props {
+  class?: string;
+}
+const { class: className = "" } = Astro.props;
+
+/** Turn an ASCII pixel map into SVG rect coordinates. */
+const px = (map: string[]) =>
+  map.flatMap((row, y) =>
+    [...row].flatMap((cell, x) => (cell === "1" ? [{ x, y }] : [])),
+  );
+
+// A little port-squatter: round blob, stubby ears, hollow eyes, tiny feet.
+const CRITTER = px([
+  "..1..1..",
+  "..1111..",
+  ".111111.",
+  "11.11.11",
+  "11111111",
+  "11111111",
+  ".111111.",
+  ".1.11.1.",
+]);
+
+// The stubborn boot, toe pointing at the squatter.
+const BOOT = px([
+  ".111......",
+  ".111......",
+  ".1111.....",
+  ".11111....",
+  ".111111...",
+  ".11111111.",
+  "1111111111",
+  "1111111111",
+]);
+
+const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
+---
+
+<div class:list={["pocket-device relative mx-auto w-full max-w-[21rem]", className]} data-state="found">
+  <p class="sr-only">
+    Interactive demo device: a pocket port janitor. Use the scan, inspect, and kick buttons to
+    replay how Kickoutchi finds a process squatting on a port and kicks it out.
+  </p>
+
+  <div class="shell relative mx-auto flex flex-col items-center px-7 pt-8 pb-10 sm:px-9">
+    <!-- Badge + status LED -->
+    <div class="mb-4 flex w-full items-center justify-between" aria-hidden="true">
+      <span class="font-pixel text-sm tracking-[0.18em] text-lcd-ink/70">KICKOUTCHI</span>
+      <span class="led size-2.5 rounded-full"></span>
+    </div>
+
+    <!-- LCD -->
+    <div class="w-full rounded-xl border-2 border-border-strong bg-lcd-ink p-2 shadow-[inset_0_2px_6px_rgb(0_0_0/0.5)]" aria-hidden="true">
+      <div class="lcd lcd-screen relative aspect-[5/4] w-full overflow-hidden rounded-md">
+        <!-- top status row -->
+        <div class="absolute inset-x-0 top-0 flex items-center justify-between border-b border-lcd-ink/40 px-2.5 py-1.5 font-mono text-[0.6rem] font-bold tracking-wide">
+          <span>PORT&nbsp;<span data-bind="port">:3000</span></span>
+          <span class="scene-scan-hide" data-bind="pidline">PID 18422</span>
+        </div>
+
+        <!-- SCENE: boot splash -->
+        <div class="scene scene-boot">
+          <p class="font-pixel text-lg tracking-[0.2em]">KICKOUTCHI</p>
+          <p class="mt-1 font-mono text-[0.6rem] font-bold tracking-[0.3em]">PORT JANITOR</p>
+        </div>
+
+        <!-- SCENE: scanning -->
+        <div class="scene scene-scan">
+          <div class="scan-bar mb-3 h-2 w-3/5 overflow-hidden rounded-sm border border-lcd-ink/60">
+            <div class="scan-fill h-full w-full"></div>
+          </div>
+          <p class="font-pixel text-sm tracking-[0.15em]">SCANNING PORTS<span class="blink">_</span></p>
+        </div>
+
+        <!-- SCENE: the stage (found / kicking / free) -->
+        <div class="scene scene-stage">
+          <div class="stage relative h-20 w-full">
+            <svg class="boot-sprite absolute bottom-1 left-3 h-12 w-[3.75rem]" viewBox="0 0 10 8" shape-rendering="crispEdges">
+              {BOOT.map((p) => <rect x={p.x} y={p.y} width="1" height="1" fill="currentColor" />)}
+            </svg>
+            <svg class="critter-sprite absolute bottom-1 left-1/2 h-14 w-14 -translate-x-1/2" viewBox="0 0 8 8" shape-rendering="crispEdges">
+              {CRITTER.map((p) => <rect x={p.x} y={p.y} width="1" height="1" fill="currentColor" />)}
+            </svg>
+            <svg class="sparkle-sprite absolute bottom-3 left-1/2 h-10 w-10 -translate-x-1/2" viewBox="0 0 5 5" shape-rendering="crispEdges">
+              {SPARKLE.map((p) => <rect x={p.x} y={p.y} width="1" height="1" fill="currentColor" />)}
+            </svg>
+            <!-- the port ledge the critter squats on -->
+            <div class="absolute inset-x-6 bottom-0 border-t-2 border-dashed border-lcd-ink/50"></div>
+          </div>
+          <p class="msg-found mt-2 text-center font-pixel text-[0.8rem] leading-tight tracking-wide">
+            SQUATTER FOUND<br />
+            <span class="font-mono text-[0.62rem] font-bold"><span data-bind="proc">node</span> · <span data-bind="count">3</span> PROCS</span>
+          </p>
+          <p class="msg-kicking mt-2 text-center font-pixel text-[0.8rem] tracking-wide">KICKING…</p>
+          <p class="msg-free mt-2 text-center font-pixel text-[0.8rem] leading-tight tracking-wide">
+            PORT <span data-bind="port">:3000</span> FREE ✓<br />
+            <span class="font-mono text-[0.62rem] font-bold">SIGTERM · EXIT 0</span>
+          </p>
+        </div>
+
+        <!-- SCENE: inspect tree -->
+        <div class="scene scene-inspect !items-start !justify-start px-3 pt-8">
+          <p class="font-pixel text-[0.8rem] tracking-wide">TREE · <span data-bind="count">3</span> PROCS</p>
+          <div class="mt-1.5 w-full font-mono text-[0.62rem] leading-relaxed font-bold">
+            <div data-tree="0">node&nbsp;&nbsp;&nbsp;&nbsp;18422</div>
+            <div data-tree="1">├ vite&nbsp;&nbsp;18431</div>
+            <div data-tree="2">└ esbuild 18444</div>
+          </div>
+          <p class="mt-auto mb-2 w-full text-center font-mono text-[0.58rem] font-bold opacity-70">
+            READ-ONLY · NOTHING KILLED
+          </p>
+        </div>
+
+        <!-- SCENE: confirm -->
+        <div class="scene scene-confirm">
+          <p class="font-pixel text-[0.95rem] leading-snug tracking-wide">
+            KICK <span data-bind="count">3</span> PROCS<br />ON <span data-bind="port">:3000</span> ?
+          </p>
+          <p class="confirm-hint mt-2 font-mono text-[0.6rem] font-bold tracking-widest">
+            [ KICK ] CONFIRMS
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="mt-6 flex w-full items-end justify-center gap-6">
+      <div class="flex flex-col items-center gap-1.5">
+        <button type="button" class="dev-btn btn-scan" data-action="scan" aria-label="Demo: scan for the next squatted port"></button>
+        <span class="font-mono text-[0.6rem] font-bold tracking-widest text-lcd-ink/70">SCAN</span>
+      </div>
+      <div class="flex flex-col items-center gap-1.5 -translate-y-2">
+        <button type="button" class="dev-btn dev-btn-kick btn-kick" data-action="kick" aria-label="Demo: kick the squatter off the port"></button>
+        <span class="font-mono text-[0.6rem] font-bold tracking-widest text-lcd-ink/70">KICK</span>
+      </div>
+      <div class="flex flex-col items-center gap-1.5">
+        <button type="button" class="dev-btn btn-inspect" data-action="inspect" aria-label="Demo: inspect the process tree"></button>
+        <span class="font-mono text-[0.6rem] font-bold tracking-widest text-lcd-ink/70">INSPECT</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- floor shadow -->
+  <div class="mx-auto mt-4 h-3 w-3/5 rounded-[100%] bg-border-strong/25 blur-[2px]" aria-hidden="true"></div>
+</div>
+
+<style>
+  .shell {
+    background:
+      linear-gradient(160deg, rgb(255 255 255 / 0.5), transparent 45%),
+      var(--color-shell);
+    border: 3px solid var(--border-strong);
+    border-radius: 46% 46% 44% 44% / 24% 24% 22% 22%;
+    box-shadow:
+      7px 8px 0 0 var(--chunk-shadow),
+      inset 0 -10px 0 0 var(--color-shell-deep);
+    animation: device-float 7s ease-in-out infinite;
+  }
+  @keyframes device-float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-0.6deg);
+    }
+    50% {
+      transform: translateY(-8px) rotate(0.6deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shell {
+      animation: none;
+    }
+  }
+
+  .led {
+    background-color: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    animation: cursor-blink 2.4s steps(1) infinite;
+  }
+  .pocket-device[data-state="kicking"] .led,
+  .pocket-device[data-state="confirm"] .led {
+    background-color: var(--kick);
+    box-shadow: 0 0 6px var(--kick);
+  }
+
+  /* ---- Scenes: exactly one visible per device state ---- */
+  .scene {
+    position: absolute;
+    inset: 0;
+    top: 1.6rem;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-lcd-ink);
+  }
+  .pocket-device[data-state="boot"] .scene-boot,
+  .pocket-device[data-state="scan"] .scene-scan,
+  .pocket-device[data-state="found"] .scene-stage,
+  .pocket-device[data-state="kicking"] .scene-stage,
+  .pocket-device[data-state="free"] .scene-stage,
+  .pocket-device[data-state="inspect"] .scene-inspect,
+  .pocket-device[data-state="confirm"] .scene-confirm {
+    display: flex;
+  }
+  .pocket-device[data-state="scan"] .scene-scan-hide,
+  .pocket-device[data-state="boot"] .scene-scan-hide {
+    visibility: hidden;
+  }
+
+  /* ---- Stage actors ---- */
+  .boot-sprite,
+  .sparkle-sprite,
+  .msg-kicking,
+  .msg-free {
+    display: none;
+  }
+
+  .pocket-device[data-state="found"] .critter-sprite {
+    animation: critter-bob 0.9s steps(2) infinite;
+  }
+  @keyframes critter-bob {
+    0%,
+    100% {
+      transform: translateX(-50%) translateY(0);
+    }
+    50% {
+      transform: translateX(-50%) translateY(-4px);
+    }
+  }
+
+  .pocket-device[data-state="kicking"] .msg-found,
+  .pocket-device[data-state="free"] .msg-found {
+    display: none;
+  }
+  .pocket-device[data-state="kicking"] .msg-kicking {
+    display: block;
+  }
+  .pocket-device[data-state="kicking"] .boot-sprite {
+    display: block;
+    animation: boot-swing 0.45s steps(3) forwards;
+  }
+  @keyframes boot-swing {
+    0% {
+      transform: translateX(-120%) rotate(18deg);
+    }
+    100% {
+      transform: translateX(30%) rotate(-14deg);
+    }
+  }
+  .pocket-device[data-state="kicking"] .critter-sprite {
+    animation: critter-fly 0.7s steps(6) 0.18s forwards;
+  }
+  @keyframes critter-fly {
+    0% {
+      transform: translateX(-50%) translateY(0) rotate(0deg);
+    }
+    100% {
+      transform: translateX(180%) translateY(-70px) rotate(400deg);
+    }
+  }
+
+  .pocket-device[data-state="free"] .critter-sprite,
+  .pocket-device[data-state="free"] .boot-sprite {
+    display: none;
+  }
+  .pocket-device[data-state="free"] .sparkle-sprite {
+    display: block;
+    animation: sparkle-pop 1.2s steps(4) infinite;
+  }
+  .pocket-device[data-state="free"] .msg-free {
+    display: block;
+  }
+  @keyframes sparkle-pop {
+    0%,
+    100% {
+      transform: translateX(-50%) scale(0.8);
+      opacity: 0.7;
+    }
+    50% {
+      transform: translateX(-50%) scale(1.15);
+      opacity: 1;
+    }
+  }
+
+  .scan-fill {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--color-lcd-ink) 0 6px,
+      transparent 6px 10px
+    );
+    animation: scan-slide 0.8s linear infinite;
+  }
+  @keyframes scan-slide {
+    from {
+      transform: translateX(-10px);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .confirm-hint {
+    animation: cursor-blink 1.2s steps(1) infinite;
+  }
+
+  /* ---- Physical buttons ---- */
+  .dev-btn {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 9999px;
+    border: 3px solid var(--border-strong);
+    background:
+      linear-gradient(150deg, rgb(255 255 255 / 0.45), transparent 55%),
+      var(--color-shell-deep);
+    box-shadow: 0 4px 0 0 var(--chunk-shadow);
+    cursor: pointer;
+    transition:
+      transform 90ms ease,
+      box-shadow 90ms ease;
+  }
+  .dev-btn:hover {
+    filter: brightness(1.05);
+  }
+  .dev-btn:active,
+  .dev-btn[data-pressed] {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 0 var(--chunk-shadow);
+  }
+  .dev-btn-kick {
+    width: 3.1rem;
+    height: 3.1rem;
+    background:
+      linear-gradient(150deg, rgb(255 255 255 / 0.35), transparent 55%),
+      var(--kick);
+  }
+</style>
+
+<script>
+  interface PortInfo {
+    port: string;
+    proc: string;
+    pid: string;
+    tree: string[];
+  }
+
+  const PORTS: PortInfo[] = [
+    {
+      port: ":3000",
+      proc: "node",
+      pid: "18422",
+      tree: ["node    18422", "├ vite  18431", "└ esbuild 18444"],
+    },
+    {
+      port: ":5173",
+      proc: "vite",
+      pid: "21077",
+      tree: ["vite    21077", "└ esbuild 21093"],
+    },
+    {
+      port: ":8080",
+      proc: "python",
+      pid: "9021",
+      tree: ["python  9021"],
+    },
+  ];
+
+  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  type State = "boot" | "scan" | "found" | "inspect" | "confirm" | "kicking" | "free";
+
+  /** state → [next state, delay ms] for the attract loop. */
+  const AUTO: Record<State, [State, number]> = {
+    boot: ["scan", 1400],
+    scan: ["found", 1500],
+    found: ["inspect", 3200],
+    inspect: ["confirm", 2600],
+    confirm: ["kicking", 1900],
+    kicking: ["free", 950],
+    free: ["scan", 2600],
+  };
+
+  function wireDevice(device: HTMLElement) {
+    let portIndex = 0;
+    let autoTimer = 0;
+    let resumeTimer = 0;
+
+    const treeRows = device.querySelectorAll<HTMLElement>("[data-tree]");
+
+    function state(): State {
+      return (device.dataset.state as State) ?? "found";
+    }
+
+    function render() {
+      const info = PORTS[portIndex];
+      for (const el of device.querySelectorAll<HTMLElement>('[data-bind="port"]'))
+        el.textContent = info.port;
+      for (const el of device.querySelectorAll<HTMLElement>('[data-bind="proc"]'))
+        el.textContent = info.proc;
+      for (const el of device.querySelectorAll<HTMLElement>('[data-bind="pidline"]'))
+        el.textContent = `PID ${info.pid}`;
+      for (const el of device.querySelectorAll<HTMLElement>('[data-bind="count"]'))
+        el.textContent = String(info.tree.length);
+      treeRows.forEach((row, i) => {
+        row.textContent = info.tree[i] ?? "";
+        row.style.display = i < info.tree.length ? "" : "none";
+      });
+    }
+
+    function setState(next: State) {
+      // Entering "scan" always retargets the next squatted port.
+      if (next === "scan" && state() !== "scan") {
+        portIndex = (portIndex + 1) % PORTS.length;
+        render();
+      }
+      device.dataset.state = next;
+    }
+
+    function scheduleAuto() {
+      window.clearTimeout(autoTimer);
+      const [next, delay] = AUTO[state()];
+      autoTimer = window.setTimeout(() => {
+        setState(next);
+        scheduleAuto();
+      }, delay);
+    }
+
+    /** A button press takes control; the attract loop resumes after idling. */
+    function interact() {
+      window.clearTimeout(autoTimer);
+      window.clearTimeout(resumeTimer);
+      if (!REDUCED) resumeTimer = window.setTimeout(scheduleAuto, 9000);
+    }
+
+    device.addEventListener("click", (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLElement>("[data-action]");
+      if (!button) return;
+      interact();
+
+      const current = state();
+      switch (button.dataset.action) {
+        case "scan":
+          setState("scan");
+          window.setTimeout(() => {
+            if (state() === "scan") setState("found");
+          }, REDUCED ? 150 : 700);
+          break;
+        case "inspect":
+          if (current === "found" || current === "confirm" || current === "free") {
+            setState("inspect");
+          }
+          break;
+        case "kick":
+          if (current === "found" || current === "inspect") {
+            setState("confirm");
+          } else if (current === "confirm") {
+            setState("kicking");
+            window.setTimeout(() => {
+              if (state() === "kicking") setState("free");
+            }, REDUCED ? 150 : 950);
+          }
+          break;
+      }
+    });
+
+    render();
+    if (!REDUCED) {
+      setState("boot");
+      scheduleAuto();
+    }
+  }
+
+  function wireDevices() {
+    for (const device of document.querySelectorAll<HTMLElement>(".pocket-device:not([data-wired])")) {
+      device.dataset.wired = "true";
+      wireDevice(device);
+    }
+  }
+
+  wireDevices();
+  document.addEventListener("astro:page-load", wireDevices);
+</script>
