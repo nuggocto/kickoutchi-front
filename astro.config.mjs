@@ -11,13 +11,8 @@ export default defineConfig({
   integrations: [mdx(), sitemap()],
   markdown: {
     shikiConfig: {
-      // Dual-theme code blocks: Shiki emits both colour sets as CSS variables
-      // and `global.css` picks the active one from `data-theme`.
-      themes: {
-        light: "github-light",
-        dark: "github-dark",
-      },
-      defaultColor: false,
+      // Light-only site: single Shiki theme; `.prose pre` supplies the surface.
+      theme: "github-light",
       wrap: true,
     },
   },

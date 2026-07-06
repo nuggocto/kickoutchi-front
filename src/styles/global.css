@@ -8,13 +8,13 @@
   kicked out. The site borrows the hardware's vocabulary:
 
   - chunky ink outlines + hard offset shadows (moulded-plastic sticker look)
-  - a sage LCD green that glows in the dark theme
+  - a sage LCD green straight off the hardware
   - one hot "kick" orange reserved for the boot / the act of kicking
   - pixel type for labels, a grotesk for headlines, mono for the truth
-*/
 
-/* `dark:` utilities key off the root `data-theme` attribute. */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+  Light theme only, by design: the site is warm paper; the dark surfaces are
+  reserved for the device screens (Terminal, LCD).
+*/
 
 @theme {
   --font-sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -29,7 +29,7 @@
   --color-shell-deep: #d4cdb4;
 }
 
-/* ---- Semantic colour tokens, switched per theme ---- */
+/* ---- Semantic colour tokens ---- */
 :root {
   color-scheme: light;
   --bg: #f1edde;
@@ -52,55 +52,6 @@
   /* Hard offset shadow = printed ink. */
   --chunk-shadow: #2c3021;
   --glow-opacity: 0.05;
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #0c0e09;
-  --fg: #eaecdb;
-  --muted: #9aa287;
-  --border: #262b1c;
-  --border-strong: #3d4629;
-  --surface: #12150c;
-  --surface-2: #1a1e11;
-  --accent: #b7d073;
-  --accent-hover: #cade8f;
-  --accent-fg: #11150a;
-  --kick: #ff7a52;
-  --kick-soft: #2f180f;
-  --warning: #d8a657;
-  --warning-soft: #2a2415;
-  --danger: #e0705a;
-  --danger-soft: #2c1a16;
-  --ring: #b7d073;
-  --chunk-shadow: #04050299;
-  --glow-opacity: 0.1;
-}
-
-/* No-JS fallback: honour the OS preference until the inline script runs. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-    --bg: #0c0e09;
-    --fg: #eaecdb;
-    --muted: #9aa287;
-    --border: #262b1c;
-    --border-strong: #3d4629;
-    --surface: #12150c;
-    --surface-2: #1a1e11;
-    --accent: #b7d073;
-    --accent-hover: #cade8f;
-    --accent-fg: #11150a;
-    --kick: #ff7a52;
-    --kick-soft: #2f180f;
-    --warning: #d8a657;
-    --warning-soft: #2a2415;
-    --danger: #e0705a;
-    --danger-soft: #2c1a16;
-    --ring: #b7d073;
-    --chunk-shadow: #04050299;
-    --glow-opacity: 0.1;
-  }
 }
 
 /* Expose the semantic tokens to Tailwind utilities (bg-bg, text-fg, …). */
@@ -197,22 +148,10 @@
   }
 }
 
-/* ---- Dual-theme Shiki code blocks (MDX docs) ---- */
-:root[data-theme="light"] .astro-code,
-:root[data-theme="light"] .astro-code span {
-  color: var(--shiki-light);
-  background-color: transparent;
-  font-style: var(--shiki-light-font-style);
-  font-weight: var(--shiki-light-font-weight);
-  text-decoration: var(--shiki-light-text-decoration);
-}
-:root[data-theme="dark"] .astro-code,
-:root[data-theme="dark"] .astro-code span {
-  color: var(--shiki-dark);
-  background-color: transparent;
-  font-style: var(--shiki-dark-font-style);
-  font-weight: var(--shiki-dark-font-weight);
-  text-decoration: var(--shiki-dark-text-decoration);
+/* Shiki code blocks keep their own background transparent so `.prose pre`
+   supplies the surface. */
+.astro-code {
+  background-color: transparent !important;
 }
 
 /* ---- Reusable building blocks ---- */

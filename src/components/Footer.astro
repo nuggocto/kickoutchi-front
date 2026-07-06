@@ -65,9 +65,11 @@ const year = new Date().getFullYear();
     </div>
   </div>
 
-  <!-- Giant pixel sign-off, clipped at the page edge like a stamp. -->
-  <div class="pointer-events-none select-none overflow-hidden" aria-hidden="true">
-    <p class="mx-auto max-w-6xl px-4 text-center font-pixel text-[clamp(3.4rem,12vw,9.5rem)] leading-[0.72] tracking-tight text-fg/[0.07] whitespace-nowrap translate-y-[0.16em]">
+  <!-- Giant pixel sign-off. Fully visible: normal leading so the glyphs fit,
+       flex centering so any horizontal overflow stays symmetric, and bottom
+       padding so the word breathes above the page edge. -->
+  <div class="pointer-events-none flex select-none justify-center overflow-hidden px-4 pb-8" aria-hidden="true">
+    <p class="font-pixel text-[clamp(2.5rem,9.5vw,8rem)] leading-none tracking-tight text-fg/[0.08] whitespace-nowrap">
       KICKOUTCHI
     </p>
   </div>

@@ -29,25 +29,6 @@ const ogImage = new URL(image, Astro.site ?? `https://${SITE.domain}`).href;
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <script is:inline>
-      // Set the theme before first paint so there's no flash. Explicit choice
-      // wins; otherwise follow the OS preference, with a dark-terminal default.
-      (function () {
-        try {
-          var stored = localStorage.getItem("kickoutchi-theme");
-          var theme =
-            stored === "light" || stored === "dark"
-              ? stored
-              : window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light";
-          document.documentElement.setAttribute("data-theme", theme);
-        } catch (error) {
-          document.documentElement.setAttribute("data-theme", "dark");
-        }
-      })();
-    </script>
-
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
     <title>{pageTitle}</title>
@@ -61,8 +42,7 @@ const ogImage = new URL(image, Astro.site ?? `https://${SITE.domain}`).href;
     <link rel="icon" href="/favicon-light.png" type="image/png" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#f1edde" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0c0e09" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f1edde" />
 
     <!-- Open Graph / Twitter -->
     <meta property="og:type" content="website" />

@@ -1,6 +1,5 @@
 ---
-import markDark from "../assets/logo/mark-dark.png";
-import markWhite from "../assets/logo/mark-white.png";
+import mark from "../assets/logo/mark-dark.png";
 
 interface Props {
   alt?: string;
@@ -20,34 +19,12 @@ const {
 ---
 
 <img
-  src={markDark.src}
+  src={mark.src}
   alt={alt}
-  class:list={["logo-mark logo-mark--light", className]}
+  class:list={["logo-mark", className]}
   data-pixel
-  width={width ?? markDark.width}
-  height={height ?? markDark.height}
+  width={width ?? mark.width}
+  height={height ?? mark.height}
   loading={priority ? "eager" : "lazy"}
   fetchpriority={priority ? "high" : undefined}
 />
-<img
-  src={markWhite.src}
-  alt={alt}
-  class:list={["logo-mark logo-mark--dark", className]}
-  data-pixel
-  width={width ?? markWhite.width}
-  height={height ?? markWhite.height}
-  loading={priority ? "eager" : "lazy"}
-  fetchpriority={priority ? "high" : undefined}
-/>
-
-<style>
-  .logo-mark--dark {
-    display: none;
-  }
-  :global([data-theme="dark"]) .logo-mark--dark {
-    display: block;
-  }
-  :global([data-theme="dark"]) .logo-mark--light {
-    display: none;
-  }
-</style>

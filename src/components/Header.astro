@@ -1,6 +1,5 @@
 ---
 import LogoMark from "./LogoMark.astro";
-import ThemeToggle from "./ThemeToggle.astro";
 import { MAIN_NAV } from "../data/nav";
 import { LINKS, SITE } from "../data/links";
 
@@ -10,7 +9,10 @@ const isActive = (href: string) =>
 const internalNav = MAIN_NAV.filter((item) => !item.external);
 ---
 
-<header class="sticky top-0 z-50 border-b-2 border-border-strong bg-bg/85 backdrop-blur supports-[backdrop-filter]:bg-bg/75">
+<header
+  class="site-header sticky top-0 z-50 border-b-2 border-border-strong bg-bg/85 backdrop-blur supports-[backdrop-filter]:bg-bg/75"
+  data-hidden="false"
+>
   <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
     <a href="/" class="group flex items-center gap-2.5" aria-label={`${SITE.name} home`}>
       <LogoMark alt="" width={36} height={36} class="size-9 shrink-0 object-contain transition-transform group-hover:-rotate-6" />
@@ -38,7 +40,6 @@ const internalNav = MAIN_NAV.filter((item) => !item.external);
     </nav>
 
     <div class="flex items-center gap-2">
-      <ThemeToggle />
       <a
         href={LINKS.github}
         target="_blank"
@@ -84,3 +85,67 @@ const internalNav = MAIN_NAV.filter((item) => !item.external);
     </div>
   </div>
 </header>
+
+<style>
+  .site-header {
+    transition: transform 300ms ease;
+    will-change: transform;
+  }
+  /* Slid up out of view when scrolling down; the border keeps it flush. */
+  .site-header[data-hidden="true"] {
+    transform: translateY(-101%);
+  }
+  /* Don't snap the bar around for motion-sensitive visitors: keep it put. */
+  @media (prefers-reduced-motion: reduce) {
+    .site-header {
+      transition: none;
+    }
+    .site-header[data-hidden="true"] {
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  // Hide the header on scroll-down, reveal it on scroll-up. Always shown near
+  // the top of the page, and never hidden while the mobile menu is open.
+  function wireAutoHideHeader() {
+    const header = document.querySelector<HTMLElement>(".site-header");
+    if (!header || header.dataset.autohide === "wired") return;
+    header.dataset.autohide = "wired";
+
+    const REVEAL_AT = 80; // px from the top where the bar always shows
+    const DELTA = 6; // ignore tiny jitters
+    let lastY = window.scrollY;
+    let ticking = false;
+
+    function update() {
+      ticking = false;
+      const y = Math.max(0, window.scrollY);
+      const menuOpen = !!header!.querySelector("details[open]");
+
+      if (y <= REVEAL_AT || menuOpen) {
+        header!.dataset.hidden = "false";
+      } else if (y > lastY + DELTA) {
+        header!.dataset.hidden = "true"; // scrolling down
+      } else if (y < lastY - DELTA) {
+        header!.dataset.hidden = "false"; // scrolling up
+      }
+      lastY = y;
+    }
+
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!ticking) {
+          ticking = true;
+          window.requestAnimationFrame(update);
+        }
+      },
+      { passive: true },
+    );
+  }
+
+  wireAutoHideHeader();
+  document.addEventListener("astro:page-load", wireAutoHideHeader);
+</script>
