@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-07-07
+
+### Added
+
+- Homebrew tap publishing for releases. The generated formula lands in
+  `nuggocto/homebrew-tap`, so Homebrew users can install with
+  `brew install nuggocto/tap/kickoutchi`.
+- Scoop bucket packaging for Windows. The live `nuggocto/scoop-bucket` manifest
+  auto-updates from GitHub Release assets and their `.sha256` sidecars.
+
+### Changed
+
+- Install documentation now lists Homebrew and Scoop as available package-manager
+  paths while keeping AUR marked as publication-paused.
+
 ## [1.1.1] - 2026-07-05
 
 ### Fixed
@@ -537,7 +552,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/nuggocto/kickoutchi/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/nuggocto/kickoutchi/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/nuggocto/kickoutchi/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/nuggocto/kickoutchi/compare/v1.0.0...v1.0.1

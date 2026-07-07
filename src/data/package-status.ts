@@ -41,7 +41,7 @@ export const PACKAGE_STATUS: PackageStatus[] = z.array(packageStatusSchema).pars
   { name: "Release archives", status: "available", detail: "All platforms + checksums" },
   { name: "Cargo", status: "available", detail: "cargo install --git" },
   { name: "Nix flake", status: "available", detail: "nix run / nix profile" },
-  { name: "AUR", status: "paused", detail: "v1.1.1 templates ready; publication blocked" },
-  { name: "Homebrew", status: "not-planned", detail: "Use installer or archive" },
-  { name: "winget", status: "not-planned", detail: "Use installer or archive" },
+  { name: "AUR", status: "paused", detail: "v1.1.2 templates ready; publication blocked" },
+  { name: "Homebrew", status: "available", detail: "macOS tap • both binaries" },
+  { name: "Scoop", status: "available", detail: "Windows bucket • both binaries" },
 ]);

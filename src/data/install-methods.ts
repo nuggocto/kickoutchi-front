@@ -106,7 +106,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     summary:
       "Installs the prebuilt binary from the GitHub Release archive. The fast path for Arch users.",
     commands: [{ code: "yay -S kickoutchi-bin", lang: "sh" }],
-    note: "v1.1.1 templates are ready, but publishing is paused while AUR registration is locked after recent AUR security incidents.",
+    note: "v1.1.2 templates are ready, but publishing is paused while AUR registration is locked after recent AUR security incidents.",
   },
   {
     id: "aur-source",
@@ -116,26 +116,34 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     group: "package",
     summary: "Builds from the release source archive with Cargo.",
     commands: [{ code: "yay -S kickoutchi", lang: "sh" }],
-    note: "Same publication hold as kickoutchi-bin. The v1.1.1 AUR templates live in packaging/arch/ for maintainers who want to build or review locally.",
+    note: "Same publication hold as kickoutchi-bin. The v1.1.2 AUR templates live in packaging/arch/ for maintainers who want to build or review locally.",
   },
   {
     id: "homebrew",
     name: "Homebrew",
-    status: "not-planned",
+    status: "available",
     platforms: ["macos"],
     group: "package",
     summary:
-      "Not planned right now. macOS users should use the installer or a direct archive. PRs adding support are welcome.",
-    commands: [],
+      "Install from the Homebrew tap • one formula, both binaries, and brew upgrade keeps them current.",
+    commands: [{ code: "brew install nuggocto/tap/kickoutchi", lang: "sh" }],
+    note: "The formula is generated and pushed to the tap automatically on every release.",
   },
   {
-    id: "winget",
-    name: "winget",
-    status: "not-planned",
+    id: "scoop",
+    name: "Scoop",
+    status: "available",
     platforms: ["windows"],
     group: "package",
-    summary:
-      "Not planned right now. Windows users should use the PowerShell installer or a direct archive. PRs adding support are welcome.",
-    commands: [],
+    summary: "Install from the Scoop bucket • both binaries, and scoop update keeps them current.",
+    commands: [
+      {
+        code: "scoop bucket add nuggocto https://github.com/nuggocto/scoop-bucket",
+        lang: "powershell",
+        label: "Add the bucket",
+      },
+      { code: "scoop install kickoutchi", lang: "powershell", label: "Install" },
+    ],
+    note: "The bucket manifest auto-updates from each release's checksummed archive.",
   },
 ]);
