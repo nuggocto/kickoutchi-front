@@ -2,7 +2,7 @@
 
 The public website for [Kickoutchi](https://github.com/nuggocto/kickoutchi) • a TUI and CLI port
 janitor that shows what owns your local ports, inspects process families, and helps you terminate
-stale dev servers safely.
+stale dev servers safely ;D
 
 Built with **Astro v7**, **Tailwind CSS v4**, MDX content collections, and a dark/light
 pocket-terminal theme. Static-first, deployed to **Cloudflare Pages**.
