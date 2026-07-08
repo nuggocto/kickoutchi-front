@@ -43,11 +43,11 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     summary: "The PowerShell installer • same release flow, Windows edition.",
     commands: [
       {
-        code: "irm https://github.com/nuggocto/kickoutchi/releases/latest/download/kickoutchi-installer.ps1 | iex",
+        code: 'powershell -ExecutionPolicy Bypass -NoProfile -Command "irm https://github.com/nuggocto/kickoutchi/releases/latest/download/kickoutchi-installer.ps1 | iex"',
         lang: "powershell",
       },
     ],
-    note: "Use an elevated terminal if higher-privilege processes hide metadata or reject termination. Windows supports CLI tree kill; --group is Unix-only.",
+    note: "ExecutionPolicy Bypass is scoped to the installer process. Use an elevated terminal if higher-privilege processes hide metadata or reject termination. Windows supports CLI tree kill; --group is Unix-only.",
   },
   {
     id: "update",
