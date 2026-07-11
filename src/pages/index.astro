@@ -212,6 +212,38 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {FEATURES.map((feature) => <FeatureCard feature={feature} class={bentoSpan[feature.id]} />)}
     </div>
+
+    <div class="pocket-panel mt-6 grid gap-6 p-6 sm:p-8 lg:grid-cols-[0.8fr_1.2fr]">
+      <div>
+        <p class="pixel-label">v1.2.0 reference run</p>
+        <h3 class="mt-3 text-2xl font-bold tracking-tight">Fast on the maintainer's Linux host</h3>
+        <p class="mt-3 text-sm leading-relaxed text-muted">
+          2,000 successful invocations of the packaged
+          <code class="text-fg">x86_64-unknown-linux-gnu</code> release-candidate binary on an AMD
+          Ryzen AI MAX+ 395 (16 cores / 32 threads) with 64 GiB RAM.
+        </p>
+      </div>
+      <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {
+          [
+            ["p50", "10.836 ms"],
+            ["p95", "12.289 ms"],
+            ["p99", "12.831 ms"],
+            ["Peak RSS", "14.45 MiB"],
+          ].map(([label, value]) => (
+            <div class="rounded-lg border-2 border-border-strong bg-surface-2/50 p-4">
+              <dt class="font-mono text-xs text-muted">{label}</dt>
+              <dd class="mt-2 font-mono text-lg font-bold text-fg">{value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+      <p class="text-xs leading-relaxed text-muted lg:col-span-2">
+        Single-machine startup reference, not a latency guarantee. Power state, caches, background
+        load, and the host's process, file-descriptor, and socket counts affect collection time;
+        Windows and macOS use different native collectors.
+      </p>
+    </div>
   </section>
 
   <!-- 04 · Guardrails -->

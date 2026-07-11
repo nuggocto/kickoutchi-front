@@ -51,6 +51,9 @@ Every key is optional. Anything you leave out keeps its default.
 | `confirm_force_kill`       | boolean          | `true`        | Require the typed `force` confirmation for force kills (when `--yes` is absent).                  |
 | `protected_processes`      | string[]         | _(see below)_ | Extra process names that require stronger confirmation. **Added** to the built-in list.           |
 
+Config files are capped at **64 KiB**. Larger files are rejected instead of being partially parsed
+or allowed to consume unbounded memory.
+
 ### Example
 
 <CommandBlock

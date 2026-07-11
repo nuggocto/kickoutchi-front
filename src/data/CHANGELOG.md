@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-11
+
+### Added
+
+- A clearly labeled single-machine performance reference based on 2,000 local
+  runs of the packaged Linux release-candidate binary.
+
+### Changed
+
+- Windows tree-kill reports now retain normalized PID lists for Job Object
+  delivery, verified fallback termination, already-exited members, and members
+  not confirmed terminated.
+
+### Fixed
+
+- Release publication now waits for Linux, Windows, macOS, and supply-chain
+  checks on the exact tag SHA before publishing artifacts.
+- CLI confirmations reject and drain lines beyond the 128-byte cap instead of
+  truncating them into a potentially valid destructive confirmation.
+- Config files fail closed past a 64 KiB byte cap.
+- Linux collection caches process metadata once per PID and enforces aggregate
+  PID, file-descriptor traversal, and emitted-row limits.
+- Windows parent links with equal creation timestamps remain explicitly
+  unverified; tree completion uses one shared deadline and disjoint PID outcome
+  reporting.
+- Failed Windows Job Object termination retains the complete partial-action
+  report and refreshes confirmed target ports before returning failure.
+- TUI details collection is single-flight, with one bounded latest-request slot
+  and stale result rejection.
+- Docker enrichment drains stdout and stderr concurrently, bounds retained
+  output and drain waits, and caps stuck drain workers globally.
+- CLI table columns align by terminal display width for accented and CJK names.
+- Human-facing command diagnostics sanitize bidi and zero-width controls.
+- Tree confirmation budgeting accounts for terminal word wrapping and reserves
+  enough vertical space for prompts, errors, and the cancel hint.
+- Windows tree sweeps report unexpected process-open failures accurately instead
+  of mislabeling them as permission denied.
+
+### Security
+
+- PATH-resolved Docker enrichment is disabled while Kickoutchi is elevated,
+  including Unix root/set-ID/capability contexts and elevated Windows tokens.
+- Release installer assets are downloaded and SHA-256 verified before execution,
+  and workflow tag values are passed through environment variables rather than
+  inline shell interpolation.
+- Linux `/proc` stat and status reads fail closed past their byte caps instead of
+  silently truncating identity metadata.
+
 ## [1.1.2] - 2026-07-07
 
 ### Added
@@ -552,7 +600,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/nuggocto/kickoutchi/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/nuggocto/kickoutchi/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/nuggocto/kickoutchi/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/nuggocto/kickoutchi/compare/v1.0.1...v1.1.0

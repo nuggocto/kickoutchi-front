@@ -72,13 +72,13 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
   <section class="mx-auto max-w-5xl px-4 py-8">
     <h2 class="mb-1 text-2xl font-bold tracking-tight">Package managers</h2>
     <p class="mb-6 text-muted">
-      Homebrew (macOS) and Scoop (Windows) are available. The v1.1.2 Arch templates are ready too,
+      Homebrew (macOS) and Scoop (Windows) are available. The v1.2.0 Arch templates are ready too,
       but AUR publication stays paused.
     </p>
     <Callout type="warning" title="AUR publication is paused" class="mb-6">
-      The v1.1.2 <code>kickoutchi-bin</code> and <code>kickoutchi</code> templates are ready, but
-      publishing is blocked while AUR registration stays locked after recent AUR security
-      incidents. <code>kickoutchi-bin</code> installs the prebuilt release archive;
+      The verified v1.2.0 <code>kickoutchi-bin</code> and <code>kickoutchi</code> templates are ready,
+      but publishing is blocked while AUR registration stays locked. <code>kickoutchi-bin</code>
+      installs the prebuilt release archive;
       {" "}<code>kickoutchi</code> builds from the release source with Cargo. Templates live in{" "}
       <a href={LINKS.aurPackaging} target="_blank" rel="noopener noreferrer">packaging/arch/</a>.
     </Callout>

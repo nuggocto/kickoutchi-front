@@ -52,6 +52,11 @@ Docker context is **enrichment**, shown when the Docker CLI is available • it'
 normal port listing. Without the Docker CLI, you'll still see the port and process, just not the
 container mapping.
 
+Kickoutchi also disables PATH-resolved Docker enrichment while running as root, set-ID, with Linux
+capabilities, or from an elevated Windows token. This prevents a writable `docker` executable on
+`PATH` from crossing a privilege boundary. Run Kickoutchi without elevation when you specifically
+need optional container metadata; elevate only when OS process permissions require it.
+
 ## Linux: kernel too old for pidfd termination
 
 Listing ports works on older kernels, but safe `pidfd`-based termination needs **Linux 5.3+**. On a

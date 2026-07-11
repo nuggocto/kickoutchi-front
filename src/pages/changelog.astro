@@ -38,7 +38,7 @@ const styleFor = (category: string) =>
         releases.map((release) => (
           <article
             id={`v${release.version}`}
-            class="pocket-panel scroll-mt-24 p-6"
+            class="pocket-panel min-w-0 scroll-mt-24 p-6"
           >
             <header class="mb-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-border pb-4">
               <h2 class="font-mono text-xl font-bold text-fg">
@@ -60,10 +60,10 @@ const styleFor = (category: string) =>
                   </span>
                   <ul class="mt-3 space-y-2">
                     {group.items.map((item) => (
-                      <li class="flex gap-2.5 text-sm leading-relaxed text-muted">
+                      <li class="flex min-w-0 gap-2.5 text-sm leading-relaxed text-muted">
                         <span class="mt-2 size-1.5 shrink-0 rounded-[1px] bg-accent" aria-hidden="true" />
                         <span
-                          class="[&_a]:text-accent [&_a:hover]:underline [&_code]:rounded [&_code]:border [&_code]:border-border [&_code]:bg-surface-2 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-fg"
+                          class="min-w-0 [overflow-wrap:anywhere] [&_a]:text-accent [&_a:hover]:underline [&_code]:break-all [&_code]:rounded [&_code]:border [&_code]:border-border [&_code]:bg-surface-2 [&_code]:px-1 [&_code]:py-0.5 [&_code]:font-mono [&_code]:text-xs [&_code]:text-fg"
                           set:html={inlineMarkdown(item)}
                         />
                       </li>
