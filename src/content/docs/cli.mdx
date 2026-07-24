@@ -6,7 +6,7 @@ order: 2
 mode: cli
 related:
   - tui
-  - scoped-kills
+  - watch-and-why
   - commands
 ---
 
@@ -18,9 +18,9 @@ The swamp shortcut: use the CLI when you already know which port to clear. CLI
 commands **never** open the TUI • they print to stdout/stderr and exit with a
 [stable code](/docs/commands#exit-codes).
 
-There are three subcommands on every platform: `list`, `inspect`, and `kill`. Windows supports
-read-only `inspect` and CLI `--tree`; `--group` stays Linux/macOS-only. Use whichever binary you
-like • `kick` is shorter.
+There are five subcommands on every platform: `list`, `inspect`, `kill`, `watch`, and `why`. Only
+`kill` ever signals anything. Windows supports read-only `inspect` and CLI `--tree`; `--group`
+stays Linux/macOS-only. Use whichever binary you like • `kick` is shorter.
 
 ## Listing ports
 
@@ -28,21 +28,22 @@ like • `kick` is shorter.
   title="kick list"
   lines={[
     { kind: "command", text: "kick list" },
-    { kind: "muted", text: "PROTO  ADDRESS    PORT  PID    PROCESS   STATE" },
-    { kind: "output", text: "TCP    127.0.0.1  3000  18422  node      LISTEN" },
-    { kind: "output", text: "TCP    127.0.0.1  5173  18510  vite      LISTEN" },
-    { kind: "output", text: "TCP    0.0.0.0    5432  1201   postgres  LISTEN" },
+    { kind: "muted", text: "PROTO  ADDRESS    PORT  PID    PROCESS   STATE   LABEL" },
+    { kind: "output", text: "TCP    127.0.0.1  3000  18422  node      LISTEN  web dev" },
+    { kind: "output", text: "TCP    127.0.0.1  5173  18510  vite      LISTEN  -" },
+    { kind: "output", text: "TCP    0.0.0.0    5432  1201   postgres  LISTEN  postgres" },
   ]}
 />
 
 The table is plain, whitespace-separated text with no box-drawing • so it stays friendly to
-`grep` and `awk`. Withheld metadata shows as `-`.
+`grep` and `awk`. Withheld metadata shows as `-`. The `LABEL` column appears once you've configured
+[endpoint labels](/docs/config#endpoint-labels).
 
 ### Narrowing the list
 
 <CommandBlock
   code={
-    "kick list --port 3000\nkick list --process node\nkick list --filter scope:public\nkick list --sort pid"
+    "kick list --port 3000\nkick list --process node\nkick list --filter scope:public\nkick list --filter 'label:web family:ipv4'\nkick list --sort pid"
   }
   label="list options"
 />
@@ -78,12 +79,22 @@ so it's safe to parse.
     "child_pids": [],
     "protected": false,
     "platform": "linux",
-    "permission": "full"
+    "permission": "full",
+    "label": "web dev"
   }
 ]
 ```
 
 Missing metadata is `null`, never an empty string. An empty result is always `[]`.
+
+For the complete in-scope observation • every native TCP state, owner identity, completeness, and
+evidence gap • use `--snapshot-json` instead:
+
+<CommandBlock code={"kick list --snapshot-json"} label="full snapshot" />
+
+Snapshot mode deliberately ignores `--port`, `--process`, `--filter`, `--sort`, and
+`hide_system_processes`, and omits full command lines. See
+[Structured output](/docs/structured-output).
 
 ## Killing by port or PID
 
@@ -151,6 +162,26 @@ Normal kill still targets one PID. `--tree` adds descendant cleanup on Linux, ma
 See [Scoped kills](/docs/scoped-kills) for the Unix freeze-first and Windows Job Object safety
 details.
 
+## Watching and explaining
+
+Two read-only commands answer questions `list` can't:
+
+<CommandBlock
+  code={
+    "kick why 3000\nkick why 3000 --all-protocols --all-addresses --json\nkick watch --tcp --port 3000\nkick watch --filter state:listen --duration 30s --json"
+  }
+  label="watch and why"
+/>
+
+- `why PORT` • takes one snapshot, then attempts the exact bind and closes it immediately. It tells
+  occupied, permission denied, address unavailable, and unsupported apart, with the evidence behind
+  each verdict.
+- `watch` • polls full-state snapshots and streams `baseline`, `bind`, `release`, `replacement`, and
+  `collection_gap` events, as terminal output or NDJSON.
+
+Neither one signals a process or runs Docker. Full walkthrough:
+[Watch & Why](/docs/watch-and-why).
+
 ## How the CLI behaves
 
 - **An empty unfiltered list is success** (exit `0`) • a quiet machine isn't an error.
@@ -166,4 +197,5 @@ Kickoutchi prints a "possible related process" hint to **stderr** so JSON on std
 ## Next
 
 Want the terse index of every flag, filter, and exit code? See the
-[command reference](/docs/commands).
+[command reference](/docs/commands). Parsing the output? See
+[Structured output](/docs/structured-output).

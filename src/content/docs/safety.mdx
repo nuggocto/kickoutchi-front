@@ -76,9 +76,10 @@ Tree and group kill are ogre-sized controls: broader than one PID, so they use a
 - They are opt-in: `--tree`, `--group`, or TUI `t`/`T` for tree scope.
 - They count before signalling; cap refusals happen with zero side effects.
 - They freeze the root first, then sweep members to a fixed point.
-- They verify every stopped member's identity where PID reuse is impossible.
+- They verify every stopped member's identity where PID reuse is impossible, and pin that post-stop
+  identity for rollback, so a recycled PID is resumed rather than signalled.
 - They thaw everything on any refusal, permission problem, identity drift, protected descendant, or
-  partial metadata.
+  partial metadata, and a cleanup error names only processes whose `SIGCONT` was refused.
 - Group termination queues every `SIGTERM` before any `SIGCONT`, so parent-like members cannot wake
   up early and spawn survivors.
 
@@ -91,9 +92,14 @@ Windows tree kill uses Job Object containment rather than a freeze-first signal 
 - It preflights the confirmed root and observed tree before any Job Object assignment.
 - It refuses before commit for unsafe PIDs, protected descendants, incomplete metadata, identity
   drift, or an over-cap tree.
+- It proves Job Object freeze/thaw support on an empty disposable job before touching the target.
 - It treats assigning the root to the Job Object as the irreversible commit boundary.
-- It terminates contained members with hard termination and reports partial containment,
-  fallback-terminated, and not-terminated members honestly.
+- It freezes the committed job for a final validation sweep, closing the descendant-spawn window,
+  and reapplies `--yes` warning authorization during that sweep.
+- It withholds all termination when a live member cannot join the job, rather than terminating that
+  process individually and reopening the containment gap.
+- It terminates contained members with hard termination and reports delivered, already-exited,
+  unconfirmed, and not-terminated members separately.
 - It fails closed when missing creation-time metadata could hide a descendant inside the confirmed
   tree.
 

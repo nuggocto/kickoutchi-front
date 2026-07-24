@@ -86,9 +86,18 @@ const { title = "kick • local ports", lines, animate = false, class: className
       radial-gradient(120% 90% at 50% 0%, rgb(183 208 115 / 0.06), transparent 70%),
       var(--term-bg);
   }
+  /* Inside `.prose` (the docs body), the global `pre` rule would paint a light
+     card over the screen and leave light-on-dark text unreadable. The terminal
+     owns its own chrome, so neutralize those properties here rather than
+     carving an exception into the prose styles. */
   .screen pre {
     margin: 0;
     font: inherit;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    overflow-x: visible;
   }
   .line {
     white-space: pre-wrap;

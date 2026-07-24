@@ -1,0 +1,184 @@
+---
+title: Watch & Why
+description: The read-only observation commands • stream binds and releases, and get a real answer when a port refuses to bind.
+section: Guides
+order: 4
+mode: cli
+related:
+  - cli
+  - structured-output
+  - commands
+---
+
+import Callout from "../../components/Callout.astro";
+import CommandBlock from "../../components/CommandBlock.astro";
+import Terminal from "../../components/Terminal.astro";
+
+Two commands that never signal anything. `watch` tells you what your ports are _doing_; `why` tells
+you what's stopping a bind right now. Both read the same native snapshot the rest of Kickoutchi
+uses, and neither one runs Docker.
+
+## `why` • the real reason a bind fails
+
+`Address already in use` is a symptom with at least four different causes. `why` separates them by
+taking one snapshot, then **actually attempting the bind** and closing it immediately.
+
+<Terminal
+  title="kick why 3000"
+  lines={[
+    { kind: "command", text: "kick why 3000" },
+    { kind: "muted", text: "WHY port=3000 protocols=TCP addresses=127.0.0.1,::1 snapshot=partial" },
+    { kind: "muted", text: "scope kind=current_network_namespace identifier=net:[4026531833]" },
+    { kind: "output", text: "tcp://127.0.0.1:3000 verdict=owned certainty=proven label=web dev" },
+    { kind: "output", text: "  probe=address_in_use raw_os_error=98" },
+    { kind: "output", text: "  evidence code=visible_verified_owner source=linux_procfs" },
+    { kind: "muted", text: "    PID 18422 (node) owned the endpoint at snapshot capture" },
+    { kind: "output", text: "  evidence code=exact_bind_address_in_use source=bind_probe" },
+    { kind: "muted", text: "    the exact bind probe reported that the address is in use" },
+    { kind: "output", text: "tcp://[::1]:3000 verdict=bindable_now certainty=proven label=-" },
+    { kind: "output", text: "  evidence code=exact_bind_succeeded source=bind_probe" },
+    { kind: "output", text: "aggregate_exit_code=3" },
+  ]}
+/>
+
+Note the two rows. `127.0.0.1:3000` is taken; `[::1]:3000` is free. A tool that reports "port 3000
+is busy" hides exactly that distinction.
+
+### Which endpoints get probed
+
+The default query is **TCP on `127.0.0.1`, then `::1`** • the two addresses a local dev server
+usually means. Widen it explicitly:
+
+<CommandBlock
+  code={
+    "kick why 3000\nkick why 5353 --udp --address 127.0.0.1\nkick why 3000 --tcp --address :: --ipv6-only\nkick why 3000 --all-protocols --all-addresses --json"
+  }
+  label="why examples"
+/>
+
+- `--tcp` / `--udp` / `--all-protocols` • protocol selection. TCP is ordered before UDP.
+- `--address ADDR` • one literal local IP. No `%zone` syntax • use `--scope-id` instead.
+- `--all-addresses` • `127.0.0.1`, `0.0.0.0`, `::1`, then `::`. It does **not** enumerate your
+  interfaces.
+- `--scope-id ID` • a nonzero IPv6 interface index; requires one explicit IPv6 `--address`.
+- `--ipv6-only` / `--dual-stack` • mutually exclusive, and valid only when every address is IPv6.
+  With neither, you get the OS default.
+- `--reuse-address` • probe with address reuse enabled.
+
+The matrix is protocol-major and capped at **eight endpoints**.
+
+### Verdicts and certainty
+
+Every endpoint gets a verdict and a `certainty` that belongs to _that specific claim_:
+
+| Certainty   | Means                                                          |
+| ----------- | -------------------------------------------------------------- |
+| `proven`    | Directly observed • a probe result or a verified owner.        |
+| `estimated` | Derived from a bounded calculation, such as a Linux TCP timer. |
+| `heuristic` | Inferred from a pattern rather than a fact.                    |
+| `unknown`   | Not established • usually a scope or permission limit.         |
+
+Verdicts distinguish bindable, occupied, permission denied, address unavailable, unsupported
+behaviour, and other retained OS errors. Each one carries ordered `evidence` lines and, where
+something couldn't be established, `gap` lines naming what's missing.
+
+<Callout type="warning" title="A successful probe is not a reservation">
+  `verdict=bindable_now` means the exact bind succeeded **and was immediately closed**. It is a fact
+  about one instant. Another process can take the endpoint a millisecond later, and `why` makes no
+  claim otherwise.
+</Callout>
+
+### Exit codes
+
+`why` uses the shared [exit-code contract](/docs/commands#exit-codes) with one extra rule: for a
+multi-endpoint query, the aggregate is the worst result present. Precedence is `1`, then `4`, then
+`3`, and `0` only when **every** endpoint proved bindable.
+
+## `watch` • ports changing hands
+
+`watch` polls full-state snapshots and emits an event whenever something changes.
+
+<Terminal
+  title="kick watch --tcp --port 3000"
+  lines={[
+    { kind: "command", text: "kick watch --tcp --port 3000" },
+    {
+      kind: "output",
+      text: "BIND TCP 127.0.0.1:3000 listen owners=18422 label=web dev filter=matched certainty=proven",
+    },
+    {
+      kind: "output",
+      text: "RELEASE TCP 127.0.0.1:3000 listen owners=18422 label=web dev filter=matched certainty=proven",
+    },
+  ]}
+/>
+
+<CommandBlock
+  code={
+    "kick watch\nkick watch --tcp --address 127.0.0.1 --port 3000\nkick watch --filter label:web --interval 500ms\nkick watch --filter state:established --duration 30s --json"
+  }
+  label="watch examples"
+/>
+
+### Events
+
+| Event            | Emitted when                                                          |
+| ---------------- | --------------------------------------------------------------------- |
+| `baseline`       | The first valid snapshot, describing what was already open.           |
+| `bind`           | An endpoint appeared.                                                 |
+| `release`        | An endpoint disappeared.                                              |
+| `replacement`    | The same endpoint is now held by a different owner identity.          |
+| `collection_gap` | A poll failed. The last valid snapshot is kept rather than discarded. |
+
+`replacement` exists because a PID alone isn't identity. Kickoutchi compares PID **plus** a
+start marker, so a recycled PID on the same port is reported as a replacement instead of silently
+looking like nothing happened.
+
+### Timing
+
+- `--interval` accepts `100ms..=60s`; the default is `1s`.
+- `--duration` accepts `100ms..=7d`. Without it, `watch` runs until Ctrl-C.
+- Polls never overlap. If collection is slower than your interval, the next poll waits rather than
+  building a backlog.
+
+<Callout type="note" title="Polling, not a kernel event feed">
+  A socket that opens and closes between two polls is never seen, several changes can collapse into
+  one net difference, and the observation times bracket a **collection attempt** rather than the
+  exact kernel event. Tighten `--interval` to narrow the window; you can't close it.
+</Callout>
+
+### Failure and recovery
+
+Collection can fail transiently. `watch` is explicit about it rather than fabricating events:
+
+- A failed **initial** collection emits nothing and exits `1`.
+- After a valid baseline, a failed poll emits `collection_gap`, **keeps the last valid snapshot**,
+  and retries. Recovery compares against that retained snapshot, so a transient failure can't
+  manufacture a wave of false `release` events.
+- The **third consecutive** failure flushes its gap and exits `1`.
+- Collection gaps bypass endpoint filters • you always learn that you stopped seeing.
+
+Ctrl-C, duration expiry, and a closed stdout consumer (`kick watch --json | head`) all exit
+successfully.
+
+### Filtering
+
+`watch` accepts the shared [filter grammar](/docs/commands#filters) plus a watch-only `state:`
+field covering every native TCP state:
+
+<CommandBlock
+  code={
+    "listen bound closed syn_sent syn_received established fin_wait1 fin_wait2\nclose_wait closing last_ack time_wait delete_tcb new_syn_received unknown"
+  }
+  lang="text"
+  label="state: values"
+/>
+
+When a filter depends on a fact Kickoutchi couldn't read • an owner PID, a process name • the event
+is emitted with `filter=indeterminate` rather than being dropped. A definite non-match is still
+suppressed. You are told when a filter _might_ have hidden something.
+
+## Next
+
+Both commands have machine-readable output. See [Structured output](/docs/structured-output) for
+the `kickoutchi.watch_event/1` and `kickoutchi.why/1` schemas.

@@ -38,8 +38,10 @@ export const FOOTER_NAV: FooterGroup[] = z.array(footerGroupSchema).parse([
     items: [
       { label: "TUI walkthrough", href: "/docs/tui" },
       { label: "CLI walkthrough", href: "/docs/cli" },
+      { label: "Watch & Why", href: "/docs/watch-and-why" },
       { label: "Scoped kills", href: "/docs/scoped-kills" },
       { label: "Command reference", href: "/docs/commands" },
+      { label: "Structured output", href: "/docs/structured-output" },
       { label: "Troubleshooting", href: "/docs/troubleshooting" },
     ],
   },

@@ -1,13 +1,13 @@
 ---
 title: Command reference
-description: A compact index of binaries, list/inspect/kill options, scoped kill flags, filters, JSON fields, and exit codes.
+description: A compact index of binaries, list/kill/inspect/watch/why options, scoped kill flags, filters, JSON fields, and exit codes.
 section: Reference
 order: 1
 mode: cli
 related:
   - cli
-  - scoped-kills
-  - config
+  - watch-and-why
+  - structured-output
 ---
 
 import CommandBlock from "../../components/CommandBlock.astro";
@@ -39,15 +39,19 @@ Print open ports and exit.
 
 <CommandBlock code={"kick list [OPTIONS]"} lang="text" label="usage" />
 
-| Option           | Description                                                   |
-| ---------------- | ------------------------------------------------------------- |
-| `--port PORT`    | Only rows bound to this exact port.                           |
-| `--process TEXT` | Only rows whose process name contains the text.               |
-| `--filter TEXT`  | TUI-style search text or structured filters (below).          |
-| `--sort MODE`    | Sort order (below). Defaults to your config's `default_sort`. |
-| `--json`         | Print stable JSON instead of a table.                         |
+| Option            | Description                                                                 |
+| ----------------- | --------------------------------------------------------------------------- |
+| `--port PORT`     | Only rows bound to this exact port.                                         |
+| `--process TEXT`  | Only rows whose process name contains the text.                             |
+| `--filter TEXT`   | TUI-style search text or structured filters (below).                        |
+| `--sort MODE`     | Sort order (below). Defaults to your config's `default_sort`.               |
+| `--json`          | Print the legacy visible-row `kickoutchi.list/1` array.                     |
+| `--snapshot-json` | Print the complete, unfiltered `kickoutchi.snapshot/1` observation instead. |
 
 An empty **unfiltered** list exits `0`. An empty **filtered** result exits `3`.
+
+`--snapshot-json` ignores `--port`, `--process`, `--filter`, `--sort`, and `hide_system_processes`
+by design, and omits full command lines. See [Structured output](/docs/structured-output).
 
 ## `kill`
 
@@ -89,28 +93,98 @@ Exactly one of `--pid` / `--port` is required.
 `inspect --pid` is read-only and can inspect a portless supervisor. `inspect --port` follows the
 same target-resolution rules as `kill --port`.
 
+## `watch`
+
+Stream bounded socket changes until interrupted or the duration expires. Read-only.
+
+<CommandBlock code={"kick watch [OPTIONS]"} lang="text" label="usage" />
+
+| Option              | Description                                                                     |
+| ------------------- | ------------------------------------------------------------------------------- |
+| `--tcp` / `--udp`   | Protocol selection. **Neither** flag means both; `--tcp --udp` also means both. |
+| `--address ADDRESS` | Match this literal normalized IP address across IPv6 scopes.                    |
+| `--scope-id ID`     | Narrow an explicit IPv6 address to this nonzero interface index.                |
+| `--port PORT`       | Match this exact nonzero port.                                                  |
+| `--filter TEXT`     | Plain or structured full-state filters, including watch-only `state:`.          |
+| `--interval DUR`    | Poll every `100ms..=60s`. Default `1s`.                                         |
+| `--duration DUR`    | Stop after `100ms..=7d` instead of waiting for Ctrl-C.                          |
+| `--json`            | Emit `kickoutchi.watch_event/1` NDJSON to stdout; diagnostics stay on stderr.   |
+
+Events are `baseline`, `bind`, `release`, `replacement`, and `collection_gap`. A failed initial
+collection exits `1`; after a valid baseline, the **third consecutive** failure exits `1`. Ctrl-C,
+duration expiry, and a closed consumer exit `0`. Docker is never invoked in the polling loop.
+
+## `why`
+
+Explain whether exact local endpoints are bindable now. Read-only apart from a temporary bind that
+is closed immediately.
+
+<CommandBlock code={"kick why <PORT> [OPTIONS]"} lang="text" label="usage" />
+
+| Option              | Description                                                              |
+| ------------------- | ------------------------------------------------------------------------ |
+| `--tcp`             | TCP only (the default), ordered before UDP in a matrix.                  |
+| `--udp`             | UDP endpoints only.                                                      |
+| `--all-protocols`   | TCP then UDP.                                                            |
+| `--address ADDRESS` | One literal local IP. No `%zone` syntax • use `--scope-id`.              |
+| `--all-addresses`   | `127.0.0.1`, `0.0.0.0`, `::1`, then `::`. Does not enumerate interfaces. |
+| `--scope-id ID`     | Nonzero IPv6 interface index; requires one explicit IPv6 `--address`.    |
+| `--ipv6-only`       | Require IPv6-only behaviour. Valid only when every address is IPv6.      |
+| `--dual-stack`      | Require dual-stack behaviour. Mutually exclusive with `--ipv6-only`.     |
+| `--reuse-address`   | Enable address reuse for the diagnostic bind.                            |
+| `--json`            | Print one `kickoutchi.why/1` document instead of human evidence.         |
+
+The default query probes TCP on `127.0.0.1`, then `::1`. The matrix is protocol-major and capped at
+**eight endpoints**. For a multi-endpoint query the aggregate exit code takes the worst result:
+`1`, then `4`, then `3`, and `0` only when every endpoint proved bindable. See
+[Watch & Why](/docs/watch-and-why).
+
 ## Filters
 
-Used by `list --filter` and the TUI search box. Multiple terms are combined with AND. Bare words
-are matched as substrings across the visible fields.
+Used by `list --filter`, `watch --filter`, and the TUI search box. Multiple terms are combined with
+AND, and so are repeated fields. Bare words are matched as substrings across the visible fields.
 
-| Filter                                            | Matches                                |
-| ------------------------------------------------- | -------------------------------------- |
-| `pid:18422`                                       | Exact PID                              |
-| `port:3000`                                       | Exact port                             |
-| `proto:tcp` / `proto:udp`                         | Protocol                               |
-| `scope:public` / `scope:local` / `scope:loopback` | Bind scope                             |
-| `protected:true` / `protected:false`              | Protected status                       |
-| `parent:node`                                     | Parent process name or PID (substring) |
+| Filter                                            | Matches                                         |
+| ------------------------------------------------- | ----------------------------------------------- |
+| `pid:18422`                                       | Exact PID                                       |
+| `port:3000`                                       | Exact port                                      |
+| `proto:tcp` / `proto:udp`                         | Protocol                                        |
+| `scope:public` / `scope:local` / `scope:loopback` | Bind scope                                      |
+| `protected:true` / `protected:false`              | Protected status                                |
+| `parent:node`                                     | Parent process name or PID (substring)          |
+| `label:web`                                       | Configured endpoint label                       |
+| `address:127.0.0.1`                               | Parsed, normalized IP address • not a substring |
+| `scope_id:3`                                      | Numeric IPv6 interface scope                    |
+| `family:ipv4` / `family:ipv6`                     | Normalized address family                       |
+| `state:established`                               | **`watch` only** • native socket state          |
 
 <CommandBlock
   code={
-    "kick list --filter 3000\nkick list --filter port:3000\nkick list --filter proto:udp\nkick list --filter scope:public\nkick list --filter protected:true\nkick list --filter parent:node"
+    "kick list --filter 3000\nkick list --filter port:3000\nkick list --filter 'label:web family:ipv4'\nkick list --filter address:127.0.0.1\nkick list --filter 'proto:tcp family:ipv6 parent:node'\nkick watch --filter state:listen"
   }
   label="filter examples"
 />
 
-An invalid structured value (e.g. `port:not-a-port`) is a usage error (exit `2`).
+`address:` matching parses the address rather than comparing text, so `address:::1` and
+`address:0:0:0:0:0:0:0:1` are the same query, and IPv4-mapped IPv6 addresses normalize to IPv4.
+
+`state:` is **reserved** for `watch`. `list` and the TUI reject it rather than quietly treating it
+as plain search text. Accepted values:
+
+<CommandBlock
+  code={
+    "listen bound closed syn_sent syn_received established fin_wait1 fin_wait2\nclose_wait closing last_ack time_wait delete_tcb new_syn_received unknown"
+  }
+  lang="text"
+  label="state: values"
+/>
+
+Filter expressions are bounded to **256 UTF-8 bytes**. An invalid structured value (e.g.
+`port:not-a-port`) is a usage error (exit `2`).
+
+In `watch`, an owner-dependent term must be satisfied by the same conceptual owner • two different
+owners cannot each satisfy half of one expression. When a needed owner or metadata fact is missing,
+the event is emitted as `indeterminate` instead of being silently dropped.
 
 ## Sort modes
 
@@ -135,28 +209,33 @@ key sink to the bottom. In the TUI, `s` cycles through these in order.
 | `command_line`        | string \| `null`                      |
 | `parent_pid`          | number \| `null`                      |
 | `parent_process_name` | string \| `null`                      |
-| `child_pids`          | number[]                              |
+| `child_pids`          | number[] • always `[]`                |
 | `protected`           | boolean                               |
 | `platform`            | `"linux"` \| `"macos"` \| `"windows"` |
 | `permission`          | `"full"` \| `"partial"`               |
+| `label`               | string \| `null`                      |
 
-Missing metadata is `null`. An empty result is `[]`.
+Missing metadata is `null`. An empty result is `[]`. `label` is the only field added in 1.3.0;
+`child_pids` is a frozen `1.x` compatibility field with no data behind it.
+
+Three more contracts • `kickoutchi.snapshot/1`, `kickoutchi.watch_event/1`, and `kickoutchi.why/1`
+• are documented in [Structured output](/docs/structured-output).
 
 ## Exit codes
 
 The script-facing contract • these numbers don't drift.
 
-| Code | Meaning                                   |
-| ---- | ----------------------------------------- |
-| `0`  | Success                                   |
-| `1`  | Failure                                   |
-| `2`  | Invalid arguments                         |
-| `3`  | No match                                  |
-| `4`  | Permission denied / ownership unavailable |
-| `5`  | Kill cancelled                            |
-| `6`  | Protected process needs confirmation      |
+| Code | Meaning                                                      |
+| ---- | ------------------------------------------------------------ |
+| `0`  | Command completed and its requested positive condition holds |
+| `1`  | Operational or internal failure                              |
+| `2`  | Invalid arguments                                            |
+| `3`  | No match, or a requested endpoint is unavailable             |
+| `4`  | Permissions prevented a reliable answer                      |
+| `5`  | Kill cancelled                                               |
+| `6`  | Protected process needs confirmation                         |
 
 ## Config
 
-Defaults for sort, refresh interval, protected processes, and more live in a config file. See
-[Configuration](/docs/config).
+Defaults for sort, refresh interval, protected processes, and endpoint labels live in a config
+file. See [Configuration](/docs/config).

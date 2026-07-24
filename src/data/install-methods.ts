@@ -100,23 +100,23 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
   {
     id: "aur-bin",
     name: "AUR • kickoutchi-bin",
-    status: "paused",
+    status: "available",
     platforms: ["linux"],
     group: "package",
     summary:
       "Installs the prebuilt binary from the GitHub Release archive. The fast path for Arch users.",
     commands: [{ code: "yay -S kickoutchi-bin", lang: "sh" }],
-    note: "v1.2.0 templates are verified and ready, but publishing is paused while AUR registration remains locked.",
+    note: "Any AUR helper works; swap yay for paru or makepkg. AUR packages are pushed by hand after the GitHub Release, so they can land shortly after a new version.",
   },
   {
     id: "aur-source",
     name: "AUR • kickoutchi",
-    status: "paused",
+    status: "available",
     platforms: ["linux"],
     group: "package",
     summary: "Builds from the release source archive with Cargo.",
     commands: [{ code: "yay -S kickoutchi", lang: "sh" }],
-    note: "Same publication hold as kickoutchi-bin. The verified v1.2.0 AUR templates live in packaging/arch/ for maintainers who want to build or review locally.",
+    note: "Pick this one if you'd rather compile than trust a prebuilt archive. Both PKGBUILDs are maintained in packaging/arch/ in the repository.",
   },
   {
     id: "homebrew",

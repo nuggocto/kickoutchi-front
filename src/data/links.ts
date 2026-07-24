@@ -13,7 +13,7 @@ export const SITE = {
   binary: "kickoutchi",
   shortBinary: "kick",
   /** Latest published release; mirrors the repository release version. */
-  version: "1.2.0",
+  version: "1.3.0",
   author: "nugget",
 } as const;
 
@@ -28,6 +28,8 @@ const linksSchema = z.object({
   license: z.url(),
   readme: z.url(),
   aurPackaging: z.url(),
+  aurBin: z.url(),
+  aurSource: z.url(),
 });
 
 export const LINKS = linksSchema.parse({
@@ -38,6 +40,8 @@ export const LINKS = linksSchema.parse({
   license: `${REPO}/blob/${REPO_BRANCH}/LICENSE`,
   readme: `${REPO}/blob/${REPO_BRANCH}/README.md`,
   aurPackaging: `${REPO}/tree/${REPO_BRANCH}/packaging/arch`,
+  aurBin: "https://aur.archlinux.org/packages/kickoutchi-bin",
+  aurSource: "https://aur.archlinux.org/packages/kickoutchi",
 });
 
 /** Direct release-download URLs used by the install flow. */

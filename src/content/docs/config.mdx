@@ -1,11 +1,12 @@
 ---
 title: Configuration
-description: The optional config file • location, precedence, every key, and the protected-process list.
+description: The optional config file • location, precedence, every key, endpoint labels, and the protected-process list.
 section: Reference
 order: 2
 mode: general
 related:
   - commands
+  - watch-and-why
   - safety
 ---
 
@@ -50,6 +51,7 @@ Every key is optional. Anything you leave out keeps its default.
 | `hide_system_processes`    | boolean          | `false`       | Hide conservative system/service rows from the default view.                                      |
 | `confirm_force_kill`       | boolean          | `true`        | Require the typed `force` confirmation for force kills (when `--yes` is absent).                  |
 | `protected_processes`      | string[]         | _(see below)_ | Extra process names that require stronger confirmation. **Added** to the built-in list.           |
+| `[[ports]]`                | table array      | _(none)_      | Endpoint labels. Up to 256 selectors • see [below](#endpoint-labels).                             |
 
 Config files are capped at **64 KiB**. Larger files are rejected instead of being partially parsed
 or allowed to consume unbounded memory.
@@ -63,7 +65,13 @@ or allowed to consume unbounded memory.
 default_sort = "scope"
 hide_system_processes = true
 confirm_force_kill = true
-protected_processes = ["redis", "mysqld"]`}
+protected_processes = ["redis", "mysqld"]
+
+[[ports]]
+protocol = "tcp"
+address = "127.0.0.1"
+port = 3000
+label = "web dev"`}
 />
 
 <Callout type="warning" title="Typos won't pass silently">
@@ -72,6 +80,61 @@ protected_processes = ["redis", "mysqld"]`}
   a bad `default_sort`). A broken file is a hard error (exit `1`) rather than a quiet fallback that
   hides your mistake.
 </Callout>
+
+## Endpoint labels
+
+`5432` is a port number. `postgres` is a name you'll recognise at 2am. Each `[[ports]]` block gives
+one endpoint a label that then follows it through the CLI table, sufficiently wide TUI tables,
+plain search, filters, `list --json`, snapshots, watch events, and `why` output.
+
+<CommandBlock
+  lang="toml"
+  label="endpoint labels"
+  code={`[[ports]]
+protocol = "tcp"
+address = "127.0.0.1"
+port = 3000
+label = "web dev"
+
+[[ports]]
+protocol = "tcp"
+address = "\*"
+port = 3000
+label = "web service"
+
+[[ports]]
+protocol = "udp"
+address = "fe80::1"
+scope_id = 3
+port = 5353
+label = "mDNS"`}
+/>
+
+| Field      | Required | Meaning                                                              |
+| ---------- | -------- | -------------------------------------------------------------------- |
+| `protocol` | yes      | `"tcp"` or `"udp"`. The two are matched separately.                  |
+| `address`  | yes      | An exact literal IPv4/IPv6 address, or `"*"` for any address.        |
+| `port`     | yes      | The exact port.                                                      |
+| `scope_id` | no       | Nonzero IPv6 interface index. Valid only with an exact IPv6 address. |
+| `label`    | yes      | The display text.                                                    |
+
+Matching rules:
+
+- **Exact beats wildcard.** With both blocks above, `127.0.0.1:3000` resolves to `web dev` and any
+  other address on TCP 3000 resolves to `web service`.
+- **IPv4-mapped IPv6 addresses normalize to IPv4** before duplicate detection and matching.
+- **Hostnames, DNS names, CIDR ranges, interface names, and `%zone` syntax are rejected.** Use
+  `scope_id` for an IPv6 scope.
+- Duplicate selectors are an error, not a last-one-wins surprise.
+
+<Callout type="note" title="Labels are validated, not just stored">
+  A label must be nonempty, safe, visible Unicode of at most **128 UTF-8 bytes**. Control
+  characters, terminal escapes, bidi controls, and zero-width text are rejected outright • a config
+  file can't smuggle terminal control sequences into your port table. Human display clips to 32
+  terminal columns; structured output keeps the complete label.
+</Callout>
+
+Up to **256** selectors are accepted.
 
 ## Protected processes
 

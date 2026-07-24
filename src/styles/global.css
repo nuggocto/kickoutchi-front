@@ -357,7 +357,11 @@
   padding: 0.1rem 0.35rem;
   border-radius: 0.35rem;
   color: var(--fg);
-  white-space: nowrap;
+  /* `pre-wrap`, not `nowrap`: a short token like `--tree` has no space to break
+     at and still stays intact, while a long space-separated string (a key-hint
+     line, a filter list) wraps instead of pushing the page wider than the
+     viewport on a phone. */
+  white-space: pre-wrap;
 }
 .prose pre {
   margin-top: 1.25rem;

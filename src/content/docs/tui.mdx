@@ -31,15 +31,16 @@ The screen is split into four regions, top to bottom:
 
 ### Table columns
 
-| Column    | What it shows                                   |
-| --------- | ----------------------------------------------- |
-| `PROTO`   | `TCP` (listening) or `UDP` (bound)              |
-| `ADDRESS` | The bound local address                         |
-| `PORT`    | The local port                                  |
-| `PID`     | Owning process ID, or `-` when the OS won't say |
-| `PROCESS` | Process name, or `-` when withheld              |
-| `STATE`   | `LISTEN` or `BOUND`                             |
-| `SCOPE`   | `public`, `local`, or `loopback`                |
+| Column    | What it shows                                                    |
+| --------- | ---------------------------------------------------------------- |
+| `PROTO`   | `TCP` (listening) or `UDP` (bound)                               |
+| `ADDRESS` | The bound local address                                          |
+| `PORT`    | The local port                                                   |
+| `PID`     | Owning process ID, or `-` when the OS won't say                  |
+| `PROCESS` | Process name, or `-` when withheld                               |
+| `STATE`   | `LISTEN` or `BOUND`                                              |
+| `SCOPE`   | `public`, `local`, or `loopback`                                 |
+| `LABEL`   | Your configured endpoint label, when the terminal is wide enough |
 
 Rows are colour-coded: **protected** processes and rows with **partial metadata** (visible socket,
 unreadable owner) are tinted so you notice them before acting.
@@ -61,15 +62,19 @@ Press `/` to start editing the filter, then type. The table narrows on every key
 - `Enter` keeps the filter and returns to the table.
 - `Esc` clears it.
 
-Plain text matches across port, address, PID, process, path, command line, and parent. You can
-also use the same structured filters as the CLI:
+Plain text matches across port, address, PID, process, path, command line, parent, and label. You
+can also use the same structured filters as the CLI:
 
 <CommandBlock
-  code={"port:3000   proto:udp   scope:public   protected:true   parent:node"}
+  code={
+    "port:3000   proto:udp   scope:public   protected:true   parent:node\nlabel:web   address:127.0.0.1   scope_id:3   family:ipv6"
+  }
   lang="text"
   label="filter syntax"
 />
 
+Terms combine with AND, and `address:` compares parsed addresses rather than text. `state:` is
+reserved for `kick watch` and is rejected here rather than being treated as a plain search word.
 See the [command reference](/docs/commands#filters) for the full grammar.
 
 ## Sorting

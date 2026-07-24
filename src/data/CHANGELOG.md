@@ -7,12 +7,88 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.0] - 2026-07-11
+## [1.3.0] - 2026-07-24
 
 ### Added
 
-- A clearly labeled single-machine performance reference based on 2,000 local
-  runs of the packaged Linux release-candidate binary.
+- `watch`, a bounded polling view that streams `baseline`, `bind`, `release`,
+  `replacement`, and `collection_gap` events as terminal output or versioned
+  `kickoutchi.watch_event/1` NDJSON. Intervals are `100ms..=60s`, optional
+  durations are `100ms..=7d`, and Ctrl-C, duration expiry, and a closed consumer
+  all exit cleanly.
+- `why PORT`, which combines one native snapshot with immediate TCP/UDP bind
+  probes to explain whether an exact endpoint is bindable right now. It reports
+  bindable, occupied, permission denied, address unavailable, unsupported, and
+  retained OS errors, each with ordered evidence and a certainty of `proven`,
+  `estimated`, `heuristic`, or `unknown`.
+- `list --snapshot-json`, one `kickoutchi.snapshot/1` document holding the
+  complete in-scope native observation: every TCP state, owner identity,
+  completeness, process metadata, evidence gaps, scope limitations, and labels.
+  Snapshot mode bypasses list filters, sorting, and system-row hiding, and does
+  not serialize full command lines.
+- Endpoint labels configured with up to 256 `[[ports]]` selectors. Exact
+  addresses beat `"*"` wildcards, IPv6 scopes are matched by numeric
+  `scope_id`, and labels are validated safe Unicode of at most 128 bytes.
+  Labels appear in the CLI, wide TUI tables, search, filters, legacy JSON,
+  snapshots, watch events, and why output.
+- Shared `label:`, `address:`, `scope_id:`, and `family:` filters across list,
+  TUI search, and watch, plus the watch-only `state:` vocabulary covering every
+  native TCP state.
+
+### Changed
+
+- List, TUI, inspect, and kill now read one bounded, consistency-checked native
+  snapshot. Unprivileged `kill --port` keeps working when the endpoint has one
+  verified owner; unrelated unreadable host processes no longer turn the
+  flagship port-kill path into a root-only operation.
+- Windows tree kill freezes the committed Job Object for its final validation
+  sweep, closing the descendant-spawn window before whole-job termination. A
+  live member that cannot join the job now withholds all termination instead of
+  receiving racy individual fallback termination.
+- `list --json` documents `child_pids` as what it always was: a frozen `1.x`
+  compatibility field that is `[]` on every row and platform. The wire output is
+  unchanged.
+- Structured output states permanent platform limits rather than implying
+  machine-wide visibility. Linux excludes other network namespaces, native
+  Windows excludes the WSL network stack, macOS is process-first, watch polling
+  can miss transient activity, and a why probe cannot reserve an endpoint.
+
+### Fixed
+
+- Tree and group cleanup no longer reports a member that exited under the freeze
+  as a thaw failure; only a refused `SIGCONT` leaves a process that may still be
+  stopped.
+- macOS termination distinguishes a process that exits between `SIGTERM` and the
+  guarded identity check from an unreadable or recycled PID, and resumes a
+  detected PID-reuse replacement without signalling it.
+- Inspect joins process, port, and command-line observations by PID and start
+  identity, refusing a changed port owner instead of attributing sockets to a
+  recycled PID.
+- Confirmation input applies its 128-byte limit to the entered UTF-8 payload
+  rather than counting the terminal line ending.
+- Linux treats restricted or unverifiable procfs and PID-namespace visibility as
+  partial ownership instead of a false complete empty result, and parses the
+  bounded ASCII tail of `/proc/<pid>/stat` from bytes so a non-UTF-8 process name
+  cannot abort collection.
+- Windows converts IPv6 scope IDs from network byte order, normalizes
+  IPv4-mapped endpoints, retains ownerless rows as partial evidence, and never
+  treats PID `0` as a process.
+- Docker enrichment stops retaining at the first byte past each cap, hands
+  timed-out children to capped cleanup workers that own them through confirmed
+  reap, and keeps IPv4 and IPv6 publications separate.
+
+### Security
+
+- Docker enrichment is pinned to a bounded local Unix socket or Windows named
+  pipe, with ambient host, context, and TLS selectors removed. A remote Docker
+  context can no longer be presented as local container ownership.
+- Release jobs install an exact locked cargo-dist version, Homebrew validation
+  runs without tap credentials, and repository and tap tokens exist only on the
+  specific steps that plan or publish.
+- Added a private vulnerability-reporting policy and documented the sensitivity
+  of command lines exposed by the legacy JSON compatibility interface.
+
+## [1.2.0] - 2026-07-11
 
 ### Changed
 

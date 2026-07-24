@@ -37,6 +37,24 @@ const demo: TerminalLine[] = [
   { kind: "success", text: "confirmed target ports are no longer visible" },
 ];
 
+// Real `kick why` output for an occupied port. Capture timestamps and the
+// unchanged scope-limitation lines are dropped so the verdicts stay legible.
+const whyDemo: TerminalLine[] = [
+  { kind: "command", text: "kick why 3000" },
+  { kind: "muted", text: "WHY port=3000 protocols=TCP addresses=127.0.0.1,::1 snapshot=partial" },
+  { kind: "muted", text: "scope kind=current_network_namespace identifier=net:[4026531833]" },
+  { kind: "output", text: "tcp://127.0.0.1:3000 verdict=owned certainty=proven label=web dev" },
+  { kind: "output", text: "  probe=address_in_use raw_os_error=98" },
+  { kind: "output", text: "  evidence code=visible_verified_owner source=linux_procfs" },
+  { kind: "muted", text: "    PID 18422 (node) owned the endpoint at snapshot capture" },
+  { kind: "output", text: "  evidence code=exact_bind_address_in_use source=bind_probe" },
+  { kind: "muted", text: "    the exact bind probe reported that the address is in use" },
+  { kind: "output", text: "tcp://[::1]:3000 verdict=bindable_now certainty=proven label=-" },
+  { kind: "output", text: "  evidence code=exact_bind_succeeded source=bind_probe" },
+  { kind: "muted", text: "    the exact bind probe succeeded" },
+  { kind: "output", text: "aggregate_exit_code=3" },
+];
+
 const safety = [
   "Every termination is confirmed — and --yes still prints the banner, warnings, and fresh-scan refusals.",
   "PID 0, PID 1, Kickoutchi's own PID, and Windows PID 4 are blocked outright.",
@@ -54,12 +72,41 @@ const ticker = [
   "SIGTERM → 3 procs",
   "port :3000 free ✓",
   "exit 0",
+  "kick why 3000",
+  "verdict: owned",
+  "kick watch --json",
+  "bind → release → replacement",
+  "label: web dev",
   "kick list --json",
   "no guessed PIDs",
   "PID 1 is off-limits",
   "tree scope: opt-in",
   "kick kill --port 5173",
   "confirmed, always",
+];
+
+// The 1.3.0 headline: three read-only ways to understand a port, plus labels.
+const whatsNew = [
+  {
+    command: "kick why 3000",
+    detail:
+      "One snapshot plus a real bind probe. Separates occupied, permission denied, unavailable, and unsupported — with the evidence and certainty behind each verdict.",
+  },
+  {
+    command: "kick watch --json",
+    detail:
+      "Bounded polling that streams bind, release, replacement, and collection-gap events as one versioned NDJSON object per line.",
+  },
+  {
+    command: "kick list --snapshot-json",
+    detail:
+      "The complete in-scope observation: every native TCP state, owner identity, completeness, evidence gaps, and scope limitations.",
+  },
+  {
+    command: 'label = "web dev"',
+    detail:
+      "Name exact endpoints or protocol-and-port wildcards in config. Labels follow the port through every surface, including filters.",
+  },
 ];
 
 // Bento spans: 4-col grid on lg, mixed widths so the wall has a rhythm.
@@ -88,9 +135,9 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
           </span>
         </h1>
         <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted lg:mx-0">
-          Kickoutchi shows which process owns each open TCP/UDP port, lets you inspect the family
-          around it, then terminates stale port-owning processes safely — from a guided TUI or a
-          script-friendly CLI.
+          Kickoutchi shows which process owns each open TCP/UDP port, explains why a port won't
+          bind, watches ports change hands, and terminates stale port-owning processes safely —
+          from a guided TUI or a script-friendly CLI.
         </p>
         <div class="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
           <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
@@ -165,10 +212,49 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
     </div>
   </section>
 
-  <!-- 02 · Two ways in -->
+  <!-- 02 · Ask why -->
   <section class="mx-auto max-w-6xl px-4 py-12">
     <div class="mb-10 flex items-center gap-4">
-      <h2 class="pixel-label shrink-0 !text-base">02 · Two ways in</h2>
+      <h2 class="pixel-label shrink-0 !text-base">02 · Ask why</h2>
+      <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
+    </div>
+    <div class="grid items-start gap-10 lg:grid-cols-[1.15fr_0.85fr]">
+      <Terminal title="kick • why is :3000 refusing me?" lines={whyDemo} />
+      <div class="lg:sticky lg:top-24">
+        <h3 class="text-3xl font-bold tracking-tight">
+          "Address already in use" is not an explanation.
+        </h3>
+        <p class="mt-4 leading-relaxed text-muted">
+          <code class="font-mono text-sm text-fg">kick why</code> takes one native snapshot, then
+          actually attempts the bind and immediately closes it. Occupied, permission denied,
+          address unavailable, and unsupported are four different answers, and each verdict shows
+          the evidence and certainty it rests on.
+        </p>
+        <ul class="mt-6 space-y-3 text-sm leading-relaxed text-muted">
+          <li>
+            <code class="font-mono text-fg">verdict=owned</code> — the snapshot named the owner{" "}
+            <em>and</em> the probe was refused.
+          </li>
+          <li>
+            <code class="font-mono text-fg">verdict=bindable_now</code> — the exact bind succeeded.
+            That is a fact about one moment, not a reservation.
+          </li>
+          <li>
+            <code class="font-mono text-fg">certainty=</code> is attached to the specific claim
+            carrying it, so a guess never reads like a proof.
+          </li>
+        </ul>
+        <ButtonLink href="/docs/watch-and-why" variant="secondary" size="sm" class="mt-6">
+          Watch &amp; Why
+        </ButtonLink>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 · Two ways in -->
+  <section class="mx-auto max-w-6xl px-4 py-12">
+    <div class="mb-10 flex items-center gap-4">
+      <h2 class="pixel-label shrink-0 !text-base">03 · Two ways in</h2>
       <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
     </div>
     <div class="mx-auto mb-8 max-w-2xl text-center lg:mx-0 lg:text-left">
@@ -182,7 +268,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         icon="tui"
         eyebrow="The swamp tour"
         title="Guided TUI"
-        description="Run either binary with no command to open the terminal UI. Browse, search, sort, inspect details, and use x/X for one PID or t/T for Linux/macOS tree cleanup."
+        description="Run either binary with no command to open the terminal UI. Browse, search by label or address, sort, inspect details, and use x/X for one PID or t/T for Linux/macOS tree cleanup."
         command="kickoutchi"
         href="/docs/tui"
         ctaLabel="Explore the TUI"
@@ -191,18 +277,18 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         icon="cli"
         eyebrow="The swamp shortcut"
         title="Scriptable CLI"
-        description="Print ports as a table or stable JSON, inspect process families, and choose process, tree, or Unix group scope with a fixed exit-code contract."
-        command="kick list --json"
+        description="Print ports as a table or stable JSON, ask why an endpoint won't bind, watch binds and releases as NDJSON, and choose process, tree, or Unix group scope with a fixed exit-code contract."
+        command="kick list --filter 'label:web family:ipv4'"
         href="/docs/cli"
         ctaLabel="Explore the CLI"
       />
     </div>
   </section>
 
-  <!-- 03 · The arsenal -->
+  <!-- 04 · The arsenal -->
   <section class="mx-auto max-w-6xl px-4 py-12">
     <div class="mb-10 flex items-center gap-4">
-      <h2 class="pixel-label shrink-0 !text-base">03 · The arsenal</h2>
+      <h2 class="pixel-label shrink-0 !text-base">04 · The arsenal</h2>
       <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
     </div>
     <div class="mx-auto mb-8 max-w-2xl text-center lg:mx-0 lg:text-left">
@@ -215,41 +301,37 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
 
     <div class="pocket-panel mt-6 grid gap-6 p-6 sm:p-8 lg:grid-cols-[0.8fr_1.2fr]">
       <div>
-        <p class="pixel-label">v1.2.0 reference run</p>
-        <h3 class="mt-3 text-2xl font-bold tracking-tight">Fast on the maintainer's Linux host</h3>
+        <p class="pixel-label">New in v{SITE.version}</p>
+        <h3 class="mt-3 text-2xl font-bold tracking-tight">Names, history, and explanations</h3>
         <p class="mt-3 text-sm leading-relaxed text-muted">
-          2,000 successful invocations of the packaged
-          <code class="text-fg">x86_64-unknown-linux-gnu</code> release-candidate binary on an AMD
-          Ryzen AI MAX+ 395 (16 cores / 32 threads) with 64 GiB RAM.
+          Kickoutchi 1.3.0 keeps the same TUI, <code class="text-fg">list</code>{", "}<code
+            class="text-fg">kill</code
+          >, and <code class="text-fg">inspect</code> workflows and adds three read-only ways to
+          understand a port before you touch it.
         </p>
+        <ButtonLink href="/docs/watch-and-why" variant="secondary" size="sm" class="mt-5">
+          Watch &amp; Why
+        </ButtonLink>
       </div>
-      <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <dl class="grid gap-3 sm:grid-cols-2">
         {
-          [
-            ["p50", "10.836 ms"],
-            ["p95", "12.289 ms"],
-            ["p99", "12.831 ms"],
-            ["Peak RSS", "14.45 MiB"],
-          ].map(([label, value]) => (
+          whatsNew.map((item) => (
             <div class="rounded-lg border-2 border-border-strong bg-surface-2/50 p-4">
-              <dt class="font-mono text-xs text-muted">{label}</dt>
-              <dd class="mt-2 font-mono text-lg font-bold text-fg">{value}</dd>
+              <dt class="font-mono text-sm font-bold text-fg [overflow-wrap:anywhere]">
+                {item.command}
+              </dt>
+              <dd class="mt-2 text-xs leading-relaxed text-muted">{item.detail}</dd>
             </div>
           ))
         }
       </dl>
-      <p class="text-xs leading-relaxed text-muted lg:col-span-2">
-        Single-machine startup reference, not a latency guarantee. Power state, caches, background
-        load, and the host's process, file-descriptor, and socket counts affect collection time;
-        Windows and macOS use different native collectors.
-      </p>
     </div>
   </section>
 
   <!-- 04 · Guardrails -->
   <section class="mx-auto max-w-6xl px-4 py-12">
     <div class="mb-10 flex items-center gap-4">
-      <h2 class="pixel-label shrink-0 !text-base">04 · Guardrails</h2>
+      <h2 class="pixel-label shrink-0 !text-base">05 · Guardrails</h2>
       <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
     </div>
     <div class="pocket-panel relative overflow-hidden">
@@ -295,7 +377,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
   <!-- 05 · Get it -->
   <section class="mx-auto max-w-6xl px-4 py-12">
     <div class="mb-10 flex items-center gap-4">
-      <h2 class="pixel-label shrink-0 !text-base">05 · Get it</h2>
+      <h2 class="pixel-label shrink-0 !text-base">06 · Get it</h2>
       <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
     </div>
     <div class="pocket-panel p-6 sm:p-8">

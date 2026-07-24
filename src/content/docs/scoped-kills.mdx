@@ -65,22 +65,33 @@ On Linux and macOS, the execution path is freeze-first:
 - Re-check the confirmed root right before acting.
 - Count the tree before any signal; over the cap refuses with zero side effects.
 - `SIGSTOP` the root first, then sweep descendants to a fixed point.
-- Verify each stopped member's identity while PID reuse is impossible.
+- Verify each stopped member's identity while PID reuse is impossible, and pin that post-stop
+  identity for rollback. A PID reused mid-freeze is resumed, never terminated.
 - Send `SIGTERM`, then `SIGCONT`, leaves first and root last. `--force` sends `SIGKILL` instead.
 - If anything becomes uncertain, thaw every stopped process and send no termination.
+
+A cleanup error after a thaw names only processes whose `SIGCONT` was **refused** • those are the
+ones that may still be stopped. A member that simply exited under the freeze isn't something you
+can resume, so it isn't reported as a thaw failure.
 
 On Windows, tree kill uses Job Object containment instead of pretending there is a `SIGSTOP`
 equivalent:
 
+- Prove freeze/thaw support on an empty disposable Job Object before touching the target.
 - Re-check the confirmed root and tree before the Job Object commit.
 - Refuse before commit for unsafe PIDs, protected descendants, incomplete metadata, identity drift,
   or an over-cap tree.
 - Assign the root to a Job Object as the irreversible commit boundary, then converge descendants
   into the same containment.
+- Freeze the committed job for a final bounded validation sweep, closing the descendant-spawn
+  window before termination, and reapply `--yes` warning authorization during that sweep. A late
+  child that needs fresh review withholds the whole termination.
+- Withhold all termination if a live member cannot join the job. Terminating it individually would
+  reopen the containment gap, so nothing is signalled instead.
 - Terminate contained members with `TerminateJobObject`. Windows tree termination is hard
   termination only.
-- Report partial containment, fallback termination, and not-terminated members honestly instead of
-  collapsing them into success.
+- Report delivered, already-exited, unconfirmed, and not-terminated PIDs honestly instead of
+  collapsing them into success, and attempt thaw when a post-commit step fails.
 
 ## Process-group kill
 

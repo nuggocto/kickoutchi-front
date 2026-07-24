@@ -1,0 +1,211 @@
+---
+title: Structured output
+description: The four machine-readable contracts • list JSON, full snapshots, watch NDJSON, and why documents, plus what they can expose.
+section: Reference
+order: 3
+mode: cli
+related:
+  - commands
+  - watch-and-why
+  - cli
+---
+
+import Callout from "../../components/Callout.astro";
+import CommandBlock from "../../components/CommandBlock.astro";
+
+Kickoutchi has four machine-readable interfaces. Field names and enum values are lowercase
+`snake_case` and are treated as a contract, so parsing them is safe.
+
+| Command                     | Contract                   | Form       |
+| --------------------------- | -------------------------- | ---------- |
+| `kick list --json`          | `kickoutchi.list/1`        | JSON array |
+| `kick list --snapshot-json` | `kickoutchi.snapshot/1`    | One object |
+| `kick watch --json`         | `kickoutchi.watch_event/1` | NDJSON     |
+| `kick why PORT --json`      | `kickoutchi.why/1`         | One object |
+
+Snapshot, watch, and why documents carry in-band `schema` and integer `version` fields. Legacy
+`list --json` stays a bare top-level array so existing scripts keep working.
+
+Diagnostics always go to **stderr**, so stdout stays parseable.
+
+## `kickoutchi.list/1` • the compatibility array
+
+`list --json` is the visible-row view: it honours `--port`, `--process`, `--filter`, `--sort`, and
+`hide_system_processes`, and it lists listening TCP and bound UDP sockets only.
+
+```json
+[
+  {
+    "protocol": "tcp",
+    "local_addr": "127.0.0.1",
+    "local_port": 3000,
+    "state": "listen",
+    "pid": 18422,
+    "process_name": "node",
+    "executable_path": "/usr/bin/node",
+    "command_line": "node server.js",
+    "parent_pid": 18001,
+    "parent_process_name": "pnpm",
+    "child_pids": [],
+    "protected": false,
+    "platform": "linux",
+    "permission": "full",
+    "label": "web dev"
+  }
+]
+```
+
+The only field added in 1.3.0 is nullable `label`.
+
+<Callout type="note" title="child_pids is frozen">
+  `child_pids` is a `1.x` compatibility field. It is `[]` on every row and every platform, with no
+  data behind it. Use `kick inspect` for a real process family.
+</Callout>
+
+Missing metadata is `null`, never an empty string. An empty result is `[]`.
+
+## `kickoutchi.snapshot/1` • the full observation
+
+`list --snapshot-json` emits one object describing everything Kickoutchi could see _within its
+declared scope_. It deliberately **bypasses** list filters, sorting, `hide_system_processes`, and
+the listening-TCP/bound-UDP projection • and it does **not** serialize full command lines.
+
+<CommandBlock code={"kick list --snapshot-json"} label="full snapshot" />
+
+Top-level keys:
+
+| Key                          | Contains                                                          |
+| ---------------------------- | ----------------------------------------------------------------- |
+| `schema` / `version`         | `"kickoutchi.snapshot"` and `1`.                                  |
+| `scope`                      | Observation `kind`, an `identifier`, and permanent `limitations`. |
+| `completeness`               | `complete` or `partial` **within that scope**.                    |
+| `owner_completeness`         | Whether owner attribution across the snapshot is complete.        |
+| `capture`                    | When collection started and finished.                             |
+| `sockets`                    | Every endpoint, with state, timer evidence, owners, and label.    |
+| `processes`                  | Identities, names, paths, parents, and metadata completeness.     |
+| `evidence_gaps`              | What could not be established, and what each gap affects.         |
+| `omitted_evidence_gap_count` | How many gaps were dropped by the output bound.                   |
+
+A socket entry looks like this:
+
+```json
+{
+  "endpoint": { "protocol": "tcp", "address": "127.0.0.1", "port": 3000, "ipv6_scope": null },
+  "state": { "kind": "listen", "native_code": null },
+  "timer": {
+    "kind": "none",
+    "native_code": null,
+    "raw_ticks": 0,
+    "estimated_remaining_milliseconds": 0,
+    "certainty": "estimated"
+  },
+  "owners": {
+    "owners": [
+      {
+        "kind": "verified",
+        "identity": {
+          "pid": 18422,
+          "start_marker": { "kind": "linux_start_ticks", "ticks": 11977192 }
+        }
+      }
+    ],
+    "omitted_owner_count": 0,
+    "completeness": "complete",
+    "reasons": []
+  },
+  "socket_token": { "kind": "linux_inode", "value": 1631547 },
+  "label": "web dev"
+}
+```
+
+Owners are either `verified` (PID plus a start marker) or an explicitly unverified PID. That
+distinction is the whole point: a bare PID is not stable identity.
+
+## `kickoutchi.watch_event/1` • one object per line
+
+`watch --json` writes NDJSON. Every line is independently valid JSON and bounded to 64 KiB, so
+streaming consumers never need to buffer the whole session.
+
+```json
+{
+  "schema": "kickoutchi.watch_event",
+  "version": 1,
+  "sequence": 0,
+  "event": "bind",
+  "observation": {
+    "previous_completed_unix_ms": 1784929159673,
+    "attempt_started_unix_ms": 1784929159955,
+    "attempt_completed_unix_ms": 1784929159972
+  },
+  "data": {
+    "endpoint": { "protocol": "tcp", "address": "127.0.0.1", "port": 3000, "ipv6_scope": null },
+    "state": { "kind": "listen", "native_code": null },
+    "previous_owners": null,
+    "current_owners": {
+      "owners": [
+        {
+          "kind": "verified",
+          "identity": {
+            "pid": 18422,
+            "start_marker": { "kind": "linux_start_ticks", "ticks": 11977192 }
+          }
+        }
+      ],
+      "omitted_owner_count": 0,
+      "completeness": "complete",
+      "reasons": []
+    },
+    "multiplicity": 1,
+    "label": "web dev",
+    "filter_result": "matched",
+    "certainty": "proven",
+    "evidence": [],
+    "omitted_evidence_count": 0,
+    "evidence_gaps": [],
+    "omitted_evidence_gap_count": 0
+  }
+}
+```
+
+- `event` is `baseline`, `bind`, `release`, `replacement`, or `collection_gap`.
+- `sequence` increments across the session, so gaps in it are detectable.
+- `observation` brackets a **collection attempt**, not an exact kernel event time.
+- `previous_owners` / `current_owners` are what makes `replacement` meaningful.
+- `filter_result` can be `matched` or `indeterminate` • see
+  [Watch & Why](/docs/watch-and-why#filtering).
+
+Records omit full command lines.
+
+## `kickoutchi.why/1` • one document
+
+`why --json` emits a single object with the same verdicts, certainty, evidence, gaps, labels, and
+aggregate exit status as the human output. It never collects full command lines and never runs
+Docker.
+
+Output is streamed, so any legal bounded result shape is emitted rather than being rejected for
+overall size.
+
+## Privacy
+
+<Callout type="warning" title="Escaping is not redaction">
+  Structured output can expose endpoints, PIDs, process identities, names, executable paths, labels,
+  ownership, and evidence. Legacy `list --json` can additionally expose complete bounded **command
+  lines**, which frequently contain tokens, paths, and connection strings.
+
+Terminal sanitization makes output safe to _display_. It does not remove anything sensitive. Treat
+these documents as you would treat `ps` output before pasting them into an issue or shipping them
+to a log aggregator.
+
+</Callout>
+
+## Distinctions worth preserving
+
+When you consume these documents, keep these apart • Kickoutchi went to some trouble not to
+conflate them:
+
+- **`null` vs empty vs omitted.** Unknown, known-to-be-empty, and dropped-by-a-bound are three
+  different states.
+- **`partial` vs `complete`.** `complete` means complete within the declared native scope • not
+  every socket in every container, namespace, VM, or subsystem.
+- **Verified vs unverified owners.** Only a verified identity survives PID reuse.
+- **Certainty.** It attaches to the individual claim carrying it, not to the document.

@@ -6,8 +6,8 @@ order: 1
 mode: general
 related:
   - safety
+  - watch-and-why
   - scoped-kills
-  - install
 ---
 
 import Callout from "../../components/Callout.astro";
@@ -17,10 +17,16 @@ ones.
 
 ## A port shows in another tool but not in Kickoutchi
 
-Kickoutchi lists **listening TCP** sockets and **bound UDP** sockets • the socket states that occupy
-a local port. It doesn't list established/outbound connections, so a port you see in a connection-oriented
-tool may simply not be a listener. It also uses native collectors rather than parsing `ss`,
-`netstat`, or `lsof`, so output can differ from those tools by design.
+`list` and the TUI show **listening TCP** sockets and **bound UDP** sockets • the socket states that
+occupy a local port. Established and transitional connections are deliberately not in that view, so
+a port you see in a connection-oriented tool may simply not be a listener. Kickoutchi also uses
+native collectors rather than parsing `ss`, `netstat`, or `lsof`, so output can differ from those
+tools by design.
+
+The full native state _is_ collected • it just isn't in the legacy view.
+[`kick list --snapshot-json`](/docs/structured-output) and
+[`kick watch`](/docs/watch-and-why) both retain every native TCP state, including `established`,
+`time_wait`, and the transitional ones.
 
 ## Process metadata is missing (shows `-`)
 
@@ -45,6 +51,54 @@ for good reasons.
 
 Two or more PIDs own that port, so Kickoutchi refuses to guess. It prints the candidates; re-run
 with `--pid` and the one you mean.
+
+## `why` says the port is free, but my server still can't bind
+
+Three usual causes, and `why` distinguishes them if you read the per-endpoint rows:
+
+- **Different address.** `why 3000` defaults to `127.0.0.1` and `::1`. Your server may be binding
+  `0.0.0.0` or a LAN address. Re-run with `--all-addresses` or an explicit `--address`.
+- **Different protocol.** The default is TCP. Add `--udp` or `--all-protocols`.
+- **A race.** A successful probe binds and immediately closes. It proves the endpoint was free at
+  that instant; it does not reserve it. Something else can take it a millisecond later.
+
+## `why` exits `4` for a low port
+
+Ports below 1024 usually need elevation to bind, so the probe is refused before it can learn
+anything. `permission_denied` is reported honestly rather than being turned into "free" or "busy" •
+current bindability is genuinely unknown. Re-run with elevation if you need a real answer.
+
+## `watch` printed `collection_gap`
+
+A poll failed. Kickoutchi keeps the last valid snapshot rather than discarding it, so the failure
+can't manufacture a wave of false `release` events, and it retries. If three consecutive polls fail,
+`watch` flushes the third gap and exits `1`. Gaps ignore your endpoint filters on purpose • you
+always find out that you stopped seeing.
+
+## `watch` shows `filter=indeterminate`
+
+Your filter needed a fact Kickoutchi couldn't read • usually an owner PID or a process name behind
+a permission boundary. Rather than silently dropping the event, it's emitted and marked
+indeterminate, so you know a filter _might_ have hidden something. Definite non-matches are still
+suppressed.
+
+## `watch` missed a port that definitely opened
+
+`watch` polls; it is not a kernel event feed. A socket that opens and closes between two polls is
+never observed, and several changes can collapse into one net difference. Lower `--interval` (down
+to `100ms`) to narrow the window • you cannot close it.
+
+## My label isn't showing up
+
+- The CLI and TUI only show a `LABEL` column when at least one label is configured, and the TUI
+  additionally needs a wide enough terminal. Structured output always carries the label.
+- Selectors are **exact**: `protocol`, `address`, and `port` all have to match, and TCP and UDP are
+  separate. Use `address = "*"` for a protocol-and-port wildcard.
+- An exact selector always wins over a wildcard for the same endpoint.
+- Hostnames, CIDR ranges, interface names, and `%zone` syntax are rejected • use `scope_id` for an
+  IPv6 scope.
+
+See [Endpoint labels](/docs/config#endpoint-labels) for the validation rules.
 
 ## Docker-owned port details are partial or unavailable
 
@@ -79,12 +133,18 @@ That means the scoped kill hit a safety refusal after freezing began: permission
 drift, protected descendant, incomplete metadata, cap overflow, or a sweep that would not converge.
 Kickoutchi sent `SIGCONT` to every member it had stopped and sent no termination signal.
 
+If a cleanup error names PIDs, those are processes whose `SIGCONT` was **refused** and which may
+still be stopped • check them. A member that exited during the freeze is not reported, because
+there is nothing left to resume.
+
 ## Windows tree kill reports incomplete metadata or partial containment
 
 Windows tree kill has no `SIGSTOP` equivalent. It preflights before the Job Object commit and fails
-closed if missing creation-time metadata could hide a descendant. After commit, it reports partial
-containment, fallback termination, and not-terminated PIDs instead of calling the kill fully
-successful.
+closed if missing creation-time metadata could hide a descendant. After commit it freezes the job
+for a final validation sweep, and if a live member can't join the job it withholds termination
+entirely rather than terminating that one process individually • doing so would reopen the
+descendant-spawn window it just closed. Delivered, already-exited, unconfirmed, and not-terminated
+PIDs are all reported separately instead of collapsing into "success".
 
 ## Windows: `--group` or TUI `t`/`T` is unavailable
 
