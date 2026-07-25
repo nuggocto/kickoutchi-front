@@ -87,7 +87,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     id: "nix",
     name: "Nix flake",
     status: "available",
-    platforms: ["linux", "macos"],
+    platforms: ["linux"],
     group: "source",
     summary:
       "Run or install the flake directly • first-class because it fits Rust CLI/TUI tools cleanly.",
