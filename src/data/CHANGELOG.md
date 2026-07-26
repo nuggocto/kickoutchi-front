@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.5] - 2026-07-26
+
+### Fixed
+
+- The foreground update check releases its cache lock before starting the
+  detached worker, preserving bounded lock acquisition when several commands
+  launch close together.
+- Homebrew publication and formula installation now run through the canonical
+  tap path and a pinned disposable Homebrew environment, avoiding hosted-runner
+  path and temporary-volume failures.
+- The Arch source package disables link-time optimization that is incompatible
+  with the bundled TLS implementation on the current Rust toolchain.
+- macOS release qualification accepts bounded visibility gaps without weakening
+  the terminal fail-closed behavior required after repeated collection gaps.
+
+## [1.3.1] - 2026-07-26
+
+### Added
+
+- A silent, timeout-bounded stable-release check runs at most once every seven
+  days outside the foreground command. New-version notices recommend the right
+  update path for Homebrew, Scoop, AUR, Linux Nix, Cargo, or standalone installs,
+  never contaminate structured output, and can be disabled in configuration.
+
+### Changed
+
+- Nix flake outputs are explicitly Linux-only. Nix, Homebrew, Scoop, and AUR
+  installs now carry provenance markers so update notices can give
+  package-manager-specific guidance.
+- Linux release archives are built in pinned Debian 11 containers with a glibc
+  2.31 compatibility floor, and release validation rejects newer symbol
+  requirements.
+
+### Fixed
+
+- Linux and macOS scoped termination now observes suspension under one shared
+  deadline and handles pre-stopped processes without leaving targets frozen
+  after refusal or successful termination delivery.
+- Windows tree termination reconciles every live pinned descendant with its
+  frozen Job Object immediately before termination and thaws on every refusal.
+- TUI startup, undersized confirmation dialogs, terminal signal restoration,
+  Docker named-pipe validation, macOS dual-stack decoding, protected-process
+  matching, terminal sanitization, and broken-pipe handling are more robust.
+
 ## [1.3.0] - 2026-07-24
 
 ### Added
@@ -676,7 +720,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.3.5...HEAD
+[1.3.5]: https://github.com/nuggocto/kickoutchi/compare/v1.3.1...v1.3.5
+[1.3.1]: https://github.com/nuggocto/kickoutchi/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/nuggocto/kickoutchi/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/nuggocto/kickoutchi/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/nuggocto/kickoutchi/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/nuggocto/kickoutchi/compare/v1.1.0...v1.1.1
