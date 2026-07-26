@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.6] - 2026-07-26
+
+### Added
+
+- Versioned evidence gaps now include nullable `affected_pid_count`. Linux keeps target-relevant
+  PID losses exact while aggregating unrelated bounded owner-scan losses; repeated consistency
+  passes retain the maximum aggregate count rather than summing overlapping observations.
+
+### Changed
+
+- `list --process ""` is now an invalid-argument error (exit `2`) instead of accidentally matching
+  every row with a readable process name.
+
+### Removed
+
+- Automatic weekly GitHub release checks, update caches, install-provenance notices, and the runtime
+  TLS dependency stack were removed. The old boolean `check_for_updates` key remains accepted and
+  ignored for config compatibility. The explicit `kickoutchi-update` helper is unchanged.
+
+### Fixed
+
+- Duplicate cross-pass evidence gaps no longer consume multiple retention slots or make otherwise
+  usable observations look incomplete.
+- Config diagnostics preserve TOML excerpts while keeping path and I/O text terminal-safe, and
+  protected-process limit errors report raw, unique, built-in, and merged counts accurately.
+- TUI worker panics return to owner control flow so the terminal is restored before the failure is
+  reported, including a panic racing with quit.
+- Release qualification separates successful Linux group-kill coverage from race refusal, pins
+  Linux builders by digest, rechecks the release tag, and serializes package publication.
+
 ## [1.3.5] - 2026-07-26
 
 ### Fixed
@@ -720,7 +750,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.3.5...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.3.6...HEAD
+[1.3.6]: https://github.com/nuggocto/kickoutchi/compare/v1.3.5...v1.3.6
 [1.3.5]: https://github.com/nuggocto/kickoutchi/compare/v1.3.1...v1.3.5
 [1.3.1]: https://github.com/nuggocto/kickoutchi/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/nuggocto/kickoutchi/compare/v1.2.0...v1.3.0

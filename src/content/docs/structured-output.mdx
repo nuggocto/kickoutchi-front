@@ -121,6 +121,17 @@ A socket entry looks like this:
 Owners are either `verified` (PID plus a start marker) or an explicitly unverified PID. That
 distinction is the whole point: a bare PID is not stable identity.
 
+### Evidence gaps and affected PID counts
+
+Every `EvidenceGap` has an exact nullable `pid` and an always-present nullable
+`affected_pid_count`. A gap tied to one known PID uses `pid` and leaves `affected_pid_count` null.
+When a bounded Linux scan loses evidence for several PIDs that have no discovered edge to a target
+socket, one aggregate gap instead uses a positive `affected_pid_count` and leaves `pid` null.
+
+Repeated consistency passes keep the maximum aggregate count rather than adding counts that may
+describe the same PIDs. `omitted_evidence_gap_count` means something different: it counts gap
+records that could not fit in the output array, never PIDs represented by an aggregate gap.
+
 ## `kickoutchi.watch_event/1` • one object per line
 
 `watch --json` writes NDJSON. Every line is independently valid JSON and bounded to 64 KiB, so

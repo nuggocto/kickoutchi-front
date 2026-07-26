@@ -42,6 +42,6 @@ export const PACKAGE_STATUS: PackageStatus[] = z.array(packageStatusSchema).pars
   { name: "Cargo", status: "available", detail: "cargo install --git" },
   { name: "Nix flake", status: "available", detail: "nix run / nix profile" },
   { name: "AUR", status: "available", detail: "Arch • kickoutchi-bin & kickoutchi" },
-  { name: "Homebrew", status: "available", detail: "macOS tap • both binaries" },
+  { name: "Homebrew", status: "available", detail: "Linux/macOS tap • both binaries" },
   { name: "Scoop", status: "available", detail: "Windows bucket • both binaries" },
 ]);

@@ -44,14 +44,15 @@ it (see below).
 
 Every key is optional. Anything you leave out keeps its default.
 
-| Key                        | Type             | Default       | Meaning                                                                                           |
-| -------------------------- | ---------------- | ------------- | ------------------------------------------------------------------------------------------------- |
-| `refresh_interval_seconds` | integer (1–3600) | `3`           | How often the TUI re-collects ports.                                                              |
-| `default_sort`             | string           | `"port"`      | Default sort for the CLI and TUI. One of `port`, `pid`, `protocol`, `process`, `parent`, `scope`. |
-| `hide_system_processes`    | boolean          | `false`       | Hide conservative system/service rows from the default view.                                      |
-| `confirm_force_kill`       | boolean          | `true`        | Require the typed `force` confirmation for force kills (when `--yes` is absent).                  |
-| `protected_processes`      | string[]         | _(see below)_ | Extra process names that require stronger confirmation. **Added** to the built-in list.           |
-| `[[ports]]`                | table array      | _(none)_      | Endpoint labels. Up to 256 selectors • see [below](#endpoint-labels).                             |
+| Key                        | Type             | Default       | Meaning                                                                                                            |
+| -------------------------- | ---------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `refresh_interval_seconds` | integer (1–3600) | `3`           | How often the TUI re-collects ports.                                                                               |
+| `default_sort`             | string           | `"port"`      | Default sort for the CLI and TUI. One of `port`, `pid`, `protocol`, `process`, `parent`, `scope`.                  |
+| `hide_system_processes`    | boolean          | `false`       | Hide conservative system/service rows from the default view.                                                       |
+| `confirm_force_kill`       | boolean          | `true`        | Require the typed `force` confirmation for force kills (when `--yes` is absent).                                   |
+| `check_for_updates`        | boolean          | _(ignored)_   | Deprecated compatibility key. `true` and `false` are accepted, but Kickoutchi performs no automatic release check. |
+| `protected_processes`      | string[]         | _(see below)_ | Extra process names that require stronger confirmation. **Added** to the built-in list.                            |
+| `[[ports]]`                | table array      | _(none)_      | Endpoint labels. Up to 256 selectors • see [below](#endpoint-labels).                                              |
 
 Config files are capped at **64 KiB**. Larger files are rejected instead of being partially parsed
 or allowed to consume unbounded memory.
