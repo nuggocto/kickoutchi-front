@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.7] - 2026-07-28
+
+### Added
+
+- A copy-ready root `config.example.toml` demonstrates settings and exact-before-wildcard endpoint
+  labels, with parser coverage that keeps the example aligned with the accepted schema.
+- Release qualification now executes native updaters and isolated installers on Linux, macOS, and
+  Windows, repeats the Linux journey through final public URLs, verifies exact Arch metadata, and
+  rebuilds Linux updater artifacts at the documented glibc 2.31 floor.
+
+### Changed
+
+- Human-readable endpoints retain IPv6 interface scope in list tables, the TUI, inspect, watch,
+  Why, search, ambiguity diagnostics, and kill confirmations. Legacy list JSON remains unchanged.
+- Internal policy and collection paths were consolidated without changing public behavior.
+
+### Removed
+
+- Dead internal paths, redundant tests, and the inactive in-repository Scoop mirror were removed.
+  The live `nuggocto/scoop-bucket` remains the Scoop source of truth.
+
+### Fixed
+
+- Concurrent embedded watch sessions now fail immediately instead of sharing process-global Ctrl-C
+  state. Signal-handler ownership remains fail-closed if restoration fails, and observed
+  cancellation stays latched so a delayed callback cannot cancel a later watch owner.
+
 ## [1.3.6] - 2026-07-26
 
 ### Added
@@ -750,7 +777,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.3.6...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.3.7...HEAD
+[1.3.7]: https://github.com/nuggocto/kickoutchi/compare/v1.3.6...v1.3.7
 [1.3.6]: https://github.com/nuggocto/kickoutchi/compare/v1.3.5...v1.3.6
 [1.3.5]: https://github.com/nuggocto/kickoutchi/compare/v1.3.1...v1.3.5
 [1.3.1]: https://github.com/nuggocto/kickoutchi/compare/v1.3.0...v1.3.1
