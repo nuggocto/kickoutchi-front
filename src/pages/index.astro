@@ -18,7 +18,7 @@ const demo: TerminalLine[] = [
   { kind: "output", text: "  Ports: TCP 127.0.0.1:3000" },
   { kind: "output", text: "  Process group: 18400" },
   { kind: "output", text: "Ancestors (nearest first):" },
-  { kind: "output", text: "  PID 18190 (pnpm) — pnpm dev" },
+  { kind: "output", text: "  PID 18190 (pnpm); pnpm dev" },
   { kind: "output", text: "Tree (3 processes):" },
   { kind: "output", text: "  PID 18422 (node) [TCP 127.0.0.1:3000]" },
   { kind: "output", text: "    PID 18431 (vite)" },
@@ -56,7 +56,7 @@ const whyDemo: TerminalLine[] = [
 ];
 
 const safety = [
-  "Every termination is confirmed — and --yes still prints the banner, warnings, and fresh-scan refusals.",
+  "Every termination is confirmed. --yes still prints the banner, warnings, and fresh-scan refusals.",
   "PID 0, PID 1, Kickoutchi's own PID, and Windows PID 4 are blocked outright.",
   "kill --port refuses ambiguous ports instead of guessing which PID to hit.",
   "Protected processes, including Docker owners, require typing the PID or process name to confirm.",
@@ -136,8 +136,8 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         </h1>
         <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted lg:mx-0">
           Kickoutchi shows which process owns each open TCP/UDP port, explains why a port won't
-          bind, watches ports change hands, and terminates stale port-owning processes safely —
-          from a guided TUI or a script-friendly CLI.
+          bind, watches ports change hands, and terminates stale port-owning processes safely. Use
+          the guided TUI or the script-friendly CLI.
         </p>
         <div class="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
           <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
@@ -188,13 +188,13 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         </h3>
         <p class="mt-4 leading-relaxed text-muted">
           A stale dev server is rarely one process. <code class="font-mono text-sm text-fg">kick inspect</code>
-          shows ancestors, descendants, and the process group — read-only — then tells you the exact
-          command for the scope you choose. Nothing dies until you type it.
+          shows ancestors, descendants, and the process group in read-only mode. It then tells you
+          the exact command for the scope you choose. Nothing dies until you type it.
         </p>
         <ul class="mt-6 space-y-4">
           {
             [
-              ["01", "Inspect the PID or port — who spawned it, what it spawned."],
+              ["01", "Inspect the PID or port. See who spawned it and what it spawned."],
               ["02", "Pick a scope: one process, the tree, or the Unix process group."],
               ["03", "Type the scope word to confirm. Kickoutchi verifies the port is really free."],
             ].map(([step, text]) => (
@@ -232,11 +232,11 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         </p>
         <ul class="mt-6 space-y-3 text-sm leading-relaxed text-muted">
           <li>
-            <code class="font-mono text-fg">verdict=owned</code> — the snapshot named the owner{" "}
+            <code class="font-mono text-fg">verdict=owned</code>; the snapshot named the owner{" "}
             <em>and</em> the probe was refused.
           </li>
           <li>
-            <code class="font-mono text-fg">verdict=bindable_now</code> — the exact bind succeeded.
+            <code class="font-mono text-fg">verdict=bindable_now</code>; the exact bind succeeded.
             That is a fact about one moment, not a reservation.
           </li>
           <li>

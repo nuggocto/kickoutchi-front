@@ -51,7 +51,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "why",
     title: "Ask why a port won't bind",
     description:
-      "kick why PORT combines one snapshot with a real bind probe to separate occupied, permission denied, unavailable, and unsupported — with the evidence behind each verdict.",
+      "kick why PORT combines one snapshot with a real bind probe to separate occupied, permission denied, unavailable, and unsupported. It shows the evidence behind each verdict.",
   },
   {
     id: "watch-changes",
