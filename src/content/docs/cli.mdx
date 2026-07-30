@@ -40,7 +40,9 @@ The table is plain, whitespace-separated text with no box-drawing • so it stay
 [endpoint labels](/docs/config#endpoint-labels).
 
 Human-readable endpoints retain IPv6 interface scope, for example `[fe80::1%3]:5353`, throughout
-the list table, TUI, inspect, watch, Why, search, diagnostics, and kill confirmations. Legacy
+the list table, TUI, inspect, watch, Why, search, diagnostics, and kill confirmations.
+`%unavailable` means the native collector could not report an interface index, which is expected
+for IPv6 observations on Linux and macOS; it is not part of the literal address or an error. Legacy
 `list --json` remains unchanged; versioned structured output carries scope separately.
 
 ### Narrowing the list

@@ -42,6 +42,19 @@ The screen is split into four regions, top to bottom:
 | `SCOPE`   | `public`, `local`, or `loopback`                                 |
 | `LABEL`   | Your configured endpoint label, when the terminal is wide enough |
 
+<Callout type="note" title="Reading IPv4 and IPv6 rows">
+  `127.0.0.1` and `::1` are loopback addresses. `0.0.0.0` and `::` are wildcard addresses for
+  every applicable interface. An address beginning with `fe80::` is IPv6 link-local. A suffix such
+  as `%3` identifies an interface; `%unavailable` means the native collector could not report that
+  index, which is expected on Linux and macOS. It is not part of the literal IP address or an
+  error.
+
+`public` describes a wildcard bind, not proven Internet reachability. `local` means a concrete
+non-loopback address, and `loopback` is machine-only. A `-` under `PID` or `PROCESS` means
+ownership metadata was unavailable, not that the socket has no owner.
+
+</Callout>
+
 Rows are colour-coded: **protected** processes and rows with **partial metadata** (visible socket,
 unreadable owner) are tinted so you notice them before acting.
 
