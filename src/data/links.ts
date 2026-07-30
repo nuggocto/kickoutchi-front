@@ -13,7 +13,7 @@ export const SITE = {
   binary: "kickoutchi",
   shortBinary: "kick",
   /** Latest published release; mirrors the repository release version. */
-  version: "1.3.8",
+  version: "1.3.9",
   author: "nugget",
 } as const;
 
@@ -27,6 +27,7 @@ const linksSchema = z.object({
   issues: z.url(),
   license: z.url(),
   readme: z.url(),
+  performance: z.url(),
   aurPackaging: z.url(),
   aurBin: z.url(),
   aurSource: z.url(),
@@ -39,6 +40,7 @@ export const LINKS = linksSchema.parse({
   issues: `${REPO}/issues`,
   license: `${REPO}/blob/${REPO_BRANCH}/LICENSE`,
   readme: `${REPO}/blob/${REPO_BRANCH}/README.md`,
+  performance: `${REPO}/blob/v${SITE.version}/docs/performance.md`,
   aurPackaging: `${REPO}/tree/${REPO_BRANCH}/packaging/arch`,
   aurBin: "https://aur.archlinux.org/packages/kickoutchi-bin",
   aurSource: "https://aur.archlinux.org/packages/kickoutchi",

@@ -85,28 +85,35 @@ const ticker = [
   "confirmed, always",
 ];
 
-// The 1.3.8 headline: sharper protection, clearer details, and truthful race handling.
+// The 1.3.9 headline: consistent safety semantics, measured performance, and provenance.
 const whatsNew = [
   {
-    command: "Windows tree races",
+    command: "one refusal language",
     detail:
-      "If a port-selected tree root exits during final preparation, the CLI now reports already exited with the no-match status instead of an identity-change failure.",
+      "Windows and Unix tree handling now share refusal causes and exit classifications; CLI and TUI wording stays consistent without hiding interface-specific recovery details.",
   },
   {
-    command: "/proc/<pid>/comm",
+    command: "measured, then leaner",
     detail:
-      "Linux protection matching reproduces the kernel's raw 15-byte truncation even when it splits UTF-8, keeping non-ASCII protected names protected.",
+      "A 24,000-execution Linux comparison found no meaningful regression, then stripped distribution binaries cut each x86_64 executable by 18.72%.",
   },
   {
-    command: "protected details",
+    command: "attested releases",
     detail:
-      "The minimum-size TUI reserves exactly one protected-process warning row and still shows the selected process's permission status.",
+      "Every native archive and installer is validated before publication, attested with GitHub provenance, downloaded again, verified, and exercised through the public release.",
   },
   {
-    command: "parallel contracts",
+    command: "bounded parser campaigns",
     detail:
-      "Integration tests create configuration directories exclusively, preventing parallel runs from sharing or deleting one another's live state.",
+      "Pure configuration, Linux process-data, and archive-path fuzz targets run on a pinned toolchain; saved regression corpora replay in ordinary CI.",
   },
+];
+
+const performanceRows = [
+  { workload: "Cold startup", p50: "1.145 ms", p99: "1.222 ms", delta: "+0.27%" },
+  { workload: "Warm startup", p50: "1.146 ms", p99: "1.215 ms", delta: "-0.09%" },
+  { workload: "list", p50: "12.799 ms", p99: "22.435 ms", delta: "+3.84%" },
+  { workload: "list --json", p50: "12.774 ms", p99: "21.275 ms", delta: "-0.30%" },
 ];
 
 // Bento spans: 4-col grid on lg, mixed widths so the wall has a rhythm.
@@ -302,14 +309,21 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
     <div class="pocket-panel mt-6 grid gap-6 p-6 sm:p-8 lg:grid-cols-[0.8fr_1.2fr]">
       <div>
         <p class="pixel-label">New in v{SITE.version}</p>
-        <h3 class="mt-3 text-2xl font-bold tracking-tight">Sharper protection, clearer details</h3>
+        <h3 class="mt-3 text-2xl font-bold tracking-tight">
+          Leaner binaries, one refusal language
+        </h3>
         <p class="mt-3 text-sm leading-relaxed text-muted">
-          Kickoutchi 1.3.8 keeps non-ASCII Linux protections exact, makes Windows tree-exit races
-          truthful, and preserves critical details in the smallest supported TUI.
+          Kickoutchi 1.3.9 tightens internal safety semantics, adds bounded parser campaigns and
+          release provenance, and ships smaller binaries without a measured performance regression.
         </p>
-        <ButtonLink href="/changelog" variant="secondary" size="sm" class="mt-5">
-          Read the changelog
-        </ButtonLink>
+        <div class="mt-5 flex flex-wrap gap-3">
+          <ButtonLink href="/changelog" variant="secondary" size="sm">
+            Read the changelog
+          </ButtonLink>
+          <ButtonLink href={LINKS.performance} variant="ghost" size="sm" external>
+            Full benchmark
+          </ButtonLink>
+        </div>
       </div>
       <dl class="grid gap-3 sm:grid-cols-2">
         {
@@ -323,10 +337,49 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
           ))
         }
       </dl>
+      <div class="border-t-2 border-border pt-5 lg:col-span-2">
+        <div class="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <p class="font-mono text-sm font-bold text-fg">Linux performance snapshot</p>
+            <p class="mt-1 text-xs text-muted">
+              3,000 observations per build and workload · 24,000 executions · 0 errors or timeouts
+            </p>
+          </div>
+          <p class="font-mono text-xs text-accent">x86_64 binaries −18.72%</p>
+        </div>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-lg border-collapse text-left font-mono text-xs">
+            <thead>
+              <tr class="border-b-2 border-border text-muted">
+                <th class="px-2 py-2 font-medium">Workload</th>
+                <th class="px-2 py-2 text-right font-medium">p50</th>
+                <th class="px-2 py-2 text-right font-medium">p99</th>
+                <th class="px-2 py-2 text-right font-medium">p99 vs 1.3.8</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                performanceRows.map((row) => (
+                  <tr class="border-b border-border/70 last:border-0">
+                    <td class="px-2 py-2 text-fg">{row.workload}</td>
+                    <td class="px-2 py-2 text-right text-muted">{row.p50}</td>
+                    <td class="px-2 py-2 text-right text-muted">{row.p99}</td>
+                    <td class="px-2 py-2 text-right text-accent">{row.delta}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-3 text-xs leading-relaxed text-muted">
+          Same-machine directional snapshot on an AMD Ryzen AI Max+ 395 running Linux. The complete
+          release archive also fell by 11.29%; see the full report for methodology and caveats.
+        </p>
+      </div>
     </div>
   </section>
 
-  <!-- 04 · Guardrails -->
+  <!-- 05 · Guardrails -->
   <section class="mx-auto max-w-6xl px-4 py-12">
     <div class="mb-10 flex items-center gap-4">
       <h2 class="pixel-label shrink-0 !text-base">05 · Guardrails</h2>
@@ -372,7 +425,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
     </div>
   </section>
 
-  <!-- 05 · Get it -->
+  <!-- 06 · Get it -->
   <section class="mx-auto max-w-6xl px-4 py-12">
     <div class="mb-10 flex items-center gap-4">
       <h2 class="pixel-label shrink-0 !text-base">06 · Get it</h2>

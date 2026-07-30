@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.9] - 2026-07-30
+
+### Added
+
+- Release assets now receive GitHub artifact attestations in a dedicated least-privileged job after
+  native archive and installer validation. Release publication requires successful attestation,
+  and the post-publication journey verifies every downloaded asset before executing the installer.
+- Added a finite native API boundary audit covering all 119 platform-call blocks, their ownership
+  and buffer invariants, process-identity protections, error handling, native validation, and
+  explicit re-audit triggers.
+
+### Changed
+
+- CI now starts supply-chain, Linux, Windows, macOS, and both Nix lanes concurrently, runs
+  formatting and doctests once on Linux, and reports one fail-closed `CI Complete` result after
+  every lane finishes. Push CI is limited to the default `shrek` branch while pull-request and
+  scheduled coverage remain enabled; the existing cancellation policy and cache-free builds are
+  unchanged.
+- Recorded a dated, same-machine Linux performance snapshot for cold/warm startup, `list`,
+  `list --json`, CPU, peak RSS, binary/package size, and exit correctness. Three fixed-seed
+  interleaved sessions provide 3,000 observations per build and workload, including a
+  higher-confidence p99; the v1.3.8 comparison found no meaningful regression, and noisy latency
+  measurements remain outside required pull-request CI.
+- Distribution builds now strip symbol tables while retaining Rust's unwind strategy and cleanup
+  behavior, reducing shipped and installed binary size without changing runtime code paths.
+- Added three pure, bounded parser campaigns for configuration, synthetic Linux process data, and
+  release-archive member paths. Small saved corpora replay in ordinary tests, while exact-toolchain
+  60-second campaigns run only weekly or on manual request; the auxiliary dependency lock receives
+  the same advisory, license, ban, and source checks as the main crate.
+- Windows tree preparation, containment, and post-commit reporting now share the same refusal
+  vocabulary and semantic exit classification used by Unix tree handling. CLI and TUI renderers
+  share stable tree-refusal causes and direct termination descriptions while retaining their
+  interface-specific recovery details.
+- Docker output-drain and child-cleanup workers now use one bounded capacity primitive with atomic
+  multi-slot reservations and independently owned permits. Scoped tree/group confirmation shares
+  only its identical prompt execution; the safety-critical revalidation, freeze/commit, and
+  termination ordering remains explicit.
+- Host-sensitive CLI tests no longer reserve and release an ephemeral port before launching a
+  competing process. Linux no-match diagnostics run in an isolated user/network namespace, and
+  workflow security tests assert native platform coverage and unprivileged metadata generation
+  without pinning incidental runner labels or setup commands.
+- Documented that direct PID termination intentionally permits an ordinary parent process,
+  including the invoking shell, while PID 0, PID 1, Windows System PID 4, Kickoutchi itself, and
+  scoped kills containing Kickoutchi remain refused.
+
+### Removed
+
+- Removed the temporary local benchmark harness and its harness-only tests after recording the
+  reproducible performance snapshot. The bounded parser fuzzing campaigns and saved regression
+  corpora remain part of normal and scheduled verification.
+
 ## [1.3.8] - 2026-07-29
 
 ### Changed
@@ -809,7 +860,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.3.8...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.3.9...HEAD
+[1.3.9]: https://github.com/nuggocto/kickoutchi/compare/v1.3.8...v1.3.9
 [1.3.8]: https://github.com/nuggocto/kickoutchi/compare/v1.3.7...v1.3.8
 [1.3.7]: https://github.com/nuggocto/kickoutchi/compare/v1.3.6...v1.3.7
 [1.3.6]: https://github.com/nuggocto/kickoutchi/compare/v1.3.5...v1.3.6
