@@ -30,7 +30,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "ports",
     title: "See who's listening",
     description:
-      "Lists listening TCP sockets and bound UDP sockets using native collectors • no scraping ss, netstat, or lsof.",
+      "Reads open TCP and UDP ports directly from each OS. No shelling out to ss, netstat, or lsof.",
   },
   {
     id: "know-process",
@@ -44,7 +44,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "label",
     title: "Name your ports",
     description:
-      "Label exact endpoints or protocol-and-port wildcards in config. Labels show up in the CLI, wide TUI tables, search, filters, JSON, watch events, and why output.",
+      "Give important ports friendly names, then use those labels across search, filters, JSON, watch events, and kick why.",
   },
   {
     id: "ask-why",
