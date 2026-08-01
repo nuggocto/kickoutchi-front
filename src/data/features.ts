@@ -28,7 +28,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
   {
     id: "see-ports",
     icon: "ports",
-    title: "See every open port",
+    title: "See who's listening",
     description:
       "Lists listening TCP sockets and bound UDP sockets using native collectors • no scraping ss, netstat, or lsof.",
   },
@@ -51,14 +51,14 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "why",
     title: "Ask why a port won't bind",
     description:
-      "kick why PORT combines one snapshot with a real bind probe to separate occupied, permission denied, unavailable, and unsupported. It shows the evidence behind each verdict.",
+      "kick why PORT combines a process snapshot with a real bind attempt, then shows the evidence behind its answer.",
   },
   {
     id: "watch-changes",
     icon: "watch",
     title: "Watch ports change hands",
     description:
-      "kick watch streams bind, release, replacement, and collection-gap events from bounded polling, as terminal output or one versioned NDJSON object per line.",
+      "Watch ports get bound, released, or handed to a new process, live in the terminal or as versioned NDJSON.",
   },
   {
     id: "scoped-cleanup",
@@ -100,7 +100,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "snapshot",
     title: "Export the full picture",
     description:
-      "list --snapshot-json emits one bounded, scope-qualified observation: every native TCP state, owner identity, completeness, and the evidence gaps behind it.",
+      "Export one complete snapshot of TCP state, process ownership, collection scope, and any missing evidence.",
   },
   {
     id: "docker-aware",
@@ -121,6 +121,6 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "script",
     title: "Built for scripts",
     description:
-      "Four versioned output contracts, fixed exit codes, --yes gates that re-check fresh scope, and explicit CLI-only inspect/group commands make automation predictable.",
+      "Stable JSON, fixed exit codes, fresh safety checks, and explicit process scopes make automation predictable.",
   },
 ]);
