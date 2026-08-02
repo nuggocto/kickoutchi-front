@@ -13,7 +13,7 @@ export const SITE = {
   binary: "kickoutchi",
   shortBinary: "kick",
   /** Latest published release; mirrors the repository release version. */
-  version: "1.3.9",
+  version: "1.3.10",
   author: "nugget",
 } as const;
 

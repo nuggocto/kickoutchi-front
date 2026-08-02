@@ -43,6 +43,8 @@ shell command, and any warnings.
   candidates and makes you choose with `--pid` instead of guessing.
 - **A port with no readable owner is not killable** • it exits `4` (permission denied) rather than
   acting on incomplete information.
+- **Incomplete Linux ownership scans also block `kill --port`.** Even when one owner is visible,
+  Kickoutchi signals nothing if restricted process visibility could hide a co-owner of that port.
 - **Scoped kills are bounded.** Over-cap or non-converging trees/groups refuse instead of partially
   killing a moving target.
 

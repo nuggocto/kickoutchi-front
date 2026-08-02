@@ -85,27 +85,27 @@ const ticker = [
   "confirmed, always",
 ];
 
-// The 1.3.9 headline: consistent safety semantics, measured performance, and provenance.
+// The 1.3.10 headline: stricter port-kill authority and complete release provenance.
 const whatsNew = [
   {
-    command: "same answer everywhere",
+    command: "unknown owner? no signal",
     detail:
-      "Windows and Unix tree handling now share refusal causes and exit classifications; CLI and TUI wording stays consistent without hiding interface-specific recovery details.",
+      "On Linux, kill --port now refuses when incomplete process visibility could hide another owner of the selected socket.",
   },
   {
-    command: "smaller, not slower",
+    command: "proven unrelated stays usable",
     detail:
-      "A 24,000-execution Linux comparison found no meaningful regression, then stripped distribution binaries cut each x86_64 executable by 18.72%.",
+      "An ownership gap tied to a different endpoint remains non-blocking, preserving safe kills when the evidence proves it is unrelated.",
   },
   {
-    command: "releases with receipts",
+    command: "the manifest joins the receipts",
     detail:
-      "Every native archive and installer is validated before publication, attested with GitHub provenance, downloaded again, verified, and exercised through the public release.",
+      "The host-generated distribution manifest is now attested before public installer checks and package-manager publication begin.",
   },
   {
-    command: "parsers put through the wringer",
+    command: "less machinery to audit",
     detail:
-      "Pure configuration, Linux process-data, and archive-path fuzz targets run on a pinned toolchain; saved regression corpora replay in ordinary CI.",
+      "Shared fixtures, watch timing, serialization, and maintenance checks are simpler without changing public behavior.",
   },
 ];
 
@@ -308,11 +308,11 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
       <div>
         <p class="pixel-label">New in v{SITE.version}</p>
         <h3 class="mt-3 text-2xl font-bold tracking-tight">
-          Smaller binaries. Sharper guardrails.
+          Unknown owner? No signal.
         </h3>
         <p class="mt-3 text-sm leading-relaxed text-muted">
-          Kickoutchi 1.3.9 makes failures more consistent across platforms, strengthens parser
-          testing and release verification, and trims the binaries without slowing them down.
+          Kickoutchi 1.3.10 is a focused safety release: Linux port kills now stop when hidden
+          co-owners cannot be ruled out, and release provenance covers the final manifest too.
         </p>
         <div class="mt-5 flex flex-wrap gap-3">
           <ButtonLink href="/changelog" variant="secondary" size="sm">
