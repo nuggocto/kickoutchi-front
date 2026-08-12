@@ -7,6 +7,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-12
+
+### Added
+
+- Added global `--verbose`/`-v` diagnostics. Debug details are written only to
+  stderr, leaving human, JSON, and NDJSON stdout contracts unchanged.
+- Added a `docker_enrichment` configuration switch. Enabling it permits bounded,
+  local-only Docker details in qualifying TUI views; disabling it guarantees
+  that optional TUI process-context collection never resolves or executes the
+  Docker CLI.
+
+### Changed
+
+- Reduced TUI rebuild work by caching the current snapshot's compact sorted
+  source-index permutation across search edits and recording selection matches
+  in a one-bit-per-row mask. Query matching now checks cheap exact predicates
+  before metadata, specializes the common single-needle cache, skips impossible
+  plain-text field formats, and avoids allocated scoped-endpoint strings and
+  empty label-map lookups. Multi-needle results remain bounded and isolated;
+  duplicate-row order, labels, Unicode matching, and selection behavior remain
+  unchanged.
+- Bundled each native socket with its owner PIDs and local completeness before
+  canonicalization, making detached parallel-vector state unrepresentable and
+  removing the indexed permutation and its temporary allocations.
+- Replaced the immutable per-pass process-read `BTreeMap` with a validated,
+  sorted contiguous table. Native adapters now return the exact requested PID
+  batch, which is checked before binary-search lookup and deterministic
+  metadata materialization.
+- Pruned duplicated CLI and TUI orchestration tests for refusal paths already
+  covered exhaustively by the collector, process-evidence, and process-tree
+  layers. Representative interface mappings, delivery gates, and successful
+  native journeys remain covered.
+- Removed the dated v1.3.8 same-machine performance report and its duplicated
+  README summary; the historical results remain available in Git history and
+  the v1.3.9 changelog.
+- Split the oversized observation, process, watch, scoped-kill, TUI app, and
+  process-tree modules along existing responsibility boundaries. Limits, legacy
+  projection, OS-specific termination, watch filtering and signal ownership,
+  scoped outcome reporting, TUI helpers, tree actions, tree planning,
+  freeze-first execution, and module-local tests now live in focused child
+  modules without changing public behavior.
+- Moved the remaining oversized inline test modules for the native platform
+  adapters, Windows tree execution, Docker enrichment, collection, CLI kill and
+  Why, UI rendering, diagnostics, and public output into child test files.
+- Nested the Windows Job Object tree executor and its tests under the shared
+  process-tree capability instead of exposing a separate crate-root module.
+- Classified the library target as internal binary bootstrap plumbing and hid it
+  from generated API documentation instead of presenting `run()` as a supported
+  embedding contract with process-global arguments, I/O, and signal lifecycle.
+- Kept termination warnings typed through their presentation boundary, removing
+  prose suffix recognition and scope-specific rewrite helpers. Pruned the
+  obsolete implementation-coupling test and two low-value private/trivial tests
+  while preserving destructive-path and real-binary coverage.
+- Simplified release maintenance by removing the duplicate quality matrix,
+  pull-request packaging runs, post-publication revalidation, and the separate
+  release-policy layer. Native archives and installers remain validated before
+  attested Linux, macOS, Windows, and Homebrew publication.
+- Reduced the release artifact validator from 2,252 to about 1,200 lines by
+  relying on the archive libraries for XZ/ZIP framing, deleting elaborate
+  corruption fixtures and the unreachable post-publication updater journey,
+  and removing its unused test-only XZ encoder. Checksums, safe member paths,
+  exact package layouts, executable/version journeys, the Linux glibc floor,
+  updater smoke tests, and generated installer receipts remain enforced.
+- Removed two repeated CI operations: Linux's full test suite is now the sole
+  ordinary validator-test run, and the x86_64 Nix lane evaluates every declared
+  system once while both x86_64 and aarch64 lanes still build and execute their
+  native packages. Workflow contract helpers were shortened while retaining
+  action pins, checkout isolation, least permissions, target coverage, and
+  release publication ordering.
+- Kept cargo-dist installed from its exact pinned source version in release
+  jobs instead of switching to faster prebuilt binaries, preserving the
+  existing supply-chain trust model for infrequent releases.
+- Split the CLI contract suite by command and moved shared subprocess,
+  socket/process, and workflow-parser fixtures under `tests/support/`. Contract
+  names and safety behavior remain intact while individual files now have clear
+  ownership.
+- Added a documented, bounded mutation campaign for typed warnings and
+  confirmation matching. Mutation evidence justified removing a redundant
+  private decision table and exposed two warning branches plus a tree metadata
+  wait diagnostic that now have focused behavioral coverage.
+- Moved package-manager installation ahead of direct remote-installer commands
+  in the README.
+- Changed optional Docker enrichment from default-on to explicit opt-in.
+
+### Fixed
+
+- Updated the Ratatui dependency graph to require the panic-safe `lru` 0.18.2,
+  removing the safe-Rust use-after-free reported as RUSTSEC-2026-0253.
+- Kept local mutation campaigns from dirtying the checkout by ignoring
+  cargo-mutants' root-level `mutants.out/` workspace.
+- Moved scheduled and documented fuzz campaigns onto disposable working
+  corpora. Checked-in seeds remain read-only, and only intentionally minimized
+  regression fixtures are copied back.
+- Strengthened the Windows private Job Object freeze preflight: a disposable
+  helper now checks execution before freeze, suspension while frozen, and
+  resumption after thaw before any selected target crosses the assignment
+  boundary.
+- Corrected the direct-PID documentation: an unscoped PID must own a visible
+  open port, while tree and group targeting may resolve a live portless root.
+
+### Removed
+
+- Retired the source-built `kickoutchi` AUR package and its in-repository
+  packaging. Arch users now have one supported AUR path, `kickoutchi-bin`,
+  backed by the checksummed Linux release archives.
+
 ## [1.3.10] - 2026-08-02
 
 ### Changed
@@ -884,7 +990,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.3.10...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/nuggocto/kickoutchi/compare/v1.3.10...v1.4.0
 [1.3.10]: https://github.com/nuggocto/kickoutchi/compare/v1.3.9...v1.3.10
 [1.3.9]: https://github.com/nuggocto/kickoutchi/compare/v1.3.8...v1.3.9
 [1.3.8]: https://github.com/nuggocto/kickoutchi/compare/v1.3.7...v1.3.8

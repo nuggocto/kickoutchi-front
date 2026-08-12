@@ -76,17 +76,14 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
       Homebrew (macOS), Scoop (Windows), and the AUR (Arch) are all live and carry the current
       release.
     </p>
-    <Callout type="note" title="Arch users: two AUR packages" class="mb-6">
+    <Callout type="note" title="Arch users: one AUR package" class="mb-6">
       <a href={LINKS.aurBin} target="_blank" rel="noopener noreferrer"><code>kickoutchi-bin</code></a>
-      installs the prebuilt release archive — that's the fast path. {" "}<a
-        href={LINKS.aurSource}
-        target="_blank"
-        rel="noopener noreferrer"><code>kickoutchi</code></a
-      > builds from the release source with Cargo. Both PKGBUILDs are maintained in {" "}<a
+      installs the checksummed prebuilt release archive and is the supported AUR path. Its PKGBUILD
+      is maintained in {" "}<a
         href={LINKS.aurPackaging}
         target="_blank"
         rel="noopener noreferrer">packaging/arch/</a
-      >, and both are pushed by hand after each GitHub Release.
+      > and pushed by hand after each GitHub Release.
     </Callout>
     <div class="grid gap-5 lg:grid-cols-2">
       {packages.map((method) => <InstallMethodCard method={method} />)}

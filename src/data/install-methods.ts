@@ -109,16 +109,6 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     note: "Any AUR helper works; swap yay for paru or makepkg. AUR packages are pushed by hand after the GitHub Release, so they can land shortly after a new version.",
   },
   {
-    id: "aur-source",
-    name: "AUR • kickoutchi",
-    status: "available",
-    platforms: ["linux"],
-    group: "package",
-    summary: "Builds from the release source archive with Cargo.",
-    commands: [{ code: "yay -S kickoutchi", lang: "sh" }],
-    note: "Pick this one if you'd rather compile than trust a prebuilt archive. Both PKGBUILDs are maintained in packaging/arch/ in the repository.",
-  },
-  {
     id: "homebrew",
     name: "Homebrew",
     status: "available",
