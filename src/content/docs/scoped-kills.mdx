@@ -71,8 +71,8 @@ On Linux and macOS, the execution path is freeze-first:
 - If anything becomes uncertain, thaw every stopped process and send no termination.
 
 A cleanup error after a thaw names only processes whose `SIGCONT` was **refused** • those are the
-ones that may still be stopped. A member that simply exited under the freeze isn't something you
-can resume, so it isn't reported as a thaw failure.
+ones that may still be stopped. A member that exited under the freeze cannot be resumed, so it is
+not reported as a thaw failure.
 
 On Windows, tree kill uses Job Object containment instead of pretending there is a `SIGSTOP`
 equivalent:

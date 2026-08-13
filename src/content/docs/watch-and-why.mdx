@@ -1,6 +1,6 @@
 ---
 title: Watch & Why
-description: The read-only observation commands • stream binds and releases, and get a real answer when a port refuses to bind.
+description: Probe a failed bind or stream socket changes without terminating processes.
 section: Guides
 order: 4
 mode: cli
@@ -14,14 +14,13 @@ import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 import Terminal from "../../components/Terminal.astro";
 
-Two commands that never signal anything. `watch` tells you what your ports are _doing_; `why` tells
-you what's stopping a bind right now. Both read the same native snapshot the rest of Kickoutchi
-uses, and neither one runs Docker.
+`why` combines one process snapshot with a short-lived bind probe. `watch` compares successive
+native snapshots. Neither command sends signals or invokes Docker.
 
 ## `why` • the real reason a bind fails
 
 `Address already in use` is a symptom with at least four different causes. `why` separates them by
-taking one snapshot, then **actually attempting the bind** and closing it immediately.
+taking one snapshot, then **attempting the exact bind** and closing it immediately.
 
 <Terminal
   title="kick why 3000"

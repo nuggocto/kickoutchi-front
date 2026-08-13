@@ -6,6 +6,13 @@ import { getDocGroups, docHref } from "../../lib/docs";
 import { LINKS } from "../../data/links";
 
 const groups = await getDocGroups();
+const featuredIds = new Set(["tui", "cli", "watch-and-why", "scoped-kills"]);
+const remainingGroups = groups
+  .map((group) => ({
+    ...group,
+    items: group.items.filter((item) => !featuredIds.has(item.id)),
+  }))
+  .filter((group) => group.items.length > 0);
 ---
 
 <Layout
@@ -23,9 +30,8 @@ const groups = await getDocGroups();
       <header class="mb-8 border-b border-border pb-6">
         <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Documentation</h1>
         <p class="mt-3 max-w-2xl text-lg text-muted">
-          Kickoutchi shows what owns your local ports, explains why a port won't bind, shows the
-          process family around the target, and helps you terminate stale dev servers safely. Four
-          ways through the swamp • pick yours.
+          Start with an interface, a read-only diagnostic, or a termination guide. The reference
+          pages cover exact syntax, config, output contracts, and failure cases.
         </p>
       </header>
 
@@ -34,24 +40,24 @@ const groups = await getDocGroups();
           <p class="font-pixel text-xs uppercase tracking-widest text-accent">The swamp tour</p>
           <h2 class="mt-1 text-xl font-semibold text-fg group-hover:text-accent">TUI walkthrough</h2>
           <p class="mt-2 text-sm text-muted">
-            Open the terminal UI and let Kickoutchi walk you through open ports • browse, search,
-            sort, and use process or tree kill with live details and confirmations.
+            Browse and filter the live port table, open process details, and confirm one-process or
+            tree cleanup.
           </p>
         </a>
         <a href="/docs/cli" class="pocket-panel pocket-panel-hover group p-6">
           <p class="font-pixel text-xs uppercase tracking-widest text-accent">The swamp shortcut</p>
           <h2 class="mt-1 text-xl font-semibold text-fg group-hover:text-accent">CLI walkthrough</h2>
           <p class="mt-2 text-sm text-muted">
-            Use the CLI when you already know which port to clear. Tables, stable JSON,
-            precise filters, and a fixed exit-code contract.
+            Run headless commands for tables, stable JSON, exact filters, process inspection, and
+            scoped termination.
           </p>
         </a>
         <a href="/docs/watch-and-why" class="pocket-panel pocket-panel-hover group p-6">
           <p class="font-pixel text-xs uppercase tracking-widest text-accent">Look, don't touch</p>
           <h2 class="mt-1 text-xl font-semibold text-fg group-hover:text-accent">Watch &amp; Why</h2>
           <p class="mt-2 text-sm text-muted">
-            Stream binds and releases as events, and get a real answer • with evidence • when a
-            port refuses to bind. Neither command signals anything.
+            Observe socket changes or probe a failed bind. Both return evidence without sending
+            signals.
           </p>
         </a>
         <a href="/docs/scoped-kills" class="pocket-panel pocket-panel-hover group p-6">
@@ -65,12 +71,12 @@ const groups = await getDocGroups();
       </div>
 
       <Callout type="tip" class="mt-6" title="In a hurry?">
-        The <a href="/docs/commands">command reference</a> is the compact index for people who
-        already know what they need.
+        The <a href="/docs/commands">command reference</a> lists every flag, filter, output mode,
+        and exit code.
       </Callout>
 
       {
-        groups.map((group) => (
+        remainingGroups.map((group) => (
           <section class="mt-10">
             <h2 class="mb-4 text-lg font-semibold text-fg">{group.section}</h2>
             <ul class="grid gap-3 sm:grid-cols-2">
@@ -91,8 +97,7 @@ const groups = await getDocGroups();
       }
 
       <div class="mt-10 rounded-xl border border-border bg-surface-2/40 p-5 text-sm text-muted">
-        These docs track real <code class="font-mono text-fg">kickoutchi</code> behaviour. Found a
-        gap? <a href={LINKS.issues} target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Open an issue</a>.
+        Found an incorrect command, option, or output field? <a href={LINKS.issues} target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Open an issue</a>.
       </div>
     </article>
   </div>

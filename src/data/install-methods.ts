@@ -25,14 +25,13 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     platforms: ["linux", "macos"],
     group: "recommended",
     summary:
-      "The generated GitHub Release installer. Downloads the right archive for your platform and drops both binaries on your PATH.",
+      "Downloads the matching GitHub Release archive and installs both binaries on your PATH.",
     commands: [
       {
         code: "curl --proto '=https' --tlsv1.2 -LsSf \\\n  https://github.com/nuggocto/kickoutchi/releases/latest/download/kickoutchi-installer.sh \\\n  | sh",
         lang: "sh",
       },
     ],
-    note: "Installer-based installs also include the kickoutchi-update helper.",
   },
   {
     id: "installer-windows",
@@ -40,7 +39,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     status: "available",
     platforms: ["windows"],
     group: "recommended",
-    summary: "The PowerShell installer • same release flow, Windows edition.",
+    summary: "Downloads the Windows release archive and installs both binaries on your PATH.",
     commands: [
       {
         code: 'powershell -ExecutionPolicy Bypass -NoProfile -Command "irm https://github.com/nuggocto/kickoutchi/releases/latest/download/kickoutchi-installer.ps1 | iex"',
@@ -67,7 +66,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     platforms: ["linux", "macos", "windows"],
     group: "recommended",
     summary:
-      "If installers make you nervous: grab the archive, verify the hash, and run kickoutchi or kick. Every release ships archives for all three platforms plus matching .sha256 files and a release-wide sha256.sum.",
+      "Download an archive manually, verify its checksum, then place kickoutchi and kick on your PATH. Each platform archive has a matching .sha256 file, and the release includes sha256.sum.",
     commands: [],
     note: "Download archives and checksums from the GitHub Releases page. Archives include Windows inspect and CLI tree kill; --group stays Linux/macOS-only.",
   },
@@ -89,8 +88,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     status: "available",
     platforms: ["linux"],
     group: "source",
-    summary:
-      "Run or install the flake directly • first-class because it fits Rust CLI/TUI tools cleanly.",
+    summary: "Run the flake without installing it, or add either binary to a Nix profile.",
     commands: [
       { code: "nix run github:nuggocto/kickoutchi", lang: "sh", label: "Run the TUI" },
       { code: "nix run github:nuggocto/kickoutchi#kick -- list", lang: "sh", label: "Run the CLI" },
@@ -103,10 +101,9 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     status: "available",
     platforms: ["linux"],
     group: "package",
-    summary:
-      "Installs the prebuilt binary from the GitHub Release archive. The fast path for Arch users.",
+    summary: "Installs both prebuilt binaries from the checksummed GitHub Release archive.",
     commands: [{ code: "yay -S kickoutchi-bin", lang: "sh" }],
-    note: "Any AUR helper works; swap yay for paru or makepkg. AUR packages are pushed by hand after the GitHub Release, so they can land shortly after a new version.",
+    note: "Any AUR helper works; replace yay with paru, or build the PKGBUILD with makepkg.",
   },
   {
     id: "homebrew",

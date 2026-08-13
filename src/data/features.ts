@@ -44,21 +44,21 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "label",
     title: "Name your ports",
     description:
-      "Give important ports friendly names, then use those labels across search, filters, JSON, watch events, and kick why.",
+      "Assign labels to important endpoints, then use them in search, filters, JSON, watch events, and kick why.",
   },
   {
     id: "ask-why",
     icon: "why",
     title: "Ask why a port won't bind",
     description:
-      "kick why PORT combines a process snapshot with a real bind attempt, then shows the evidence behind its answer.",
+      "kick why PORT combines a process snapshot with a short-lived bind attempt, then reports the evidence behind its verdict.",
   },
   {
     id: "watch-changes",
     icon: "watch",
     title: "Watch ports change hands",
     description:
-      "Watch ports get bound, released, or handed to a new process, live in the terminal or as versioned NDJSON.",
+      "Emit bound, released, and replaced events in the terminal or as versioned NDJSON.",
   },
   {
     id: "scoped-cleanup",
@@ -77,16 +77,16 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
   {
     id: "tui-or-cli",
     icon: "modes",
-    title: "TUI or CLI",
+    title: "One engine, two interfaces",
     description:
-      "Open the guided terminal UI for a tour of open ports, or drive the script-friendly CLI when you already know the target.",
+      "The TUI and CLI share native collection, config, labels, filters, and target checks, so a row means the same thing in either interface.",
   },
   {
-    id: "safe-kills",
+    id: "fresh-target-checks",
     icon: "safety",
-    title: "Safe by default",
+    title: "Re-check before signaling",
     description:
-      "Every termination is confirmed. Unix scoped kills freeze and verify; Windows tree kill contains via Job Objects; ambiguous ports are never guessed.",
+      "Resolve the target again after confirmation, refuse changed or uncertain scopes, then verify the selected ports disappear.",
   },
   {
     id: "cross-platform",

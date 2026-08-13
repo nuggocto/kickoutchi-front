@@ -6,7 +6,7 @@ import Callout from "../components/Callout.astro";
 import ButtonLink from "../components/ButtonLink.astro";
 import { INSTALL_METHODS } from "../data/install-methods";
 import { PLATFORM_SUPPORT, PACKAGE_STATUS } from "../data/package-status";
-import { LINKS, SITE } from "../data/links";
+import { LINKS } from "../data/links";
 
 const recommended = INSTALL_METHODS.filter((m) => m.group === "recommended");
 const source = INSTALL_METHODS.filter((m) => m.group === "source");
@@ -40,13 +40,9 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
           >inspect</code
         >, and <code>kill</code> run headless and never open it.
       </Callout>
-      <Callout type="note" title="Requirements">
+      <Callout type="note" title="Requirements" class="sm:col-span-2">
         Building from source needs Rust 1.95.0+. Linux termination uses pidfd on kernel 5.3+;
         listing ports works on older kernels too.
-      </Callout>
-      <Callout type="tip" title="Staying current">
-        Installer-based installs include <code>kickoutchi-update</code>. Installed before it existed?
-        Rerun the latest installer once to opt in.
       </Callout>
     </div>
   </section>
@@ -54,7 +50,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
   <!-- Recommended -->
   <section class="mx-auto max-w-5xl px-4 py-8">
     <h2 class="mb-1 text-2xl font-bold tracking-tight">Recommended</h2>
-    <p class="mb-6 text-muted">The fastest way onto your machine, with updates included.</p>
+    <p class="mb-6 text-muted">Official installers, the updater, and direct release archives.</p>
     <div class="grid gap-5 lg:grid-cols-2">
       {recommended.map((method) => <InstallMethodCard method={method} />)}
     </div>
@@ -63,7 +59,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
   <!-- From source -->
   <section class="mx-auto max-w-5xl px-4 py-8">
     <h2 class="mb-1 text-2xl font-bold tracking-tight">From source</h2>
-    <p class="mb-6 text-muted">For Rust and Nix users who'd rather build it themselves.</p>
+    <p class="mb-6 text-muted">Build from the Git repository with Cargo, or run the Nix flake directly.</p>
     <div class="grid gap-5 lg:grid-cols-2">
       {source.map((method) => <InstallMethodCard method={method} />)}
     </div>
@@ -128,8 +124,10 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
 
   <section class="mx-auto max-w-5xl px-4 py-10">
     <div class="flex flex-col items-center gap-4 text-center">
-      <h2 class="text-2xl font-bold tracking-tight">Installed? Meet your ports.</h2>
-      <p class="max-w-xl text-muted">Run <code class="font-mono text-fg">{SITE.shortBinary}</code> with no arguments to open the TUI, or jump into the docs.</p>
+      <h2 class="text-2xl font-bold tracking-tight">Installed? Start here.</h2>
+      <p class="max-w-xl text-muted">
+        Follow the TUI walkthrough, or open the command reference for a headless workflow.
+      </p>
       <div class="flex flex-wrap justify-center gap-3">
         <ButtonLink href="/docs">Read the docs</ButtonLink>
         <ButtonLink href={LINKS.releases} variant="secondary" external>Browse releases</ButtonLink>

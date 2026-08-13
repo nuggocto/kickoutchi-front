@@ -1,6 +1,6 @@
 ---
 title: Safety
-description: How Kickoutchi avoids killing the wrong thing • confirmations, guardrails, scoped checks, and last-moment re-checks.
+description: Target identity, confirmations, protected processes, and the checks applied before Kickoutchi sends a signal.
 section: Safety
 order: 1
 mode: general
@@ -12,8 +12,8 @@ related:
 
 import Callout from "../../components/Callout.astro";
 
-Terminating the wrong process is the scary part of a tool like this. Kickoutchi treats it that way.
-Every guarantee below is real behaviour, not a promise on a marketing page.
+A port can change owners between inspection and termination. Kickoutchi resolves and checks the
+target again before signaling it. This page documents those checks and their limits.
 
 ## Confirmations
 
@@ -115,8 +115,8 @@ Windows tree kill uses Job Object containment rather than a freeze-first signal 
 
 ## After the kick
 
-On a successful termination, Kickoutchi does a best-effort re-collection and tells you whether the
-confirmed ports are actually gone • instead of just assuming success and leaving you to check.
+After a successful termination, Kickoutchi performs a best-effort re-collection and reports whether
+the confirmed ports disappeared.
 
 See the [exit codes](/docs/commands#exit-codes) for how each of these outcomes is reported to
 scripts.

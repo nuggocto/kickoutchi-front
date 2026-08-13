@@ -1,6 +1,6 @@
 ---
 title: Troubleshooting
-description: Common situations and what they mean • missing ports, withheld metadata, scoped-kill refusals, permissions, and more.
+description: Diagnose missing sockets, withheld process metadata, permission errors, and scoped-kill refusals.
 section: Help
 order: 1
 mode: general
@@ -12,14 +12,14 @@ related:
 
 import Callout from "../../components/Callout.astro";
 
-Most "problems" with Kickoutchi are actually the OS being cautious. Here's how to read the common
-ones.
+Start with the exact message or symptom below. Most cases come from socket state, operating-system
+permissions, or a safety check refusing an uncertain target.
 
 ## A port shows in another tool but not in Kickoutchi
 
 `list` and the TUI show **listening TCP** sockets and **bound UDP** sockets • the socket states that
 occupy a local port. Established and transitional connections are deliberately not in that view, so
-a port you see in a connection-oriented tool may simply not be a listener. Kickoutchi also uses
+a port you see in a connection-oriented tool may not be a listener. Kickoutchi also uses
 native collectors rather than parsing `ss`, `netstat`, or `lsof`, so output can differ from those
 tools by design.
 
@@ -90,8 +90,8 @@ to `100ms`) to narrow the window • you cannot close it.
 
 ## My label isn't showing up
 
-- The CLI and TUI only show a `LABEL` column when at least one label is configured, and the TUI
-  additionally needs a wide enough terminal. Structured output always carries the label.
+- The CLI and TUI only show a `LABEL` column when at least one label is configured. The TUI also
+  needs a wide enough terminal. Structured output always carries the label.
 - Selectors are **exact**: `protocol`, `address`, and `port` all have to match, and TCP and UDP are
   separate. Use `address = "*"` for a protocol-and-port wildcard.
 - An exact selector always wins over a wildcard for the same endpoint.

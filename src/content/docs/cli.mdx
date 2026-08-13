@@ -1,6 +1,6 @@
 ---
 title: CLI walkthrough
-description: The swamp shortcut • print ports, filter precisely, and kick by port or PID from scripts.
+description: Headless commands for tables, JSON, filters, process inspection, and scoped termination.
 section: Guides
 order: 2
 mode: cli
@@ -14,9 +14,8 @@ import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 import Terminal from "../../components/Terminal.astro";
 
-The swamp shortcut: use the CLI when you already know which port to clear. CLI
-commands **never** open the TUI • they print to stdout/stderr and exit with a
-[stable code](/docs/commands#exit-codes).
+Use a named subcommand to stay in the CLI. Commands **never** open the TUI. They print to stdout or
+stderr and return a [stable code](/docs/commands#exit-codes).
 
 There are five subcommands on every platform: `list`, `inspect`, `kill`, `watch`, and `why`. Only
 `kill` ever signals anything. Windows supports read-only `inspect` and CLI `--tree`; `--group`

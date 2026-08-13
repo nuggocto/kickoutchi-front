@@ -1,6 +1,6 @@
 ---
 title: Structured output
-description: The four machine-readable contracts • list JSON, full snapshots, watch NDJSON, and why documents, plus what they can expose.
+description: Schemas, compatibility rules, and exposure risks for list JSON, full snapshots, watch NDJSON, and why documents.
 section: Reference
 order: 3
 mode: cli
@@ -13,8 +13,8 @@ related:
 import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 
-Kickoutchi has four machine-readable interfaces. Field names and enum values are lowercase
-`snake_case` and are treated as a contract, so parsing them is safe.
+Field names and enum values use lowercase `snake_case`. Schema-bearing documents also declare a
+contract name and integer version, while legacy list JSON keeps its original array shape.
 
 | Command                     | Contract                   | Form       |
 | --------------------------- | -------------------------- | ---------- |
@@ -23,8 +23,8 @@ Kickoutchi has four machine-readable interfaces. Field names and enum values are
 | `kick watch --json`         | `kickoutchi.watch_event/1` | NDJSON     |
 | `kick why PORT --json`      | `kickoutchi.why/1`         | One object |
 
-Snapshot, watch, and why documents carry in-band `schema` and integer `version` fields. Legacy
-`list --json` stays a bare top-level array so existing scripts keep working.
+Snapshot, watch, and why carry the identifiers shown above. Legacy `list --json` stays a bare
+top-level array so existing scripts keep working.
 
 Diagnostics always go to **stderr**, so stdout stays parseable.
 
@@ -200,8 +200,8 @@ overall size.
 
 <Callout type="warning" title="Escaping is not redaction">
   Structured output can expose endpoints, PIDs, process identities, names, executable paths, labels,
-  ownership, and evidence. Legacy `list --json` can additionally expose complete bounded **command
-  lines**, which frequently contain tokens, paths, and connection strings.
+  ownership, and evidence. Legacy `list --json` can also expose complete bounded **command lines**,
+  which frequently contain tokens, paths, and connection strings.
 
 Terminal sanitization makes output safe to _display_. It does not remove anything sensitive. Treat
 these documents as you would treat `ps` output before pasting them into an issue or shipping them

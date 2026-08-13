@@ -90,7 +90,7 @@ const whatsNew = [
   {
     command: "built with Rust 1.97.1",
     detail:
-      "Every native release artifact now uses the current patched Rust toolchain.",
+      "Linux, macOS, and Windows artifacts now use the current patched toolchain.",
   },
   {
     command: "MSRV stays at 1.95.0",
@@ -100,7 +100,7 @@ const whatsNew = [
   {
     command: "all targets revalidated",
     detail:
-      "Linux, macOS, Windows, Nix, installers, checksums, and release attestations passed again for 1.4.1.",
+      "Archives, installers, Nix, package manifests, checksums, and attestations passed for 1.4.1.",
   },
   {
     command: "same runtime behavior",
@@ -112,7 +112,7 @@ const whatsNew = [
 // Bento spans: 4-col grid on lg, mixed widths so the wall has a rhythm.
 const bentoSpan: Record<string, string> = {
   "see-ports": "sm:col-span-2",
-  "safe-kills": "sm:col-span-2",
+  "fresh-target-checks": "sm:col-span-2",
 };
 
 const availablePackages = PACKAGE_STATUS.filter((pkg) => pkg.status === "available");
@@ -136,7 +136,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         </h1>
         <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted lg:mx-0">
           See what owns your local ports, find out why a port won't bind, and safely evict stale dev
-          servers. Look around in the TUI or get straight to work with the CLI.
+          servers. Browse in the TUI or run headless CLI commands in scripts.
         </p>
         <div class="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
           <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
@@ -249,16 +249,16 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
     </div>
   </section>
 
-  <!-- 03 · Two ways in -->
+  <!-- 03 · Pick an interface -->
   <section class="mx-auto max-w-6xl px-4 py-12">
     <div class="mb-10 flex items-center gap-4">
-      <h2 class="pixel-label shrink-0 !text-base">03 · Two ways in</h2>
+      <h2 class="pixel-label shrink-0 !text-base">03 · Pick an interface</h2>
       <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
     </div>
     <div class="mx-auto mb-8 max-w-2xl text-center lg:mx-0 lg:text-left">
-      <h3 class="text-3xl font-bold tracking-tight">Two ways to clear the swamp</h3>
+      <h3 class="text-3xl font-bold tracking-tight">Browse in the TUI. Automate with the CLI.</h3>
       <p class="mt-2 text-muted">
-        Open the TUI when you want to look around. Reach for the CLI when you already know the target.
+        Both interfaces use the same native collectors, config, labels, filters, and target checks.
       </p>
     </div>
     <div class="grid gap-6 md:grid-cols-2">
@@ -266,7 +266,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         icon="tui"
         eyebrow="The swamp tour"
         title="Guided TUI"
-        description="Open the TUI to browse your ports, search and sort them, inspect process details, and clean up one process or a whole tree."
+        description="Browse a live port table, filter and sort rows, inspect process details, and confirm one-process or tree cleanup."
         command="kickoutchi"
         href="/docs/tui"
         ctaLabel="Explore the TUI"
@@ -275,7 +275,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         icon="cli"
         eyebrow="The swamp shortcut"
         title="Scriptable CLI"
-        description="Already know the culprit? List ports, explain failed binds, watch changes, and clean up exactly the process scope you choose."
+        description="Run named subcommands to list ports, explain failed binds, watch changes, inspect process families, and terminate an explicit scope."
         command="kick list --filter 'label:web family:ipv4'"
         href="/docs/cli"
         ctaLabel="Explore the CLI"
@@ -290,8 +290,11 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
       <div class="h-0.5 flex-1 bg-border-strong/30" aria-hidden="true"></div>
     </div>
     <div class="mx-auto mb-8 max-w-2xl text-center lg:mx-0 lg:text-left">
-      <h3 class="text-3xl font-bold tracking-tight">A small tool that takes ports seriously</h3>
-      <p class="mt-2 text-muted">Practical first, playful second. Everything here is real behaviour.</p>
+      <h3 class="text-3xl font-bold tracking-tight">Native port data, shaped for the job</h3>
+      <p class="mt-2 text-muted">
+        The same OS-native snapshot powers tables, process details, labels, filters, JSON, watch
+        events, and bind diagnostics.
+      </p>
     </div>
     <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {FEATURES.map((feature) => <FeatureCard feature={feature} class={bentoSpan[feature.id]} />)}
@@ -301,11 +304,10 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
       <div>
         <p class="pixel-label">New in v{SITE.version}</p>
         <h3 class="mt-3 text-2xl font-bold tracking-tight">
-          Current compiler. Same behavior.
+          Build and CI maintenance
         </h3>
         <p class="mt-3 text-sm leading-relaxed text-muted">
-          Kickoutchi 1.4.1 rebuilds every release artifact with Rust 1.97.1 while keeping Rust
-          1.95.0 as the minimum supported version.
+          No CLI, TUI, config, or output contract changed in this release.
         </p>
         <div class="mt-5 flex flex-wrap gap-3">
           <ButtonLink href="/changelog" variant="secondary" size="sm">
@@ -351,8 +353,8 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
           </span>
           <h3 class="mt-4 text-3xl font-bold tracking-tight">Safe by default</h3>
           <p class="mt-3 text-muted">
-            Terminating the wrong process is the scary part. Kickoutchi treats it that way: lots of
-            guardrails, no silent surprises.
+            Termination starts with a process identity, never only a port number. Kickoutchi checks
+            that identity again before sending a signal.
           </p>
           <ButtonLink href="/docs/safety" variant="secondary" size="sm" class="mt-5">
             How termination stays safe
@@ -402,7 +404,6 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
 
       <div class="mt-8 border-t-2 border-border pt-6 text-center">
         <h4 class="font-pixel text-lg tracking-wide">Platforms &amp; packages</h4>
-        <p class="mt-2 text-sm text-muted">What's ready, at a glance.</p>
         <div class="mt-5 grid gap-4 md:grid-cols-3">
           {
             PLATFORM_SUPPORT.map((p) => (
@@ -438,8 +439,8 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
         CLEAR THE <span class="text-accent">SWAMP.</span>
       </p>
       <p class="max-w-xl text-muted">
-        Install it, run <code class="font-mono text-sm text-fg">kickoutchi</code>, and meet whatever
-        has been camping on your local ports.
+        Start with the TUI, or run <code class="font-mono text-sm text-fg">kick list</code> for a
+        one-shot table.
       </p>
       <div class="flex flex-wrap justify-center gap-3">
         <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
