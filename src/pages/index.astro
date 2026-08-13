@@ -85,27 +85,27 @@ const ticker = [
   "confirmed, always",
 ];
 
-// The 1.4.0 headline: cheaper TUI queries and diagnostics that preserve stdout contracts.
+// The 1.4.1 headline: current release tooling with the same runtime behavior.
 const whatsNew = [
   {
-    command: "diagnostics on demand",
+    command: "built with Rust 1.97.1",
     detail:
-      "Global --verbose/-v details stay on stderr, so human, JSON, and NDJSON stdout remain clean for scripts.",
+      "Every native release artifact now uses the current patched Rust toolchain.",
   },
   {
-    command: "docker stays opt-in",
+    command: "MSRV stays at 1.95.0",
     detail:
-      "Optional Docker enrichment now runs only when explicitly enabled; disabling it guarantees the TUI never executes Docker.",
+      "A dedicated CI lane compiles every test target and runs the unit suite with the minimum supported compiler.",
   },
   {
-    command: "less work per search edit",
+    command: "all targets revalidated",
     detail:
-      "Compact sorted indexes and one-bit match masks keep large-snapshot search, sorting, and selection rebuilds lean.",
+      "Linux, macOS, Windows, Nix, installers, checksums, and release attestations passed again for 1.4.1.",
   },
   {
-    command: "stronger Windows preflight",
+    command: "same runtime behavior",
     detail:
-      "Tree kill now proves helper execution, suspension, and resumption before a selected process enters Job Object containment.",
+      "This maintenance release changes the build toolchain and internal safety documentation, not the CLI or TUI contract.",
   },
 ];
 
@@ -301,11 +301,11 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
       <div>
         <p class="pixel-label">New in v{SITE.version}</p>
         <h3 class="mt-3 text-2xl font-bold tracking-tight">
-          Faster searches. Quieter defaults.
+          Current compiler. Same behavior.
         </h3>
         <p class="mt-3 text-sm leading-relaxed text-muted">
-          Kickoutchi 1.4.0 makes busy snapshots cheaper to search, keeps Docker enrichment opt-in,
-          and adds verbose diagnostics without touching stdout contracts.
+          Kickoutchi 1.4.1 rebuilds every release artifact with Rust 1.97.1 while keeping Rust
+          1.95.0 as the minimum supported version.
         </p>
         <div class="mt-5 flex flex-wrap gap-3">
           <ButtonLink href="/changelog" variant="secondary" size="sm">
