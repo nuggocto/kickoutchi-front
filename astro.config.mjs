@@ -4,14 +4,11 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 
-import cloudflare from "@astrojs/cloudflare";
-
 // Static-first: no adapter. Cloudflare Pages serves the generated `dist/`.
 // https://astro.build/config
 export default defineConfig({
   site: "https://kickoutchi.com",
   integrations: [mdx(), sitemap()],
-
   markdown: {
     shikiConfig: {
       // Light-only site: single Shiki theme; `.prose pre` supplies the surface.
@@ -19,10 +16,7 @@ export default defineConfig({
       wrap: true,
     },
   },
-
   vite: {
     plugins: [tailwindcss()],
   },
-
-  adapter: cloudflare(),
 });

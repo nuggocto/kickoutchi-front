@@ -29,7 +29,3 @@ tmp/
 Thumbs.db
 # mcp/browser automation artifacts
 .playwright-mcp/
-
-.dev.vars*
-!.dev.vars.example
-!.env.example

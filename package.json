@@ -7,18 +7,15 @@
     "dev": "astro dev",
     "start": "astro dev",
     "build": "astro build",
-    "preview": "pnpm run build && wrangler dev",
+    "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check",
-    "generate-types": "wrangler types",
-    "deploy": "pnpm run build && wrangler deploy"
+    "fmt:check": "oxfmt --check"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^14.1.1",
     "@astrojs/mdx": "^7.0.2",
     "@astrojs/sitemap": "^3.7.3",
     "@tailwindcss/vite": "^4.3.2",
@@ -31,8 +28,7 @@
     "@astrojs/check": "^0.9.9",
     "oxfmt": "^0.57.0",
     "oxlint": "^1.72.0",
-    "typescript": "^6.0.3",
-    "wrangler": "^4.107.0"
+    "typescript": "^6.0.3"
   },
   "packageManager": "pnpm@10.11.1"
 }
