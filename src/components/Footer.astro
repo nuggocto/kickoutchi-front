@@ -15,15 +15,15 @@ const year = new Date().getFullYear();
           <span class="font-pixel text-lg leading-none tracking-wide">Kickoutchi</span>
         </a>
         <p class="max-w-xs text-sm text-muted">
-          A cross-platform TUI and CLI port janitor. See what owns each local port, then clear
-          the swamp safely.
+          A cross-platform TUI and CLI port janitor that shows what owns each local port before you
+          clear it.
         </p>
       </div>
 
       {
         FOOTER_NAV.map((group) => (
           <div>
-            <h2 class="pixel-label mb-3 !text-xs">{group.title}</h2>
+            <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent">{group.title}</h2>
             <ul class="space-y-2">
               {group.items.map((item) => (
                 <li>
@@ -47,12 +47,12 @@ const year = new Date().getFullYear();
       class="mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm text-muted sm:flex-row sm:items-center sm:justify-between"
     >
       <p>
-        © {year} {SITE.name}. Released under the{" "}
-        <a href={LINKS.license} target="_blank" rel="noopener noreferrer" class="text-fg underline underline-offset-2 hover:text-accent">MIT License</a>.
-        Built in the swamp.
+        © {year} {SITE.name}, released under the{" "}
+        <a href={LINKS.license} target="_blank" rel="noopener noreferrer" class="text-fg underline underline-offset-2 hover:text-accent">MIT License</a>
+        and built in the swamp.
       </p>
       <p class="flex items-center gap-2">
-        <span class="font-mono text-xs text-muted">v{SITE.version}</span>
+        <span class="font-mono text-sm text-muted">v{SITE.version}</span>
         <span aria-hidden="true">•</span>
         <a href={LINKS.github} target="_blank" rel="noopener noreferrer" class="hover:text-accent">
           github.com/nuggocto/kickoutchi

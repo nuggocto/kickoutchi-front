@@ -17,7 +17,7 @@ const internalNav = MAIN_NAV.filter((item) => !item.external);
     <a href="/" class="group flex items-center gap-2.5" aria-label={`${SITE.name} home`}>
       <LogoMark alt="" width={36} height={36} class="size-9 shrink-0 object-contain transition-transform group-hover:-rotate-6" />
       <span class="font-pixel text-xl leading-none tracking-wide">Kickoutchi</span>
-      <span class="hidden rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[0.65rem] text-muted sm:inline">
+      <span class="hidden rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-xs text-muted sm:inline">
         v{SITE.version}
       </span>
     </a>
@@ -28,7 +28,7 @@ const internalNav = MAIN_NAV.filter((item) => !item.external);
           <a
             href={item.href}
             class:list={[
-              "rounded-md px-3.5 py-1.5 font-mono text-sm transition-colors hover:bg-surface",
+              "rounded-md px-3.5 py-1.5 text-sm font-medium transition-colors hover:bg-surface",
               isActive(item.href) ? "text-accent" : "text-muted hover:text-fg",
             ]}
             aria-current={isActive(item.href) ? "page" : undefined}
@@ -54,7 +54,7 @@ const internalNav = MAIN_NAV.filter((item) => !item.external);
 
       <details class="relative md:hidden">
         <summary
-          class="inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-lg border-2 border-border-strong bg-surface text-fg hover:text-accent [&::-webkit-details-marker]:hidden"
+          class="inline-flex size-11 cursor-pointer list-none items-center justify-center rounded-lg border-2 border-border-strong bg-surface text-fg hover:text-accent [&::-webkit-details-marker]:hidden"
           aria-label="Open menu"
         >
           <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -71,7 +71,7 @@ const internalNav = MAIN_NAV.filter((item) => !item.external);
                 target={item.external ? "_blank" : undefined}
                 rel={item.external ? "noopener noreferrer" : undefined}
                 class:list={[
-                  "block rounded-md px-3 py-2 font-mono text-sm transition-colors hover:bg-surface-2",
+                  "block rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-surface-2",
                   isActive(item.href) ? "text-accent" : "text-fg",
                 ]}
                 aria-current={isActive(item.href) ? "page" : undefined}

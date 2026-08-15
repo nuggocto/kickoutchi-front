@@ -18,29 +18,27 @@ const { title = "kick • local ports", lines, animate = false, class: className
   Astro.props;
 ---
 
-<div
+<figure
   class:list={["terminal overflow-hidden rounded-lg border-2 border-border-strong", className]}
   data-animate={animate ? "true" : undefined}
-  role="img"
-  aria-label={`Terminal: ${title}`}
 >
-  <div class="chrome flex items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-2.5">
+  <figcaption class="chrome flex items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-2.5">
     <div class="flex items-center gap-2 sm:gap-2.5">
       <span class="terminal-icon" aria-hidden="true">
         <span class="terminal-caret"></span>
       </span>
       <span class="font-mono text-xs">{title}</span>
     </div>
-    <span class="hidden font-mono text-[0.65rem] tracking-wider opacity-60 sm:inline" aria-hidden="true">
+    <span class="hidden font-mono text-xs tracking-wider opacity-60 sm:inline" aria-hidden="true">
       80×24
     </span>
+  </figcaption>
+  <div class="screen crt-overlay overflow-hidden px-3 py-3 font-mono text-xs leading-relaxed sm:px-4 sm:py-4 sm:text-sm">
+    <pre class="whitespace-pre-wrap"><code>{lines.map((line) => (
+        <span class:list={["line", `is-${line.kind ?? "output"}`]}>{line.kind === "command" && <span class="prompt">{line.prompt ?? "$"} </span>}<span class="content">{line.text}</span></span>
+      ))}</code></pre>
   </div>
-  <div class="screen crt-overlay overflow-hidden px-3 py-3 font-mono text-[0.72rem] leading-relaxed sm:px-4 sm:py-4 sm:text-sm">
-    <pre class="whitespace-pre-wrap">{lines.map((line) => (
-        <div class:list={["line", `is-${line.kind ?? "output"}`]}>{line.kind === "command" && <span class="prompt">{line.prompt ?? "$"} </span>}<span class="content">{line.text}</span></div>
-      ))}</pre>
-  </div>
-</div>
+</figure>
 
 <style>
   /* A real terminal is dark — an intentional "device screen" focal point on
@@ -100,6 +98,7 @@ const { title = "kick • local ports", lines, animate = false, class: className
     overflow-x: visible;
   }
   .line {
+    display: block;
     white-space: pre-wrap;
   }
   /* Lines hidden only once the typing script takes over (no-JS stays static). */

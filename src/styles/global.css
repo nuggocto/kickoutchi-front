@@ -1,5 +1,32 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Space Grotesk Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 300 700;
+  src: url("@fontsource-variable/space-grotesk/files/space-grotesk-latin-wght-normal.woff2")
+    format("woff2-variations");
+}
+
+@font-face {
+  font-family: "JetBrains Mono Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url("@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2")
+    format("woff2-variations");
+}
+
+@font-face {
+  font-family: "Pixelify Sans Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 700;
+  src: url("@fontsource-variable/pixelify-sans/files/pixelify-sans-latin-wght-normal.woff2")
+    format("woff2-variations");
+}
+
 /*
   Kickoutchi design system — "pocket device" edition.
 
@@ -17,9 +44,9 @@
 */
 
 @theme {
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
-  --font-pixel: "Pixelify Sans", "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Space Grotesk Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", "Menlo", monospace;
+  --font-pixel: "Pixelify Sans Variable", "Space Grotesk Variable", system-ui, sans-serif;
 
   /* Signature LCD sage — same in both themes, like real hardware. */
   --color-lcd: #a7b487;
@@ -181,7 +208,7 @@
 /* Pixel-type section eyebrow: "01 · INSPECT FIRST" */
 @utility pixel-label {
   font-family: var(--font-pixel);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--accent);
@@ -222,29 +249,6 @@
       transparent 1px,
       transparent 3px
     );
-  }
-}
-
-/* ---- Command ticker (marquee divider strip) ---- */
-@keyframes ticker-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.ticker-track {
-  display: flex;
-  width: max-content;
-  animation: ticker-scroll 36s linear infinite;
-}
-.ticker:hover .ticker-track {
-  animation-play-state: paused;
-}
-@media (prefers-reduced-motion: reduce) {
-  .ticker-track {
-    animation: none;
   }
 }
 

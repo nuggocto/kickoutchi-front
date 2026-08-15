@@ -30,7 +30,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "ports",
     title: "See who's listening",
     description:
-      "Reads open TCP and UDP ports directly from each OS. No shelling out to ss, netstat, or lsof.",
+      "Reads open TCP and UDP ports directly from each OS without shelling out to ss, netstat, or lsof.",
   },
   {
     id: "know-process",
@@ -65,14 +65,14 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "safety",
     title: "Tree and group cleanup",
     description:
-      "Opt in to --tree for descendants when a stale dev stack has more than one PID. POSIX process-group cleanup stays Linux/macOS-only.",
+      "Opt in to --tree for descendants when a stale dev stack has more than one PID, while POSIX process-group cleanup stays Linux/macOS-only.",
   },
   {
     id: "inspect-first",
     icon: "process",
     title: "Inspect before you kick",
     description:
-      "Read-only inspect shows ancestors, descendants, siblings, command lines, ports, and scoped kill hints. Linux/macOS also show process groups.",
+      "Read-only inspect shows ancestors, descendants, siblings, command lines, ports, scoped kill hints, and process groups on Linux/macOS.",
   },
   {
     id: "tui-or-cli",
@@ -93,7 +93,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "platform",
     title: "Linux, macOS, Windows",
     description:
-      "Native collection per OS. Linux/macOS support tree and group scope; Windows supports inspect and CLI tree kill, with --group unavailable.",
+      "Each OS has native collection, with tree and group scope on Linux/macOS and inspect plus CLI tree kill on Windows.",
   },
   {
     id: "full-snapshot",
@@ -107,7 +107,7 @@ export const FEATURES: Feature[] = z.array(featureSchema).parse([
     icon: "docker",
     title: "Docker-aware",
     description:
-      "Explains Docker-owned or partial-metadata ports in details when the Docker CLI is available. Docker owners are protected by default; Docker itself is optional.",
+      "When the Docker CLI is available, Kickoutchi explains Docker-owned or partial-metadata ports and protects Docker owners by default while keeping Docker optional.",
   },
   {
     id: "filters",
