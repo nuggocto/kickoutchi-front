@@ -211,7 +211,7 @@
   font-size: 0.875rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: #2a3c19;
 }
 
 /* LCD surfaces: sage glass with scanlines, like the device screen. */

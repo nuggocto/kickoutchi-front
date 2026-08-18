@@ -21,7 +21,7 @@ const langLabel: Record<NonNullable<Props["lang"]>, string> = {
 
 <figure class:list={["group not-prose overflow-hidden rounded-lg border-2 border-border-strong bg-surface", className]}>
   <figcaption class="flex items-center justify-between gap-3 border-b-2 border-border-strong bg-surface-2/60 px-3 py-1.5">
-    <span class="font-mono text-xs uppercase tracking-wider text-muted">
+    <span class="font-mono text-xs font-medium uppercase tracking-wider text-fg">
       {label ?? langLabel[lang]}
     </span>
     <CopyButton text={code} />
