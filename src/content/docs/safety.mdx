@@ -55,6 +55,10 @@ marked **protected** and require typing the PID or name to confirm • force or 
 it. The built-in list includes Docker owners such as `dockerd`, `docker-proxy`, and
 `com.docker.backend`, and it is [extensible via config](/docs/config#protected-processes).
 
+On Linux, process names truncated by the kernel midway through a Unicode character use the same
+bounded decoding for listing, protection matching, and final validation. A truncated character
+alone no longer blocks termination; ownership and process identity checks still apply.
+
 Human-facing output also sanitizes OS-provided names, paths, and status text before rendering them,
 including control bytes, ANSI escapes, bidi controls, and zero-width display controls.
 
@@ -106,6 +110,10 @@ Windows tree kill uses Job Object containment rather than a freeze-first signal 
   tree.
 
 ## Platform specifics
+
+In a nested Linux PID namespace, a process outside the namespace may still hold the same socket.
+Kickoutchi marks that ownership evidence as partial and refuses termination when the required
+ownership checks cannot be completed, even if one owner is visible.
 
 | Platform    | How termination stays honest                                                                                                                          |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |

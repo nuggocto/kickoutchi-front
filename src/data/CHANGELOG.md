@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-09-05
+
+### Fixed
+
+- Linux now checks the kernel's initial PID namespace identity before claiming
+  complete socket ownership. Nested PID namespaces with their own procfs retain
+  partial ownership evidence, including sockets shared with invisible ancestor
+  processes.
+- Linux termination now handles process names truncated by the kernel midway
+  through a Unicode character. Final validation uses the same bounded lossy
+  decoding as collection and protection matching, while retaining process
+  identity checks and name-size limits.
+- Corrected the security policy to match the release workflow's existing
+  pre-publication checks, updater smoke tests, Homebrew publication, and final
+  manifest attestation coverage.
+- Linux socket-helper cleanup tests now share the host observation lock, so
+  their socket changes cannot race concurrent port-kill tests. Host port-kill
+  tests also verify safe race refusals when namespace capabilities are required;
+  those capabilities cannot prevent unrelated host sockets from changing.
+  Linux CI now isolates test network traffic while retaining the runner's user
+  and PID namespace for permission and ownership checks.
+- Linux release archives are now executed on native runners before attestation
+  and publication. Builds retain the Debian glibc compatibility floor, while
+  termination tests no longer assume complete PID visibility inside a build
+  container.
+
 ## [1.4.1] - 2026-08-13
 
 ### Changed
@@ -1002,7 +1028,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/nuggocto/kickoutchi/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/nuggocto/kickoutchi/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/nuggocto/kickoutchi/compare/v1.3.10...v1.4.0
 [1.3.10]: https://github.com/nuggocto/kickoutchi/compare/v1.3.9...v1.3.10
