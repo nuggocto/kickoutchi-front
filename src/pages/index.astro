@@ -1,292 +1,153 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import ButtonLink from "../components/ButtonLink.astro";
+import CommandBlock from "../components/CommandBlock.astro";
 import Terminal from "../components/Terminal.astro";
 import type { TerminalLine } from "../components/Terminal.astro";
-import ModeCard from "../components/ModeCard.astro";
-import FeatureCard from "../components/FeatureCard.astro";
 import PocketDevice from "../components/PocketDevice.astro";
-import { FEATURES } from "../data/features";
-import { PLATFORM_SUPPORT, PACKAGE_STATUS } from "../data/package-status";
-import { LINKS, RELEASE_ASSETS, SITE } from "../data/links";
+import QuickInstall from "../components/QuickInstall.astro";
+import { LINKS, SITE } from "../data/links";
 
 const demo: TerminalLine[] = [
   { kind: "command", text: "kick inspect --port 3000" },
   { kind: "output", text: "Target: PID 18422 (node)" },
-  { kind: "output", text: "  Ports: TCP 127.0.0.1:3000" },
-  { kind: "output", text: "Ancestors (nearest first):" },
-  { kind: "output", text: "  PID 18190 (pnpm); pnpm dev" },
   { kind: "output", text: "Tree (3 processes):" },
   { kind: "output", text: "  PID 18422 (node) [TCP 127.0.0.1:3000]" },
   { kind: "output", text: "    PID 18431 (vite)" },
   { kind: "output", text: "    PID 18444 (esbuild)" },
-  { kind: "muted", text: "To terminate this tree: kick kill --pid 18422 --tree" },
-  { kind: "output", text: "" },
-  { kind: "command", text: "kick kill --pid 18422 --tree" },
-  { kind: "output", text: "Scope: tree (3 processes)" },
-  { kind: "muted", text: "Type tree to terminate all 3 processes, or press Enter to cancel: tree" },
-  { kind: "success", text: "sent SIGTERM to 3 process(es) in the tree rooted at PID 18422 (node)" },
-  { kind: "success", text: "confirmed target ports are no longer visible" },
+  { kind: "muted", text: "To terminate this tree:" },
+  { kind: "muted", text: "kick kill --pid 18422 --tree" },
 ];
-
-const safety = [
-  "Every interactive termination is confirmed, then checked against a fresh process snapshot.",
-  "PID 0, PID 1, Kickoutchi's own PID, and Windows PID 4 are blocked outright.",
-  "kill --port refuses ambiguous ports instead of guessing which PID to hit.",
-  "Protected processes, including Docker owners, require typing the PID or process name to confirm.",
-  "Tree scope is opt-in, typed, and bounded; group scope stays Linux/macOS-only.",
+const tasks = [
+  { number: "01", title: "Find the owner", description: "Port 3000 is busy. See the process behind it before deciding what to stop.", command: "kick list --port 3000", href: "/docs/cli", link: "List and filter ports" },
+  { number: "02", title: "Explain the conflict", description: 'Get evidence behind "address already in use", even when the owner is unclear.', command: "kick why 3000", href: "/docs/watch-and-why", link: "Understand bind failures" },
+  { number: "03", title: "Watch it change", description: "Keep an eye on ports as servers start, stop, or get replaced.", command: "kick watch", href: "/docs/watch-and-why", link: "Watch ports live" },
 ];
-
-const homepageFeatureIds = new Set([
-  "see-ports",
-  "ask-why",
-  "watch-changes",
-  "inspect-first",
-  "cross-platform",
-  "scriptable",
-]);
-const homepageFeatures = FEATURES.filter((feature) => homepageFeatureIds.has(feature.id));
-const availablePackages = PACKAGE_STATUS.filter((pkg) => pkg.status === "available");
 ---
 
 <Layout>
-  <section class="relative mx-auto max-w-6xl px-4 pt-14 pb-16 sm:pt-20">
-    <div class="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-      <div class="text-center lg:text-left">
-        <p class="mb-5 text-sm">
-          <a href={`/changelog#v${SITE.version}`} class="text-accent underline decoration-accent/40 underline-offset-4 hover:decoration-accent">
-            v{SITE.version} is out. Read the release notes <span aria-hidden="true">→</span>
-          </a>
-        </p>
-        <h1 class="text-[2.7rem] leading-[1.02] font-bold tracking-tight sm:text-6xl">
-          Your ports have squatters,
-          <span class="mt-3 block font-pixel font-medium tracking-tight text-kick">
-            so kick them out.
-          </span>
-        </h1>
-        <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted lg:mx-0">
-          Find the process behind a local port, inspect its family, and clear stale dev servers from
-          the TUI or a script.
-        </p>
-        <p class="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-fg lg:mx-0">
-          Kickoutchi resolves the target again before sending a signal, and nothing dies until you
-          choose a scope.
-        </p>
-        <div class="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start">
-          <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
-          <ButtonLink href="/docs" variant="secondary">Read the docs</ButtonLink>
-          <ButtonLink href={LINKS.github} variant="ghost" external>GitHub ↗</ButtonLink>
-        </div>
-        <p class="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-muted lg:justify-start">
-          <span>Linux · macOS · Windows</span>
-          <span class="text-border-strong" aria-hidden="true">•</span>
-          <span>
-            binaries <code class="font-mono text-[0.9em] text-fg">kickoutchi</code>{" "}and{" "}
-            <code class="font-mono text-[0.9em] text-fg">kick</code>
-          </span>
-          <span class="text-border-strong" aria-hidden="true">•</span>
-          <span>MIT</span>
-        </p>
-      </div>
-      <PocketDevice />
-    </div>
-  </section>
-
-  <section class="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-    <p class="pixel-label">See it first</p>
-    <div class="mt-5 grid items-start gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-      <div>
-        <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">
-          Know the process before you touch it.
-        </h2>
-        <p class="mt-4 leading-relaxed text-muted">
-          A stale dev server is rarely one process. <code class="font-mono text-sm text-fg">kick inspect</code>{" "}
-          shows its parents, children, ports, and the exact cleanup command for the scope you choose.
-        </p>
-        <ol class="mt-7 space-y-4">
-          {
-            [
-              ["1", "Inspect a PID or port in read-only mode."],
-              ["2", "Choose one process, its tree, or a Unix process group."],
-              ["3", "Type the scope to confirm, then verify the port is free."],
-            ].map(([step, text]) => (
-              <li class="flex gap-3 text-sm leading-relaxed text-muted">
-                <span class="font-bold text-accent">{step}.</span>
-                <span>{text}</span>
-              </li>
-            ))
-          }
-        </ol>
-      </div>
-      <Terminal title="kick • inspect, confirm, verify" lines={demo} animate />
-    </div>
-
-    <div class="mt-12 grid gap-6 border-y-2 border-border-strong/25 py-8 md:grid-cols-[0.7fr_1.3fr] md:items-center">
-      <div>
-        <p class="text-base font-semibold text-accent">When the OS answer is vague</p>
-        <code class="mt-2 block font-mono text-xl font-bold text-fg">$ kick why 3000</code>
-      </div>
-      <div>
-        <h3 class="text-xl font-semibold">"Address already in use" is not an explanation.</h3>
-        <p class="mt-2 leading-relaxed text-muted">
-          <code class="font-mono text-sm text-fg">kick why</code> checks a process snapshot, tries a
-          short-lived bind, and reports evidence and certainty so an unknown owner never becomes a
-          guessed PID.
-        </p>
-        <a href="/docs/watch-and-why" class="mt-3 inline-flex text-sm font-semibold text-accent hover:underline">
-          Read about Watch &amp; Why →
+  <section class="mx-auto max-w-6xl px-4 pt-10 pb-12 sm:pt-16 sm:pb-16">
+    <div class="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.3fr_0.7fr] lg:gap-14">
+      <div class="min-w-0">
+        <a href={`/changelog#v${SITE.version}`} class="text-sm text-accent underline decoration-accent/40 underline-offset-4 hover:decoration-accent">
+          v{SITE.version} is out. Read the release notes →
         </a>
+        <h1 class="mt-6 text-[2.6rem] leading-[1.05] font-bold tracking-tight sm:text-6xl">
+          Your ports have squatters,
+          <span class="mt-3 block font-pixel font-medium text-kick">so kick them out.</span>
+        </h1>
+        <p class="mt-5 max-w-xl text-lg leading-relaxed text-muted">
+          Find what's using your port. Inspect the process, then clear the stale server from your terminal.
+        </p>
+        <p class="mt-3 text-sm leading-relaxed text-muted">
+          Free, open-source TUI &amp; CLI. Linux, macOS, and Windows.
+        </p>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <ButtonLink href="#quick-install">Install Kickoutchi</ButtonLink>
+          <ButtonLink href="#see-it" variant="secondary">See it in action ↓</ButtonLink>
+        </div>
+        <div class="mt-8 border-t border-border pt-6">
+          <QuickInstall />
+        </div>
+      </div>
+      <div class="hero-device">
+        <PocketDevice />
       </div>
     </div>
   </section>
 
-  <section class="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-    <p class="pixel-label">Guardrails</p>
-    <div class="pocket-panel relative mt-5 overflow-hidden">
-      <div
-        class="h-2.5 w-full border-b-2 border-border-strong bg-[repeating-linear-gradient(-45deg,var(--warning)_0_10px,transparent_10px_20px)]"
-        aria-hidden="true"
-      ></div>
-      <div class="grid gap-8 p-6 sm:p-10 lg:grid-cols-[0.8fr_1.2fr]">
+  <section id="see-it" class="scroll-mt-20 border-y-2 border-border-strong bg-surface/60">
+    <div class="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+      <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <span class="inline-flex size-11 items-center justify-center rounded-md bg-accent/10 text-accent">
-            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              <path d="M9 12l2 2 4-4"></path>
-            </svg>
-          </span>
-          <h2 class="mt-4 text-3xl font-bold tracking-tight">Safe by default</h2>
-          <p class="mt-3 leading-relaxed text-muted">
-            Termination starts with a process identity rather than only a port number, so changed
-            or uncertain targets are refused.
-          </p>
-          <ButtonLink href="/docs/safety" variant="secondary" size="sm" class="mt-5">
-            Read the safety model
-          </ButtonLink>
+          <p class="pixel-label">Inside your terminal</p>
+          <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Meet your port janitor.</h2>
+          <p class="mt-3 max-w-xl leading-relaxed text-muted">Browse open ports, select a process, and see exactly what owns it.</p>
         </div>
-        <ol class="grid gap-x-8 gap-y-4 self-center sm:grid-cols-2">
-          {
-            safety.map((item, i) => (
-              <li class="flex gap-3 text-sm leading-relaxed">
-                <span class="shrink-0 font-bold text-accent">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <span class="text-muted">{item}</span>
-              </li>
-            ))
-          }
-        </ol>
+        <a href="/docs/tui" class="shrink-0 text-sm font-semibold text-accent underline underline-offset-4">Take the TUI tour →</a>
       </div>
-    </div>
-  </section>
-
-  <section class="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-    <p class="pixel-label">Pick an interface</p>
-    <h2 class="mt-5 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
-      Use the TUI to browse and the CLI to automate.
-    </h2>
-    <p class="mt-3 max-w-2xl leading-relaxed text-muted">
-      Both interfaces use the same native collectors, labels, filters, and target checks.
-    </p>
-    <div class="mt-8 grid gap-8 md:grid-cols-2">
-      <ModeCard
-        icon="tui"
-        eyebrow="Interactive"
-        title="Guided TUI"
-        description="Browse a live port table, inspect process details, and confirm one-process or tree cleanup."
-        command="kickoutchi"
-        href="/docs/tui"
-        ctaLabel="Explore the TUI"
-      />
-      <ModeCard
-        icon="cli"
-        eyebrow="Headless"
-        title="Scriptable CLI"
-        description="List ports, explain failed binds, watch changes, inspect process families, and terminate an explicit scope."
-        command="kick list --filter 'label:web family:ipv4'"
-        href="/docs/cli"
-        ctaLabel="Explore the CLI"
-      />
-    </div>
-  </section>
-
-  <section class="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-    <p class="pixel-label">What it handles</p>
-    <div class="mt-5 grid gap-8 lg:grid-cols-[0.65fr_1.35fr]">
-      <div>
-        <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">
-          One native snapshot drives every command.
-        </h2>
-        <p class="mt-4 leading-relaxed text-muted">
-          Kickoutchi reads each operating system directly and uses the same snapshot for the table,
-          process details, filters, JSON, watch events, and bind diagnostics.
-        </p>
-        <ButtonLink href="/docs" variant="ghost" size="sm" class="mt-5">
-          Browse the full reference →
-        </ButtonLink>
-      </div>
-      <div class="grid gap-x-8 sm:grid-cols-2">
-        {homepageFeatures.map((feature) => <FeatureCard feature={feature} />)}
-      </div>
-    </div>
-  </section>
-
-  <section class="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-    <p class="pixel-label">Get it</p>
-    <div class="pocket-panel mt-5 grid gap-10 p-6 sm:p-8 lg:grid-cols-[1.1fr_0.9fr]">
-      <div>
-        <h2 class="text-3xl font-bold tracking-tight">Install in one line</h2>
-        <p class="mt-3 leading-relaxed text-muted">
-          Use the installer below, a package manager, or a release archive, with checksums and every
-          supported method documented on the install page.
-        </p>
-        <div class="mt-5">
-          <Terminal
-            title="Linux & macOS"
-            lines={[
-              { kind: "command", text: "curl --proto '=https' --tlsv1.2 -LsSf \\" },
-              { kind: "command", text: "  " + RELEASE_ASSETS.installerSh + " \\", prompt: " " },
-              { kind: "command", text: "  | sh", prompt: " " },
-            ]}
-          />
+      <figure class="mt-7">
+        <div class="overflow-hidden rounded-lg border-2 border-border-strong bg-[#10130e] shadow-[5px_5px_0_var(--chunk-shadow)]">
+          <div class="flex items-center justify-between gap-3 border-b border-[#303725] px-4 py-3 font-mono text-xs text-[#d7dcc4]">
+            <span><span class="text-[#b7d073]">$</span> kick</span>
+            <span class="text-[#a0aa91]">TUI · Linux</span>
+          </div>
+          <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Kickoutchi TUI screenshot. Scroll horizontally to see the full terminal on smaller screens.">
+            <img src="/previews/kickoutchi-tui.webp" alt="Kickoutchi 1.4.2 showing a selected Node.js process on port 3000, its listening address, process details, and keyboard shortcuts for inspecting or terminating it." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
+          </div>
         </div>
-        <ButtonLink href="/install" class="mt-6">See install and verification options</ButtonLink>
-      </div>
-
-      <div>
-        <h3 class="text-xl font-semibold">Platforms</h3>
-        <dl class="mt-3">
-          {
-            PLATFORM_SUPPORT.map((platform) => (
-              <div class="border-t-2 border-border-strong/20 py-4 first:border-t-0 first:pt-0">
-                <dt class="font-semibold text-fg">{platform.platform}</dt>
-                <dd class="mt-1 text-sm leading-relaxed text-muted">{platform.detail}</dd>
-              </div>
-            ))
-          }
-        </dl>
-        <div class="border-t-2 border-border-strong/20 pt-5">
-          <h3 class="font-semibold">Available packages</h3>
-          <p class="mt-3 text-sm leading-relaxed text-muted">
-            {availablePackages.map((pkg) => pkg.name).join(", ")}
-          </p>
+        <figcaption class="mt-4 flex flex-wrap justify-between gap-2 text-sm text-muted">
+          <span>Captured from Kickoutchi v1.4.2 with a local demo server.</span>
+          <a href="/previews/kickoutchi-tui.webp" target="_blank" rel="noopener noreferrer" class="text-accent underline underline-offset-4">View full size ↗</a>
+        </figcaption>
+        <p class="mt-2 text-xs text-muted sm:hidden">Swipe the terminal to see the full table.</p>
+      </figure>
+      <details class="mt-5 rounded-lg border border-border bg-bg">
+        <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-accent">See the confirmation step</summary>
+        <p class="px-4 pb-4 text-sm leading-relaxed text-muted">The prompt names the process and every affected port. Nothing stops until you confirm.</p>
+        <div class="overflow-x-auto rounded-b-lg bg-[#10130e]" tabindex="0" role="region" aria-label="Termination confirmation screenshot. Scroll horizontally on smaller screens.">
+          <img src="/previews/kickoutchi-confirm.webp" alt="The real confirmation dialog identifies the Node.js process, lists its ports 3000, 5173, and 8080, and offers y to confirm or Escape to cancel." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
+        </div>
+      </details>
+      <div class="mt-8 grid gap-6 border-t border-border pt-6 sm:grid-cols-2">
+        <div class="flex gap-3">
+          <kbd class="flex size-9 shrink-0 items-center justify-center rounded border border-border-strong bg-bg font-mono text-sm">↵</kbd>
+          <p class="text-sm leading-relaxed text-muted"><strong class="block text-fg">Inspect first</strong>Open process details with Enter. Browsing doesn't terminate anything.</p>
+        </div>
+        <div class="flex gap-3">
+          <kbd class="flex size-9 shrink-0 items-center justify-center rounded border border-border-strong bg-bg font-mono text-sm">x</kbd>
+          <p class="text-sm leading-relaxed text-muted"><strong class="block text-fg">Review, then confirm</strong>Press x to review the target. Confirm to stop it, or Escape to cancel.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section class="mx-auto max-w-6xl px-4 pt-16 pb-4">
-    <div class="flex flex-col items-center gap-6 text-center">
-      <p class="font-pixel text-[clamp(2.2rem,6.5vw,4.5rem)] leading-[0.95] tracking-tight">
-        CLEAR THE <span class="text-accent">SWAMP.</span>
-      </p>
-      <p class="max-w-xl text-muted">
-        Start with the TUI, or run <code class="font-mono text-sm text-fg">kick list</code> for a
-        one-shot table.
-      </p>
-      <div class="flex flex-wrap justify-center gap-3">
-        <ButtonLink href="/install">Install Kickoutchi</ButtonLink>
-        <ButtonLink href={LINKS.github} variant="secondary" external>View the source</ButtonLink>
+  <section class="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+    <p class="pixel-label">Already know the port?</p>
+    <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Get straight to it.</h2>
+    <p class="mt-3 max-w-xl leading-relaxed text-muted">Use the CLI for a quick answer, or add JSON output to your scripts.</p>
+    <div class="mt-8 grid gap-8 md:grid-cols-3">
+      {tasks.map((task) => (
+        <article class="flex min-w-0 flex-col border-t-2 border-border-strong pt-5">
+          <p class="font-pixel text-lg text-accent">{task.number}</p>
+          <h3 class="mt-2 text-xl font-semibold">{task.title}</h3>
+          <p class="mt-2 mb-5 text-sm leading-relaxed text-muted">{task.description}</p>
+          <div class="mt-auto"><CommandBlock code={task.command} /></div>
+          <a href={task.href} class="mt-4 text-sm font-semibold text-accent hover:underline">{task.link} →</a>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pb-12 sm:pb-16">
+    <div class="grid items-center gap-8 rounded-xl border-2 border-border-strong bg-surface p-5 sm:p-8 lg:grid-cols-2 lg:gap-12">
+      <div>
+        <p class="pixel-label">Inspect before you kick</p>
+        <h2 class="mt-3 text-3xl font-bold tracking-tight">Clear the right process.</h2>
+        <p class="mt-4 leading-relaxed text-muted">A stale server can leave a whole process tree behind. Inspect its family before choosing what to stop.</p>
+        <ul class="mt-5 space-y-3 text-sm leading-relaxed text-muted">
+          <li class="flex gap-3"><span class="text-accent" aria-hidden="true">✓</span>One process by default. Tree cleanup only when you ask.</li>
+          <li class="flex gap-3"><span class="text-accent" aria-hidden="true">✓</span>Targets are checked again before termination.</li>
+          <li class="flex gap-3"><span class="text-accent" aria-hidden="true">✓</span>Changed or uncertain targets are refused.</li>
+        </ul>
+        <a href="/docs/safety" class="mt-6 inline-block text-sm font-semibold text-accent underline underline-offset-4">How the safety checks work →</a>
+      </div>
+      <div class="min-w-0"><Terminal title="kick · read-only inspection" lines={demo} animate /></div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-4 pb-4">
+    <div class="install-finish relative overflow-hidden rounded-xl border-2 border-border-strong bg-accent px-5 py-10 text-accent-fg sm:px-10 sm:py-12">
+      <div class="relative z-10 grid items-center gap-8 md:grid-cols-[1fr_auto]">
+        <div>
+          <p class="font-pixel text-4xl leading-none sm:text-5xl">CLEAR THE SWAMP.</p>
+          <p class="mt-4 max-w-lg leading-relaxed text-accent-fg/85">Your next dev server deserves a free port.</p>
+          <p class="mt-3 max-w-lg text-sm leading-relaxed text-accent-fg/85">Prefer a package manager? Homebrew, Scoop, AUR, Cargo, and Nix are available too.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-4 md:flex-col">
+          <ButtonLink href="/install" variant="secondary">Choose your install method →</ButtonLink>
+          <a href={LINKS.github} target="_blank" rel="noopener noreferrer" class="text-sm font-semibold underline underline-offset-4">View the source ↗</a>
+        </div>
       </div>
     </div>
   </section>

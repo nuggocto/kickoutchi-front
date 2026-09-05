@@ -1,12 +1,9 @@
 ---
 /**
- * The hero toy: a working pocket device. Its monochrome LCD replays the real
- * kick workflow (scan → found → inspect → confirm → kick → port free) as an
- * attract loop, and the three shell buttons actually drive it.
+ * A pocket device demo driven by its three shell buttons.
  *
  * Everything on screen is single-colour ink on sage, like real LCD hardware.
- * No JS → the device parks on the "squatter found" scene; reduced motion →
- * no attract loop, buttons still switch scenes instantly.
+ * No JS leaves a static preview. Reduced motion shortens scene transitions.
  */
 
 interface Props {
@@ -47,10 +44,13 @@ const BOOT = px([
 const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
 ---
 
-<div class:list={["pocket-device relative mx-auto w-full max-w-[21rem]", className]} data-state="found">
+<div class:list={["pocket-device relative mx-auto w-full max-w-[17rem] sm:max-w-[21rem]", className]} data-state="found">
   <p class="sr-only">
     Interactive demo device: a pocket port janitor. Use the scan, inspect, and kick buttons to
     replay how Kickoutchi finds a process squatting on a port and kicks it out.
+  </p>
+  <p class="sr-only" role="status" aria-atomic="true" data-demo-status>
+    Demo: node is using port 3000 with 3 processes. Inspect it or press Kick to review.
   </p>
 
   <div class="shell relative mx-auto flex flex-col items-center px-7 pt-8 pb-10 sm:px-9">
@@ -67,12 +67,6 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
         <div class="absolute inset-x-0 top-0 flex items-center justify-between border-b border-lcd-ink/40 px-2.5 py-1.5 font-mono text-[0.6rem] font-bold tracking-wide">
           <span>PORT&nbsp;<span data-bind="port">:3000</span></span>
           <span class="scene-scan-hide" data-bind="pidline">PID 18422</span>
-        </div>
-
-        <!-- SCENE: boot splash -->
-        <div class="scene scene-boot">
-          <p class="font-pixel text-lg tracking-[0.2em]">KICKOUTCHI</p>
-          <p class="mt-1 font-mono text-[0.6rem] font-bold tracking-[0.3em]">PORT JANITOR</p>
         </div>
 
         <!-- SCENE: scanning -->
@@ -153,6 +147,8 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
 
   <!-- floor shadow -->
   <div class="mx-auto mt-4 h-3 w-3/5 rounded-[100%] bg-border-strong/25 blur-[2px]" aria-hidden="true"></div>
+  <p class="mt-4 text-center text-xs text-muted">Try the buttons. This is a demo.</p>
+  <noscript><p class="mt-2 text-center text-xs text-muted">Enable JavaScript to play the demo.</p></noscript>
 </div>
 
 <style>
@@ -165,27 +161,10 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
     box-shadow:
       7px 8px 0 0 var(--chunk-shadow),
       inset 0 -10px 0 0 var(--color-shell-deep);
-    animation: device-float 7s ease-in-out infinite;
   }
-  @keyframes device-float {
-    0%,
-    100% {
-      transform: translateY(0) rotate(-0.6deg);
-    }
-    50% {
-      transform: translateY(-8px) rotate(0.6deg);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .shell {
-      animation: none;
-    }
-  }
-
   .led {
     background-color: var(--accent);
     box-shadow: 0 0 6px var(--accent);
-    animation: cursor-blink 2.4s steps(1) infinite;
   }
   .pocket-device[data-state="kicking"] .led,
   .pocket-device[data-state="confirm"] .led {
@@ -204,7 +183,6 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
     justify-content: center;
     color: var(--color-lcd-ink);
   }
-  .pocket-device[data-state="boot"] .scene-boot,
   .pocket-device[data-state="scan"] .scene-scan,
   .pocket-device[data-state="found"] .scene-stage,
   .pocket-device[data-state="kicking"] .scene-stage,
@@ -213,8 +191,7 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
   .pocket-device[data-state="confirm"] .scene-confirm {
     display: flex;
   }
-  .pocket-device[data-state="scan"] .scene-scan-hide,
-  .pocket-device[data-state="boot"] .scene-scan-hide {
+  .pocket-device[data-state="scan"] .scene-scan-hide {
     visibility: hidden;
   }
 
@@ -224,19 +201,6 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
   .msg-kicking,
   .msg-free {
     display: none;
-  }
-
-  .pocket-device[data-state="found"] .critter-sprite {
-    animation: critter-bob 0.9s steps(2) infinite;
-  }
-  @keyframes critter-bob {
-    0%,
-    100% {
-      transform: translateX(-50%) translateY(0);
-    }
-    50% {
-      transform: translateX(-50%) translateY(-4px);
-    }
   }
 
   .pocket-device[data-state="kicking"] .msg-found,
@@ -276,7 +240,7 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
   }
   .pocket-device[data-state="free"] .sparkle-sprite {
     display: block;
-    animation: sparkle-pop 1.2s steps(4) infinite;
+    animation: sparkle-pop 1.2s steps(4) 1;
   }
   .pocket-device[data-state="free"] .msg-free {
     display: block;
@@ -310,8 +274,9 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
     }
   }
 
-  .confirm-hint {
-    animation: cursor-blink 1.2s steps(1) infinite;
+  .dev-btn[aria-disabled="true"] {
+    cursor: default;
+    opacity: 0.5;
   }
 
   /* ---- Physical buttons ---- */
@@ -377,23 +342,11 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
 
   const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  type State = "boot" | "scan" | "found" | "inspect" | "confirm" | "kicking" | "free";
-
-  /** state → [next state, delay ms] for the attract loop. */
-  const AUTO: Record<State, [State, number]> = {
-    boot: ["scan", 1400],
-    scan: ["found", 1500],
-    found: ["inspect", 3200],
-    inspect: ["confirm", 2600],
-    confirm: ["kicking", 1900],
-    kicking: ["free", 950],
-    free: ["scan", 2600],
-  };
+  type State = "scan" | "found" | "inspect" | "confirm" | "kicking" | "free";
 
   function wireDevice(device: HTMLElement) {
     let portIndex = 0;
-    let autoTimer = 0;
-    let resumeTimer = 0;
+    let transitionTimer = 0;
 
     const treeRows = device.querySelectorAll<HTMLElement>("[data-tree]");
 
@@ -424,39 +377,40 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
         render();
       }
       device.dataset.state = next;
-    }
-
-    function scheduleAuto() {
-      window.clearTimeout(autoTimer);
-      const [next, delay] = AUTO[state()];
-      autoTimer = window.setTimeout(() => {
-        setState(next);
-        scheduleAuto();
-      }, delay);
-    }
-
-    /** A button press takes control; the attract loop resumes after idling. */
-    function interact() {
-      window.clearTimeout(autoTimer);
-      window.clearTimeout(resumeTimer);
-      if (!REDUCED) resumeTimer = window.setTimeout(scheduleAuto, 9000);
+      const info = PORTS[portIndex];
+      const messages: Record<State, string> = {
+        scan: `Scanning port ${info.port.slice(1)}.`,
+        found: `${info.proc} is using port ${info.port.slice(1)} with ${info.tree.length} processes. Inspect it or press Kick to review.`,
+        inspect: `Process tree: ${info.tree.join(", ")}. Nothing has been stopped. Press Kick to review termination.`,
+        confirm: `Stop ${info.tree.length} processes on port ${info.port.slice(1)}? Press Kick again to confirm, or Scan to choose another port.`,
+        kicking: `Stopping ${info.tree.length} demo processes.`,
+        free: `Port ${info.port.slice(1)} is free. Scan to try another port.`,
+      };
+      const status = device.querySelector<HTMLElement>("[data-demo-status]");
+      if (status) status.textContent = messages[next];
+      for (const button of device.querySelectorAll<HTMLButtonElement>("[data-action]")) {
+        if (button.dataset.action === "kick")
+          button.setAttribute("aria-disabled", String(!["found", "inspect", "confirm"].includes(next)));
+        if (button.dataset.action === "inspect")
+          button.setAttribute("aria-disabled", String(!["found", "confirm"].includes(next)));
+      }
     }
 
     device.addEventListener("click", (event) => {
       const button = (event.target as HTMLElement).closest<HTMLElement>("[data-action]");
-      if (!button) return;
-      interact();
+      if (!button || button.getAttribute("aria-disabled") === "true") return;
+      window.clearTimeout(transitionTimer);
 
       const current = state();
       switch (button.dataset.action) {
         case "scan":
           setState("scan");
-          window.setTimeout(() => {
+          transitionTimer = window.setTimeout(() => {
             if (state() === "scan") setState("found");
           }, REDUCED ? 150 : 700);
           break;
         case "inspect":
-          if (current === "found" || current === "confirm" || current === "free") {
+          if (current === "found" || current === "confirm") {
             setState("inspect");
           }
           break;
@@ -465,7 +419,7 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
             setState("confirm");
           } else if (current === "confirm") {
             setState("kicking");
-            window.setTimeout(() => {
+            transitionTimer = window.setTimeout(() => {
               if (state() === "kicking") setState("free");
             }, REDUCED ? 150 : 950);
           }
@@ -474,10 +428,6 @@ const SPARKLE = px(["..1..", "..1..", "11.11", "..1..", "..1.."]);
     });
 
     render();
-    if (!REDUCED) {
-      setState("boot");
-      scheduleAuto();
-    }
   }
 
   function wireDevices() {

@@ -78,6 +78,7 @@ const { title = "kick • local ports", lines, animate = false, class: className
     transform: rotate(-45deg);
   }
   .screen {
+    display: grid;
     color: var(--term-fg);
     /* Soft phosphor glow behind the text. */
     background:
@@ -89,6 +90,8 @@ const { title = "kick • local ports", lines, animate = false, class: className
      owns its own chrome, so neutralize those properties here rather than
      carving an exception into the prose styles. */
   .screen pre {
+    grid-area: 1 / 1;
+    min-width: 0;
     margin: 0;
     font: inherit;
     padding: 0;
@@ -96,6 +99,12 @@ const { title = "kick • local ports", lines, animate = false, class: className
     border-radius: 0;
     background: none;
     overflow-x: visible;
+  }
+  .screen :global(.terminal-transcript) {
+    opacity: 0;
+  }
+  .screen :global(.terminal-replay) {
+    align-self: start;
   }
   .line {
     display: block;
@@ -136,7 +145,17 @@ const { title = "kick • local ports", lines, animate = false, class: className
   const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function animateTerminal(terminal: HTMLElement) {
-    const lineEls = [...terminal.querySelectorAll<HTMLElement>(".line")];
+    const original = terminal.querySelector<HTMLElement>(".screen pre");
+    if (!original) return;
+
+    // Keep the full transcript in flow and in the accessibility tree. Replay a
+    // visual copy over it so wrapping, resizing, and typing cannot move the page.
+    const replay = original.cloneNode(true) as HTMLElement;
+    replay.classList.add("terminal-replay");
+    replay.setAttribute("aria-hidden", "true");
+    original.classList.add("terminal-transcript");
+    original.after(replay);
+    const lineEls = [...replay.querySelectorAll<HTMLElement>(".line")];
     if (lineEls.length === 0) return;
 
     const steps = lineEls.map((el) => {
@@ -163,7 +182,8 @@ const { title = "kick • local ports", lines, animate = false, class: className
 
     function nextStep() {
       if (index >= steps.length) {
-        cursor.remove();
+        replay.remove();
+        original?.classList.remove("terminal-transcript");
         return;
       }
       const step = steps[index++];

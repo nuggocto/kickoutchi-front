@@ -1,0 +1,59 @@
+---
+import CommandBlock from "./CommandBlock.astro";
+import { INSTALL_METHODS } from "../data/install-methods";
+
+const unix = INSTALL_METHODS.find((method) => method.id === "installer-unix")!;
+const windows = INSTALL_METHODS.find((method) => method.id === "installer-windows")!;
+---
+
+<div id="quick-install" class="quick-install scroll-mt-24">
+  <fieldset>
+    <legend class="mb-3 text-sm font-semibold">Install for your platform</legend>
+    <div class="mb-3 flex flex-wrap gap-2">
+      <div>
+        <input class="peer sr-only" type="radio" name="install-platform" id="install-unix" value="unix" checked />
+        <label for="install-unix" class="platform-option">Linux &amp; macOS</label>
+      </div>
+      <div>
+        <input class="peer sr-only" type="radio" name="install-platform" id="install-windows" value="windows" />
+        <label for="install-windows" class="platform-option">Windows</label>
+      </div>
+    </div>
+  </fieldset>
+  <div class="unix-command">
+    <CommandBlock code={unix.commands[0].code} lang="sh" label="Terminal" />
+  </div>
+  <div class="windows-command">
+    <CommandBlock code={windows.commands[0].code} lang="powershell" label="PowerShell" />
+  </div>
+  <p class="mt-3 text-sm text-muted">
+    Then run <code class="font-mono text-fg">kick</code> to open the TUI.{" "}
+    <a href="/install" class="font-medium text-accent underline underline-offset-4">Other install methods →</a>
+  </p>
+</div>
+
+<style>
+  .platform-option {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.4rem 0.85rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.375rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+  input:checked + .platform-option {
+    background: var(--fg);
+    color: var(--surface);
+  }
+  input:focus-visible + .platform-option {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+  }
+  .quick-install:has(#install-unix:checked) .windows-command,
+  .quick-install:has(#install-windows:checked) .unix-command {
+    display: none;
+  }
+</style>
