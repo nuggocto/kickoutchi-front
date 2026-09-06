@@ -205,7 +205,7 @@
   }
 }
 
-/* Pixel-type section eyebrow: "01 · INSPECT FIRST" */
+/* Pixel-type section eyebrow. */
 @utility pixel-label {
   font-family: var(--font-pixel);
   font-size: 0.875rem;

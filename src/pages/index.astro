@@ -19,9 +19,9 @@ const demo: TerminalLine[] = [
   { kind: "muted", text: "kick kill --pid 18422 --tree" },
 ];
 const tasks = [
-  { number: "01", title: "Find the owner", description: "Port 3000 is busy. See the process behind it before deciding what to stop.", command: "kick list --port 3000", href: "/docs/cli", link: "List and filter ports" },
-  { number: "02", title: "Explain the conflict", description: 'Get evidence behind "address already in use", even when the owner is unclear.', command: "kick why 3000", href: "/docs/watch-and-why", link: "Understand bind failures" },
-  { number: "03", title: "Watch it change", description: "Keep an eye on ports as servers start, stop, or get replaced.", command: "kick watch", href: "/docs/watch-and-why", link: "Watch ports live" },
+  { title: "Find the owner", description: "Port 3000 is busy. See the process behind it before deciding what to stop.", command: "kick list --port 3000", href: "/docs/cli", link: "List and filter ports" },
+  { title: "Explain the conflict", description: 'Get evidence behind "address already in use", even when the owner is unclear.', command: "kick why 3000", href: "/docs/watch-and-why", link: "Understand bind failures" },
+  { title: "Watch it change", description: "Keep an eye on ports as servers start, stop, or get replaced.", command: "kick watch", href: "/docs/watch-and-why", link: "Watch ports live" },
 ];
 ---
 
@@ -109,8 +109,7 @@ const tasks = [
     <div class="mt-8 grid gap-8 md:grid-cols-3">
       {tasks.map((task) => (
         <article class="flex min-w-0 flex-col border-t-2 border-border-strong pt-5">
-          <p class="font-pixel text-lg text-accent">{task.number}</p>
-          <h3 class="mt-2 text-xl font-semibold">{task.title}</h3>
+          <h3 class="text-xl font-semibold">{task.title}</h3>
           <p class="mt-2 mb-5 text-sm leading-relaxed text-muted">{task.description}</p>
           <div class="mt-auto"><CommandBlock code={task.command} /></div>
           <a href={task.href} class="mt-4 text-sm font-semibold text-accent hover:underline">{task.link} →</a>
