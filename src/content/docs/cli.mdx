@@ -135,6 +135,12 @@ Snapshot mode deliberately ignores `--port`, `--process`, `--filter`, `--sort`, 
   `--yes` exit with code `6` and signal nothing.
 </Callout>
 
+On Linux and macOS, Ctrl-C during a kill waits for frozen-process cleanup. If delivery has not
+started, Kickoutchi aborts and resumes only processes it stopped; processes that were already
+stopped stay stopped. Once delivery starts, the bounded delivery and cleanup sequence finishes
+before the interrupt takes effect. This applies to single-process, tree, and group kills, and
+also handles SIGTERM and SIGHUP sent to the CLI.
+
 ## Inspecting a process family
 
 `inspect` is the read-only way to choose the right root before a scoped kill. It shows ancestors,

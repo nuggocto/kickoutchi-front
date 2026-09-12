@@ -65,10 +65,10 @@ On Linux and macOS, the execution path is freeze-first:
 - Re-check the confirmed root right before acting.
 - Count the tree before any signal; over the cap refuses with zero side effects.
 - `SIGSTOP` the root first, then sweep descendants to a fixed point.
-- Verify each stopped member's identity while PID reuse is impossible, and pin that post-stop
-  identity for rollback. A PID reused mid-freeze is resumed, never terminated.
+- Verify each stopped member's identity before delivering a terminating signal.
 - Send `SIGTERM`, then `SIGCONT`, leaves first and root last. `--force` sends `SIGKILL` instead.
-- If anything becomes uncertain, thaw every stopped process and send no termination.
+- If anything becomes uncertain before delivery, resume only processes Kickoutchi stopped and
+  send no termination. Processes that were already stopped stay stopped on abort.
 
 A cleanup error after a thaw names only processes whose `SIGCONT` was **refused** • those are the
 ones that may still be stopped. A member that exited under the freeze cannot be resumed, so it is
