@@ -3,7 +3,7 @@ import CopyButton from "./CopyButton.astro";
 
 interface Props {
   code: string;
-  /** Affects only the copy affordance label; commands aren't syntax-highlighted. */
+  /** Shell languages render as a terminal with a prompt; the rest as plain text. */
   lang?: "sh" | "powershell" | "toml" | "json" | "text";
   label?: string;
   class?: string;
@@ -17,14 +17,57 @@ const langLabel: Record<NonNullable<Props["lang"]>, string> = {
   json: "json",
   text: "text",
 };
+const isShell = lang === "sh" || lang === "powershell";
+
+// A line gets a prompt when it starts a command: not blank, not a comment,
+// not a continuation of a line ending in "\", not an indented or piped line.
+const lines = code.split("\n").map((text, i, all) => ({
+  text,
+  prompt:
+    text.trim() !== "" &&
+    !text.startsWith("#") &&
+    !(i > 0 && all[i - 1].trimEnd().endsWith("\\")) &&
+    !/^\s|^\|/.test(text),
+}));
 ---
 
-<figure class:list={["group not-prose overflow-hidden rounded-lg border-2 border-border-strong bg-surface", className]}>
-  <figcaption class="flex items-center justify-between gap-3 border-b-2 border-border-strong bg-surface-2/60 px-3 py-1.5">
-    <span class="font-mono text-xs font-medium uppercase tracking-wider text-fg">
+<figure
+  class:list={[
+    "command-block group not-prose overflow-hidden rounded-lg border-2 border-border-strong",
+    isShell ? "command-shell" : "bg-surface",
+    className,
+  ]}
+>
+  <figcaption
+    class:list={[
+      "flex items-center justify-between gap-3 border-b-2 px-3 py-1.5",
+      isShell ? "border-[#303725] bg-[#141a14]" : "border-border-strong bg-surface-2/60",
+    ]}
+  >
+    <span class:list={["font-mono text-sm", isShell ? "text-[#b7c4a0]" : "text-fg"]}>
       {label ?? langLabel[lang]}
     </span>
     <CopyButton text={code} />
   </figcaption>
-  <pre class="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"><code class="font-mono text-fg break-words [overflow-wrap:anywhere]">{code}</code></pre>
+  <pre class="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"><code class:list={["font-mono", isShell ? "break-all text-[#e7ebd9]" : "break-words text-fg [overflow-wrap:anywhere]"]}>{isShell ? lines.map((line, i) => (<span class:list={["line", line.prompt && "has-prompt"]}>{line.text}{i < lines.length - 1 && "\n"}</span>)) : code}</code></pre>
 </figure>
+
+<style>
+  .command-shell {
+    background-color: var(--fg);
+  }
+  /* Beat the docs' `.prose pre` card (element-qualified for specificity):
+     the figure owns its surface. */
+  figure.command-block pre {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+  }
+  /* Generated content: the prompt shows but never lands in a copy. */
+  .has-prompt::before {
+    content: "$ ";
+    color: #b7d073;
+    font-weight: 600;
+  }
+</style>

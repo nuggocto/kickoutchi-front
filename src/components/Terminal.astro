@@ -9,19 +9,13 @@ export interface TerminalLine {
 interface Props {
   title?: string;
   lines: TerminalLine[];
-  /** Type the session out when it scrolls into view (falls back to static). */
-  animate?: boolean;
   class?: string;
 }
 
-const { title = "kick • local ports", lines, animate = false, class: className = "" } =
-  Astro.props;
+const { title = "kick • local ports", lines, class: className = "" } = Astro.props;
 ---
 
-<figure
-  class:list={["terminal overflow-hidden rounded-lg border-2 border-border-strong", className]}
-  data-animate={animate ? "true" : undefined}
->
+<figure class:list={["terminal overflow-hidden rounded-lg border-2 border-border-strong", className]}>
   <figcaption class="chrome flex items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:py-2.5">
     <div class="flex items-center gap-2 sm:gap-2.5">
       <span class="terminal-icon" aria-hidden="true">
@@ -78,7 +72,6 @@ const { title = "kick • local ports", lines, animate = false, class: className
     transform: rotate(-45deg);
   }
   .screen {
-    display: grid;
     color: var(--term-fg);
     /* Soft phosphor glow behind the text. */
     background:
@@ -90,7 +83,6 @@ const { title = "kick • local ports", lines, animate = false, class: className
      owns its own chrome, so neutralize those properties here rather than
      carving an exception into the prose styles. */
   .screen pre {
-    grid-area: 1 / 1;
     min-width: 0;
     margin: 0;
     font: inherit;
@@ -100,19 +92,9 @@ const { title = "kick • local ports", lines, animate = false, class: className
     background: none;
     overflow-x: visible;
   }
-  .screen :global(.terminal-transcript) {
-    opacity: 0;
-  }
-  .screen :global(.terminal-replay) {
-    align-self: start;
-  }
   .line {
     display: block;
     white-space: pre-wrap;
-  }
-  /* Lines hidden only once the typing script takes over (no-JS stays static). */
-  .line[data-pending] {
-    display: none;
   }
   .content {
     overflow-wrap: anywhere;
@@ -138,103 +120,3 @@ const { title = "kick • local ports", lines, animate = false, class: className
     color: var(--term-warning);
   }
 </style>
-
-<script>
-  // Progressive "someone is typing" replay for terminals marked data-animate.
-  // The static markup stays intact for no-JS and reduced-motion visitors.
-  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  function animateTerminal(terminal: HTMLElement) {
-    const original = terminal.querySelector<HTMLElement>(".screen pre");
-    if (!original) return;
-
-    // Keep the full transcript in flow and in the accessibility tree. Replay a
-    // visual copy over it so wrapping, resizing, and typing cannot move the page.
-    const replay = original.cloneNode(true) as HTMLElement;
-    replay.classList.add("terminal-replay");
-    replay.setAttribute("aria-hidden", "true");
-    original.classList.add("terminal-transcript");
-    original.after(replay);
-    const lineEls = [...replay.querySelectorAll<HTMLElement>(".line")];
-    if (lineEls.length === 0) return;
-
-    const steps = lineEls.map((el) => {
-      const content = el.querySelector<HTMLElement>(".content");
-      return {
-        el,
-        content,
-        text: content?.textContent ?? "",
-        isCommand: el.classList.contains("is-command"),
-      };
-    });
-
-    for (const step of steps) {
-      step.el.setAttribute("data-pending", "");
-      if (step.isCommand && step.content) step.content.textContent = "";
-    }
-
-    const cursor = document.createElement("span");
-    cursor.className = "type-cursor";
-    cursor.textContent = "▮";
-    cursor.setAttribute("aria-hidden", "true");
-
-    let index = 0;
-
-    function nextStep() {
-      if (index >= steps.length) {
-        replay.remove();
-        original?.classList.remove("terminal-transcript");
-        return;
-      }
-      const step = steps[index++];
-      step.el.removeAttribute("data-pending");
-
-      if (step.isCommand && step.content) {
-        step.content.textContent = "";
-        step.content.appendChild(cursor);
-        let chars = 0;
-        const typeChar = () => {
-          chars += 1;
-          step.content!.textContent = step.text.slice(0, chars);
-          step.content!.appendChild(cursor);
-          if (chars < step.text.length) {
-            window.setTimeout(typeChar, 14 + Math.random() * 26);
-          } else {
-            window.setTimeout(nextStep, 240);
-          }
-        };
-        window.setTimeout(typeChar, 260);
-      } else {
-        // Output arrives in quick bursts, like a real program printing.
-        window.setTimeout(nextStep, 34 + Math.random() * 46);
-      }
-    }
-
-    nextStep();
-  }
-
-  function wireTerminals() {
-    const terminals = document.querySelectorAll<HTMLElement>(
-      ".terminal[data-animate]:not([data-wired])",
-    );
-    for (const terminal of terminals) {
-      terminal.dataset.wired = "true";
-      if (REDUCED || !("IntersectionObserver" in window)) continue;
-      const observer = new IntersectionObserver(
-        (entries) => {
-          for (const entry of entries) {
-            if (entry.isIntersecting) {
-              observer.disconnect();
-              animateTerminal(terminal);
-            }
-          }
-        },
-        { threshold: 0.35 },
-      );
-      observer.observe(terminal);
-    }
-  }
-
-  wireTerminals();
-  document.addEventListener("astro:page-load", wireTerminals);
-</script>

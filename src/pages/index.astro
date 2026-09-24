@@ -1,14 +1,19 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import ButtonLink from "../components/ButtonLink.astro";
-import CommandBlock from "../components/CommandBlock.astro";
-import Terminal from "../components/Terminal.astro";
-import type { TerminalLine } from "../components/Terminal.astro";
-import PocketDevice from "../components/PocketDevice.astro";
-import QuickInstall from "../components/QuickInstall.astro";
+import CopyButton from "../components/CopyButton.astro";
+import VacancyBoard from "../components/VacancyBoard.astro";
+import { INSTALL_METHODS } from "../data/install-methods";
 import { LINKS, SITE } from "../data/links";
 
-const demo: TerminalLine[] = [
+/*
+  Landing page type scale: exactly three sizes.
+  text-sm (captions, commands), text-lg (body, subheads), text-display (headlines, the sign).
+*/
+
+const unix = INSTALL_METHODS.find((method) => method.id === "installer-unix")!;
+const windows = INSTALL_METHODS.find((method) => method.id === "installer-windows")!;
+
+const demo = [
   { kind: "command", text: "kick inspect --port 3000" },
   { kind: "output", text: "Target: PID 18422 (node)" },
   { kind: "output", text: "Tree (3 processes):" },
@@ -23,131 +28,433 @@ const tasks = [
   { title: "Explain the conflict", description: 'Get evidence behind "address already in use", even when the owner is unclear.', command: "kick why 3000", href: "/docs/watch-and-why", link: "Understand bind failures" },
   { title: "Watch it change", description: "Keep an eye on ports as servers start, stop, or get replaced.", command: "kick watch", href: "/docs/watch-and-why", link: "Watch ports live" },
 ];
+const checks = [
+  "One process by default. Tree cleanup only when you ask.",
+  "Targets are checked again before termination.",
+  "Changed or uncertain targets are refused.",
+];
 ---
 
 <Layout>
-  <section class="mx-auto max-w-6xl px-4 pt-10 pb-12 sm:pt-16 sm:pb-16">
-    <div class="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.3fr_0.7fr] lg:gap-14">
-      <div class="min-w-0">
-        <a href={`/changelog#v${SITE.version}`} class="text-sm text-accent underline decoration-accent/40 underline-offset-4 hover:decoration-accent">
-          v{SITE.version} is out. Ctrl-C cleanup fixes for Unix kills →
-        </a>
-        <h1 class="mt-6 text-[2.6rem] leading-[1.05] font-bold tracking-tight sm:text-6xl">
-          Your ports have squatters,
-          <span class="mt-3 block font-pixel font-medium text-kick">so kick them out.</span>
-        </h1>
-        <p class="mt-5 max-w-xl text-lg leading-relaxed text-muted">
-          Find what's using your port. Inspect the process, then clear the stale server from your terminal.
-        </p>
-        <p class="mt-3 text-sm leading-relaxed text-muted">
-          Free, open-source TUI &amp; CLI. Linux, macOS, and Windows.
-        </p>
-        <div class="mt-6 flex flex-wrap gap-3">
-          <ButtonLink href="#quick-install">Install Kickoutchi</ButtonLink>
-          <ButtonLink href="#see-it" variant="secondary">See it in action ↓</ButtonLink>
-        </div>
-        <div class="mt-8 border-t border-border pt-6">
-          <QuickInstall />
-        </div>
-      </div>
-      <div class="hero-device">
-        <PocketDevice />
-      </div>
-    </div>
-  </section>
+  <div class="landing">
+    <!-- Hero: the pitch on top, the motel underneath -->
+    <section class="mx-auto max-w-6xl px-4 pt-10 sm:pt-14">
+      <a href={`/changelog#v${SITE.version}`} class="release-link text-sm">
+        v{SITE.version} is out. macOS now also matches protected processes by executable name
+      </a>
 
-  <section id="see-it" class="scroll-mt-20 border-y-2 border-border-strong bg-surface/60">
-    <div class="mx-auto max-w-6xl px-4 py-10 sm:py-14">
-      <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <p class="pixel-label">Inside your terminal</p>
-          <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Meet your port janitor.</h2>
-          <p class="mt-3 max-w-xl leading-relaxed text-muted">Browse open ports, select a process, and see exactly what owns it.</p>
+      <div class="mt-6 grid gap-8 lg:grid-cols-[1.25fr_1fr] lg:gap-14">
+        <h1 class="text-display font-bold tracking-tight">
+          Your ports have squatters, so kick them out.
+        </h1>
+
+        <div class="min-w-0 lg:pt-3">
+          <p class="text-lg leading-relaxed">
+            Find what's using your port. Inspect the process, then clear the stale server from your terminal.
+          </p>
+          <p class="mt-2 text-sm text-muted">Free, open-source TUI &amp; CLI. Linux, macOS, and Windows.</p>
+
+          <div id="quick-install" class="quick-install mt-6 scroll-mt-24">
+            <fieldset>
+              <legend class="sr-only">Install for your platform</legend>
+              <div class="platforms">
+                <input class="sr-only" type="radio" name="install-platform" id="install-unix" value="unix" checked />
+                <label for="install-unix" class="text-sm">Linux &amp; macOS</label>
+                <input class="sr-only" type="radio" name="install-platform" id="install-windows" value="windows" />
+                <label for="install-windows" class="text-sm">Windows</label>
+              </div>
+            </fieldset>
+            <div class="install-cmd unix-command">
+              <pre class="font-mono text-sm"><code>{unix.commands[0].code}</code></pre>
+              <CopyButton text={unix.commands[0].code} class="copy-install text-sm!" />
+            </div>
+            <div class="install-cmd windows-command">
+              <pre class="font-mono text-sm"><code>{windows.commands[0].code}</code></pre>
+              <CopyButton text={windows.commands[0].code} class="copy-install text-sm!" />
+            </div>
+            <p class="mt-3 text-sm text-muted">Then run <code class="font-mono text-fg">kick</code> to open the TUI.</p>
+            <p class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+              <a href="/install" class="ink-link">Other install methods</a>
+              <a href="#see-it" class="ink-link">See it in action ↓</a>
+            </p>
+          </div>
         </div>
-        <a href="/docs/tui" class="shrink-0 text-sm font-semibold text-accent underline underline-offset-4">Take the TUI tour →</a>
       </div>
-      <figure class="mt-7">
-        <div class="overflow-hidden rounded-lg border-2 border-border-strong bg-[#10130e] shadow-[5px_5px_0_var(--chunk-shadow)]">
-          <div class="flex items-center justify-between gap-3 border-b border-[#303725] px-4 py-3 font-mono text-xs text-[#d7dcc4]">
+
+      <div class="mt-12 sm:mt-16">
+        <VacancyBoard />
+      </div>
+    </section>
+
+    <!-- The real TUI -->
+    <section id="see-it" class="mx-auto max-w-6xl scroll-mt-20 px-4 pt-20 sm:pt-28">
+      <div class="grid gap-6 lg:grid-cols-[1.25fr_1fr] lg:items-end lg:gap-14">
+        <h2 class="text-display font-bold tracking-tight">Meet your port janitor.</h2>
+        <div>
+          <p class="text-lg leading-relaxed">Browse open ports, select a process, and see exactly what owns it.</p>
+          <a href="/docs/tui" class="ink-link mt-2 inline-block text-sm">Take the TUI tour</a>
+        </div>
+      </div>
+
+      <figure class="mt-10">
+        <div class="screen-frame">
+          <div class="screen-bar font-mono text-sm">
             <span><span class="text-[#b7d073]">$</span> kick</span>
-            <span class="text-[#a0aa91]">TUI · Linux</span>
+            <span class="opacity-70">TUI on Linux</span>
           </div>
           <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Kickoutchi TUI screenshot. Scroll horizontally to see the full terminal on smaller screens.">
             <img src="/previews/kickoutchi-tui.webp" alt="Kickoutchi 1.4.2 showing a selected Node.js process on port 3000, its listening address, process details, and keyboard shortcuts for inspecting or terminating it." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
           </div>
         </div>
-        <figcaption class="mt-4 flex flex-wrap justify-between gap-2 text-sm text-muted">
-          <span>Captured from Kickoutchi v1.4.2 with a local demo server.</span>
-          <a href="/previews/kickoutchi-tui.webp" target="_blank" rel="noopener noreferrer" class="text-accent underline underline-offset-4">View full size ↗</a>
+        <figcaption class="mt-3 flex flex-wrap justify-between gap-2 text-sm text-muted">
+          <span>Captured from Kickoutchi v1.4.2 with a local demo server. <span class="sm:hidden">Swipe the terminal to see the full table.</span></span>
+          <a href="/previews/kickoutchi-tui.webp" target="_blank" rel="noopener noreferrer" class="ink-link">View full size ↗</a>
         </figcaption>
-        <p class="mt-2 text-xs text-muted sm:hidden">Swipe the terminal to see the full table.</p>
       </figure>
-      <details class="mt-5 rounded-lg border border-border bg-bg">
-        <summary class="cursor-pointer px-4 py-3 text-sm font-semibold text-accent">See the confirmation step</summary>
-        <p class="px-4 pb-4 text-sm leading-relaxed text-muted">The prompt names the process and every affected port. Nothing stops until you confirm.</p>
-        <div class="overflow-x-auto rounded-b-lg bg-[#10130e]" tabindex="0" role="region" aria-label="Termination confirmation screenshot. Scroll horizontally on smaller screens.">
+
+      <div class="keys mt-10 grid gap-6 sm:grid-cols-2">
+        <div class="flex gap-4">
+          <kbd class="key font-mono text-lg">↵</kbd>
+          <p class="text-lg leading-snug"><strong class="block">Inspect first</strong><span class="text-sm text-muted">Open process details with Enter. Browsing doesn't terminate anything.</span></p>
+        </div>
+        <div class="flex gap-4">
+          <kbd class="key font-mono text-lg">x</kbd>
+          <p class="text-lg leading-snug"><strong class="block">Review, then confirm</strong><span class="text-sm text-muted">Press x to review the target. Confirm to stop it, or Escape to cancel.</span></p>
+        </div>
+      </div>
+
+      <details class="confirm-peek mt-8">
+        <summary class="text-sm font-semibold">See the confirmation step</summary>
+        <p class="mt-3 text-sm text-muted">The prompt names the process and every affected port. Nothing stops until you confirm.</p>
+        <div class="screen-frame mt-3 overflow-x-auto" tabindex="0" role="region" aria-label="Termination confirmation screenshot. Scroll horizontally on smaller screens.">
           <img src="/previews/kickoutchi-confirm.webp" alt="The real confirmation dialog identifies the Node.js process, lists its ports 3000, 5173, and 8080, and offers y to confirm or Escape to cancel." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
         </div>
       </details>
-      <div class="mt-8 grid gap-6 border-t border-border pt-6 sm:grid-cols-2">
-        <div class="flex gap-3">
-          <kbd class="flex size-9 shrink-0 items-center justify-center rounded border border-border-strong bg-bg font-mono text-sm">↵</kbd>
-          <p class="text-sm leading-relaxed text-muted"><strong class="block text-fg">Inspect first</strong>Open process details with Enter. Browsing doesn't terminate anything.</p>
-        </div>
-        <div class="flex gap-3">
-          <kbd class="flex size-9 shrink-0 items-center justify-center rounded border border-border-strong bg-bg font-mono text-sm">x</kbd>
-          <p class="text-sm leading-relaxed text-muted"><strong class="block text-fg">Review, then confirm</strong>Press x to review the target. Confirm to stop it, or Escape to cancel.</p>
-        </div>
+    </section>
+
+    <!-- CLI shortcuts, as a ledger -->
+    <section class="mx-auto max-w-6xl px-4 pt-20 sm:pt-28">
+      <div class="grid gap-6 lg:grid-cols-[1.25fr_1fr] lg:items-end lg:gap-14">
+        <h2 class="text-display font-bold tracking-tight">Get straight to it.</h2>
+        <p class="text-lg leading-relaxed">Already know the port? Use the CLI for a quick answer, or add JSON output to your scripts.</p>
       </div>
-    </div>
-  </section>
 
-  <section class="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-    <p class="pixel-label">Already know the port?</p>
-    <h2 class="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Get straight to it.</h2>
-    <p class="mt-3 max-w-xl leading-relaxed text-muted">Use the CLI for a quick answer, or add JSON output to your scripts.</p>
-    <div class="mt-8 grid gap-8 md:grid-cols-3">
-      {tasks.map((task) => (
-        <article class="flex min-w-0 flex-col border-t-2 border-border-strong pt-5">
-          <h3 class="text-xl font-semibold">{task.title}</h3>
-          <p class="mt-2 mb-5 text-sm leading-relaxed text-muted">{task.description}</p>
-          <div class="mt-auto"><CommandBlock code={task.command} /></div>
-          <a href={task.href} class="mt-4 text-sm font-semibold text-accent hover:underline">{task.link} →</a>
-        </article>
-      ))}
-    </div>
-  </section>
+      <ul class="ledger mt-10">
+        {tasks.map((task) => (
+          <li class="ledger-row">
+            <div>
+              <h3 class="text-lg font-bold">{task.title}</h3>
+              <p class="mt-1 text-lg leading-snug text-muted">{task.description}</p>
+            </div>
+            <div class="min-w-0">
+              <div class="cli-cmd">
+                <code class="font-mono text-sm">{task.command}</code>
+                <CopyButton text={task.command} class="copy-install text-sm!" />
+              </div>
+              <a href={task.href} class="ink-link mt-2 inline-block text-sm">{task.link}</a>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
 
-  <section class="mx-auto max-w-6xl px-4 pb-12 sm:pb-16">
-    <div class="grid items-center gap-8 rounded-xl border-2 border-border-strong bg-surface p-5 sm:p-8 lg:grid-cols-2 lg:gap-12">
-      <div>
-        <p class="pixel-label">Inspect before you kick</p>
-        <h2 class="mt-3 text-3xl font-bold tracking-tight">Clear the right process.</h2>
-        <p class="mt-4 leading-relaxed text-muted">A stale server can leave a whole process tree behind. Inspect its family before choosing what to stop.</p>
-        <ul class="mt-5 space-y-3 text-sm leading-relaxed text-muted">
-          <li class="flex gap-3"><span class="text-accent" aria-hidden="true">✓</span>One process by default. Tree cleanup only when you ask.</li>
-          <li class="flex gap-3"><span class="text-accent" aria-hidden="true">✓</span>Targets are checked again before termination.</li>
-          <li class="flex gap-3"><span class="text-accent" aria-hidden="true">✓</span>Changed or uncertain targets are refused.</li>
-        </ul>
-        <a href="/docs/safety" class="mt-6 inline-block text-sm font-semibold text-accent underline underline-offset-4">How the safety checks work →</a>
-      </div>
-      <div class="min-w-0"><Terminal title="kick · read-only inspection" lines={demo} animate /></div>
-    </div>
-  </section>
-
-  <section class="mx-auto max-w-6xl px-4 pb-4">
-    <div class="install-finish relative overflow-hidden rounded-xl border-2 border-border-strong bg-accent px-5 py-10 text-accent-fg sm:px-10 sm:py-12">
-      <div class="relative z-10 grid items-center gap-8 md:grid-cols-[1fr_auto]">
+    <!-- Safety -->
+    <section class="mx-auto max-w-6xl px-4 pt-20 sm:pt-28">
+      <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
         <div>
-          <p class="font-pixel text-4xl leading-none sm:text-5xl">CLEAR THE SWAMP.</p>
-          <p class="mt-4 max-w-lg leading-relaxed text-accent-fg/85">Your next dev server deserves a free port.</p>
-          <p class="mt-3 max-w-lg text-sm leading-relaxed text-accent-fg/85">Prefer a package manager? Homebrew, Scoop, AUR, Cargo, and Nix are available too.</p>
+          <h2 class="text-display font-bold tracking-tight">Clear the right process.</h2>
+          <p class="mt-5 text-lg leading-relaxed">A stale server can leave a whole process tree behind. Inspect its family before choosing what to stop.</p>
+          <ul class="mt-6 space-y-3">
+            {checks.map((check) => (
+              <li class="check text-lg leading-snug">{check}</li>
+            ))}
+          </ul>
+          <a href="/docs/safety" class="ink-link mt-6 inline-block text-sm">How the safety checks work</a>
         </div>
-        <div class="flex flex-wrap items-center gap-4 md:flex-col">
-          <ButtonLink href="/install" variant="secondary">Choose your install method →</ButtonLink>
-          <a href={LINKS.github} target="_blank" rel="noopener noreferrer" class="text-sm font-semibold underline underline-offset-4">View the source ↗</a>
+        <figure class="screen-frame min-w-0">
+          <figcaption class="screen-bar font-mono text-sm">
+            <span>Read-only inspection</span>
+            <span class="opacity-70">nothing stopped</span>
+          </figcaption>
+          <pre class="transcript font-mono text-sm"><code>{demo.map((line) => (
+            <span class:list={["line", `is-${line.kind}`]}>{line.kind === "command" && <span class="prompt">$ </span>}{line.text}</span>
+          ))}</code></pre>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Send-off: the sign, lit -->
+    <section class="mx-auto max-w-6xl px-4 pt-20 sm:pt-28">
+      <div class="finale">
+        <p class="finale-sign font-pixel text-display">Clear the swamp.</p>
+        <div class="finale-body">
+          <p class="text-lg leading-relaxed">Your next dev server deserves a free port.</p>
+          <p class="mt-2 text-sm opacity-85">Prefer a package manager? Homebrew, Scoop, AUR, Cargo, and Nix are available too.</p>
+          <div class="mt-6 flex flex-wrap items-center gap-5">
+            <a href="/install" class="finale-btn text-lg font-semibold">Choose your install method</a>
+            <a href={LINKS.github} target="_blank" rel="noopener noreferrer" class="text-sm font-semibold underline underline-offset-4">View the source ↗</a>
+          </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </div>
 </Layout>
+
+<style>
+  h1,
+  h2 {
+    max-width: 15ch;
+  }
+
+  .ink-link {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  .ink-link:hover {
+    color: var(--fg);
+  }
+
+  .release-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.8rem;
+    border: 2px solid var(--border-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    font-weight: 600;
+  }
+  .release-link:hover {
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  /* ---- Quick install ---- */
+  .platforms {
+    display: inline-flex;
+    border: 2px solid var(--border-strong);
+    border-bottom: 0;
+    border-radius: 0.5rem 0.5rem 0 0;
+    overflow: hidden;
+  }
+  .platforms label {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .platforms label + input + label {
+    border-left: 2px solid var(--border-strong);
+  }
+  .platforms input:checked + label {
+    background: var(--fg);
+    color: var(--bg);
+  }
+  .platforms input:focus-visible + label {
+    outline: 3px solid var(--kick);
+    outline-offset: -3px;
+  }
+  .quick-install:has(#install-unix:checked) .windows-command,
+  .quick-install:has(#install-windows:checked) .unix-command {
+    display: none;
+  }
+  .install-cmd {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.9rem 0.9rem 0.9rem 1rem;
+    border: 2px solid var(--border-strong);
+    border-radius: 0 0.5rem 0.5rem 0.5rem;
+    background: var(--fg);
+    color: #d9e0c4;
+    box-shadow: 5px 5px 0 0 rgb(26 35 27 / 0.2);
+  }
+  .install-cmd pre {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    /* break-all, not overflow-wrap: the indented URL line would otherwise
+       leave its two leading spaces stranded on a blank line. */
+    word-break: break-all;
+  }
+  .install-cmd :global(.copy-install) {
+    flex-shrink: 0;
+  }
+
+  /* ---- Screens ---- */
+  .screen-frame {
+    overflow: hidden;
+    border: 3px solid var(--border-strong);
+    border-radius: 0.6rem;
+    background: #10130e;
+    box-shadow: 6px 6px 0 0 var(--chunk-shadow);
+  }
+  .screen-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 2px solid #303725;
+    color: #d7dcc4;
+  }
+  .key {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border: 2px solid var(--border-strong);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    box-shadow: 0 4px 0 0 var(--chunk-shadow);
+  }
+  .keys strong {
+    font-weight: 700;
+  }
+  .confirm-peek summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    cursor: pointer;
+    color: var(--accent);
+  }
+  .confirm-peek summary::marker {
+    color: var(--kick);
+  }
+
+  /* ---- CLI ledger ---- */
+  .ledger {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: 3px solid var(--border-strong);
+  }
+  .ledger-row {
+    display: grid;
+    gap: 1rem;
+    padding: 1.5rem 0;
+    border-bottom: 2px solid var(--border-strong);
+  }
+  @media (min-width: 768px) {
+    .ledger-row {
+      grid-template-columns: 1.25fr 1fr;
+      gap: 3.5rem;
+      align-items: start;
+    }
+  }
+  .cli-cmd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    border: 2px solid var(--border-strong);
+    border-radius: 0.5rem;
+    background: var(--surface);
+  }
+  .cli-cmd code::before {
+    content: "$ ";
+    color: var(--accent);
+  }
+
+  /* ---- Safety ---- */
+  .check {
+    position: relative;
+    padding-left: 2rem;
+  }
+  .check::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    top: 0.05em;
+    display: grid;
+    place-items: center;
+    width: 1.35rem;
+    height: 1.35rem;
+    border: 2px solid var(--border-strong);
+    border-radius: 0.3rem;
+    background: var(--kick);
+    color: var(--fg);
+    font-size: var(--text-sm);
+    font-weight: 700;
+    line-height: 1;
+  }
+  .transcript {
+    margin: 0;
+    padding: 1rem;
+    color: #d7dcc4;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .transcript .line {
+    display: block;
+  }
+  .transcript .prompt {
+    color: #b7d073;
+    font-weight: 600;
+  }
+  .transcript .is-muted {
+    color: #8f9683;
+  }
+
+  /* ---- Finale ---- */
+  .finale {
+    display: grid;
+    gap: 2rem;
+    padding: 2.5rem 1.25rem;
+    border: 3px solid var(--border-strong);
+    border-radius: 0.75rem;
+    background:
+      repeating-linear-gradient(0deg, rgb(0 0 0 / 0.07) 0 2px, transparent 2px 28px),
+      var(--accent);
+    color: var(--accent-fg);
+  }
+  @media (min-width: 900px) {
+    .finale {
+      grid-template-columns: 1.25fr 1fr;
+      align-items: center;
+      gap: 3.5rem;
+      padding: 3.5rem;
+    }
+  }
+  .finale-sign {
+    justify-self: start;
+    margin: 0;
+    padding: 0.2em 0.45em 0.28em;
+    border-radius: 0.2em;
+    background: var(--fg);
+    color: var(--kick);
+    text-shadow:
+      0 0 0.08em var(--kick),
+      0 0 0.35em rgb(240 85 44 / 0.55);
+    line-height: 1;
+  }
+  .finale-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 3rem;
+    padding: 0 1.25rem;
+    border: 2px solid var(--border-strong);
+    border-radius: 0.5rem;
+    background: var(--kick);
+    color: var(--fg);
+    box-shadow: 4px 4px 0 0 var(--chunk-shadow);
+    transition:
+      transform 90ms ease,
+      box-shadow 90ms ease;
+  }
+  .finale-btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: 1px 1px 0 0 var(--chunk-shadow);
+  }
+</style>
