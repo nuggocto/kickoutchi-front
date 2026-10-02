@@ -65,6 +65,7 @@ unreadable owner) are tinted so you notice them before acting.
 | `k` / `↑`       | Move selection up                           |
 | `Enter`         | Open the details modal for the selected row |
 | `?`             | Open the help modal                         |
+| `m`             | Open the full kill results and errors       |
 | `q` or `Ctrl+C` | Quit                                        |
 
 ## Search and filter
@@ -105,6 +106,8 @@ status line shows how long ago the last refresh happened.
 
 The details panel always reflects the selected row. Press `Enter` for the full **details modal**,
 which also lazily loads the owner UID, the process's children, and any protected-process warnings.
+The UID and children appear only when they were read from the same process as the row, so a reused
+PID never mixes two processes in one view.
 When the Docker CLI is available, Docker-owned ports show their container context here too.
 
 ## Kicking a process out
@@ -127,15 +130,18 @@ for `T`). Execution always re-runs the tree scan fresh before the first freeze s
   - **Normal kill** • type `y` to confirm.
   - **Force kill** • type the word `force` (unless you've turned that off in config).
   - **Tree kill** • type `tree`; force tree kill still uses `force`.
-  - **Protected process** • type the **PID** or the **process name** to confirm. This can't be skipped.
+  - **Protected process** • type the **PID** or the **process name** to confirm. The name is offered
+    only when it can be typed as shown; the PID always works. This can't be skipped.
 
 `Esc` cancels the confirmation. Kickoutchi re-checks the target right before signalling, so it
 only ever hits the PID you confirmed.
 
 </Callout>
 
-After a successful kick, the status line reports the outcome and the next refresh shows the port
-gone.
+After a successful kick, the status area reports the outcome and the next refresh shows the port
+gone. Kill results and errors get their own wrapped rows above the routine status line. When a
+report is longer than that space, such as a cleanup failure listing many stopped PIDs, the preview
+says so and `m` opens the complete, scrollable report.
 
 For process-group cleanup, use the CLI `--group` flow. The TUI intentionally exposes only tree scope,
 so the broader process-group blast radius is reviewed in a full CLI banner.
@@ -146,6 +152,9 @@ so the broader process-group blast radius is reviewed in a full CLI banner.
   confirmation, or quits, depending on what's on screen.
 - **Terminal too small** • below **80×20** the TUI shows a "Terminal too small" notice instead of a
   cramped, unreadable table. Resize and it returns.
+- **Warnings that don't fit** • a kill confirmation wraps its warnings instead of cutting them off.
+  If the terminal can't show every warning and the prompt, the confirmation is cancelled rather than
+  shown partially.
 
 ## Next
 

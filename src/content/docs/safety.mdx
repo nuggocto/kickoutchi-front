@@ -23,7 +23,8 @@ Nothing is terminated without a confirmation step, and the prompt scales with th
 - **Force kill** • type the word `force` (unless you set `confirm_force_kill = false`).
 - **Tree kill** • type `tree` for normal scoped termination, or `force` for force tree kill.
 - **Group kill** • type `group` for normal scoped termination, or `force` for force group kill.
-- **Protected process** • type the **PID** or the **process name**.
+- **Protected process** • type the **PID** or the **process name**. The name is offered only when
+  it can be typed as displayed; an empty answer never confirms.
 
 Before any prompt, Kickoutchi prints the target's identity, the affected ports, the equivalent
 shell command, and any warnings.
@@ -58,6 +59,10 @@ it. The built-in list includes Docker owners such as `dockerd`, `docker-proxy`, 
 On Linux, process names truncated by the kernel midway through a Unicode character use the same
 bounded decoding for listing, protection matching, and final validation. A truncated character
 alone no longer blocks termination; ownership and process identity checks still apply.
+
+On macOS, a configured name also matches the executable basename exactly. Tree and group kills
+and `inspect` apply that rule to the root and every descendant, through planning and the final
+check before any signal.
 
 Human-facing output also sanitizes OS-provided names, paths, and status text before rendering them,
 including control bytes, ANSI escapes, bidi controls, and zero-width display controls.
