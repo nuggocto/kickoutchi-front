@@ -30,15 +30,48 @@ The full native state _is_ collected • it just isn't in the legacy view.
 
 ## Process metadata is missing (shows `-`)
 
-The socket is visible but some process metadata wasn't readable • usually because the process
-belongs to another user. The row still appears, tagged with **partial** permission so the blank is
-explained rather than hidden. Re-run with higher privileges to fill it in.
+The socket is visible but its owner or some process metadata wasn't readable • usually because the
+process belongs to another user. `kick list` explains every `-` row in notes on stderr: a socket
+that belongs to another user (named by account on Linux, such as `root (uid 0)`), a socket whose
+owner wasn't attributed, or a socket no readable process holds, which is normal for kernel-held
+sockets. Re-run with higher privileges to fill in the owners. JSON keeps the row, with `null`
+fields and `"permission": "partial"`.
+
+## `kill --port` is refused before asking anything
+
+On Linux, an unprivileged user can't read other users' processes, and any of them could share the
+port's socket. Kickoutchi can't prove the visible owner is the only holder, so it refuses to signal
+by port. The error names the verified owner and the command that works, for example
+`kick kill --pid 18422`. Run that, or rerun with `sudo`.
 
 ## Permission denied when killing
 
 You don't have the rights to signal that process (exit `4`). On Linux/macOS, try `sudo`; on Windows,
 use an **elevated terminal**. If a `--port` target has no readable owning PID, Kickoutchi reports
-permission denied rather than guessing.
+permission denied rather than guessing, and says why, for example that the socket belongs to
+another user.
+
+## `kill` says the process is still running
+
+The signal was delivered, but the process hadn't exited two seconds later. Servers often close their
+listener first and finish shutting down afterwards, so the port can be free while the process is
+still alive. Wait and check again, or rerun with `--force` to send `SIGKILL` on Linux and macOS.
+The exit code is still `0`, because the signal was accepted.
+
+## A batch kill sent nothing
+
+When several targets are given, every one is resolved and authorized before any signal. If a single
+target can't be resolved, is protected, or can't be proven to own its port, the whole batch is
+refused and each refusal is listed. Fix or drop those targets and rerun. Kill protected processes
+on their own so they can be confirmed by PID or name.
+
+## A process "runs an executable that was deleted or replaced"
+
+The binary file on disk changed after the process started. After a rebuild, this usually means an
+old dev server is still running from the previous build. After a system upgrade, it means a daemon
+is running the pre-upgrade binary. `kick inspect --pid PID` shows the original path and the process
+family, and notes when init or a service manager adopted the process, a sign that its launcher
+exited and left it orphaned.
 
 ## A protected process asks for stronger confirmation
 
@@ -61,6 +94,12 @@ Three usual causes, and `why` distinguishes them if you read the per-endpoint ro
 - **Different protocol.** The default is TCP. Add `--udp` or `--all-protocols`.
 - **A race.** A successful probe binds and immediately closes. It proves the endpoint was free at
   that instant; it does not reserve it. Something else can take it a millisecond later.
+
+## `why` says `owner_hidden`
+
+The endpoint is occupied, and a process probably holds it, but your account can't see which one,
+typically because it belongs to another user. On Linux the evidence names the UID that created the
+socket. Rerun with `sudo` to identify the owner.
 
 ## `why` exits `4` for a low port
 

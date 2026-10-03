@@ -93,7 +93,7 @@ const COMMANDS: { id: string; title: string; body: string; href: string; link: s
   {
     id: "kill",
     title: "Kick it out",
-    body: "One process by default, confirmed by you, checked again right before the signal.",
+    body: "One process or a whole batch, confirmed by you, checked again right before the signal, then checked for a real exit.",
     href: "/docs/safety",
     link: "How confirmation works",
     lines: [
@@ -104,6 +104,7 @@ const COMMANDS: { id: string; title: string; body: string; href: string; link: s
       out("Command: kill 18422"),
       out("Type y to confirm, or press Enter to cancel: y"),
       ok("sent SIGTERM to PID 18422 (node)"),
+      ok("PID 18422 (node) exited"),
       ok("confirmed target ports are no longer visible"),
     ],
   },
@@ -149,7 +150,7 @@ const CHANNELS = [
         <div class="min-w-0">
           <a href={`/changelog#v${SITE.version}`} class="release-chip text-sm">
             <span class="release-tag font-pixel">v{SITE.version}</span>
-            <span>Batch kills with one summary, and exit checks that don't trust the port</span>
+            <span>Batch kills, real exit checks, and honest answers about hidden port owners</span>
           </a>
 
           <h1 class="mt-7 text-display font-bold tracking-tight">

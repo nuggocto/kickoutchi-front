@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-10-03
+
+### Fixed
+
+- `kick why` no longer reports a port held by an unreadable process as
+  `kernel_state_observed` with `proven` certainty. On Linux, a socket owned by
+  another user's process, such as a root or postgres daemon seen by a normal
+  user, has an empty owner set because the process cannot be read. That empty
+  set was taken as proof that no process held the socket. Now an empty owner
+  set gives `owner_hidden` with `unknown` certainty whenever snapshot-wide
+  owner attribution is incomplete, and the `visible_unreadable_owner` evidence
+  names the UID that created the socket. `kernel_state_observed` remains for
+  sockets that no process holds after every process was read. Exit codes are
+  unchanged, and kill authority already treated these sockets as unproven.
+
 ## [1.5.0] - 2026-10-03
 
 ### Added
@@ -1191,7 +1206,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/nuggocto/kickoutchi/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/nuggocto/kickoutchi/compare/v1.4.6...v1.5.0
 [1.4.6]: https://github.com/nuggocto/kickoutchi/compare/v1.4.5...v1.4.6
 [1.4.5]: https://github.com/nuggocto/kickoutchi/compare/v1.4.4...v1.4.5

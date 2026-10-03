@@ -81,6 +81,12 @@ Verdicts distinguish bindable, occupied, permission denied, address unavailable,
 behaviour, and other retained OS errors. Each one carries ordered `evidence` lines and, where
 something couldn't be established, `gap` lines naming what's missing.
 
+An occupied endpoint is `owned` when a verified process holds it. It is `owner_hidden` when the
+holder can't be seen, typically another user's daemon that your account can't read. On Linux the
+evidence then names the UID that created the socket, for example `uid 970 created the socket`.
+`kernel_state_observed` is reserved for sockets no process holds after every process was read,
+and for TCP states such as `TIME_WAIT`.
+
 <Callout type="warning" title="A successful probe is not a reservation">
   `verdict=bindable_now` means the exact bind succeeded **and was immediately closed**. It is a fact
   about one instant. Another process can take the endpoint a millisecond later, and `why` makes no
