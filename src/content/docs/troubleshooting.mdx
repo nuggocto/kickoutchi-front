@@ -55,8 +55,16 @@ another user.
 
 The signal was delivered, but the process hadn't exited two seconds later. Servers often close their
 listener first and finish shutting down afterwards, so the port can be free while the process is
-still alive. Wait and check again, or rerun with `--force` to send `SIGKILL` on Linux and macOS.
-The exit code is still `0`, because the signal was accepted.
+still alive. Wait and check again, or run the command the warning prints to send `SIGKILL` on Linux
+and macOS. If the process closed its port, that command uses `--tree`, because a plain `--pid` kill
+only targets port owners. The exit code is still `0`, because the signal was accepted.
+
+## `kill --pid` says the PID "still exists but owns no visible open port"
+
+A plain `kick kill --pid` only targets a process that owns a visible port, so a typo'd or unrelated
+PID can't be killed by accident. The process is alive but has no listener, often because it closed
+it during shutdown. Run the suggested `kick kill --pid PID --tree` (add `--force` for `SIGKILL`); it
+also stops the process's children, so check them first with `kick inspect --pid PID`.
 
 ## A batch kill sent nothing
 
@@ -119,7 +127,8 @@ always find out that you stopped seeing.
 Your filter needed a fact Kickoutchi couldn't read • usually an owner PID or a process name behind
 a permission boundary. Rather than silently dropping the event, it's emitted and marked
 indeterminate, so you know a filter _might_ have hidden something. Definite non-matches are still
-suppressed.
+suppressed. If you only care about definite matches, for example while following one PID, add
+`--matched-only` to drop the indeterminate events.
 
 ## `watch` missed a port that definitely opened
 

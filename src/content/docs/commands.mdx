@@ -118,6 +118,7 @@ Stream bounded socket changes until interrupted or the duration expires. Read-on
 | `--interval DUR`    | Poll every `100ms..=60s`. Default `1s`.                                         |
 | `--duration DUR`    | Stop after `100ms..=7d` instead of waiting for Ctrl-C.                          |
 | `--json`            | Emit `kickoutchi.watch_event/1` NDJSON to stdout; diagnostics stay on stderr.   |
+| `--matched-only`    | Emit only definite matches; drop events whose match is `indeterminate`.         |
 
 Events are `baseline`, `bind`, `release`, `replacement`, and `collection_gap`. A failed initial
 collection exits `1`; after a valid baseline, the **third consecutive** failure exits `1`. Ctrl-C,
@@ -193,7 +194,8 @@ Filter expressions are bounded to **256 UTF-8 bytes**. An invalid structured val
 
 In `watch`, an owner-dependent term must be satisfied by the same conceptual owner • two different
 owners cannot each satisfy half of one expression. When a needed owner or metadata fact is missing,
-the event is emitted as `indeterminate` instead of being silently dropped.
+the event is emitted as `indeterminate` instead of being silently dropped, unless you pass
+`watch --matched-only`.
 
 ## Sort modes
 

@@ -183,6 +183,13 @@ When a filter depends on a fact Kickoutchi couldn't read • an owner PID, a pro
 is emitted with `filter=indeterminate` rather than being dropped. A definite non-match is still
 suppressed. You are told when a filter _might_ have hidden something.
 
+That makes a narrow filter noisy on an unprivileged desktop: following one PID can also print every
+socket whose owner you can't read. Add `--matched-only` to keep only definite matches. The trade-off
+is explicit: a match behind a permission boundary is then not reported. Collection gaps are always
+emitted.
+
+<CommandBlock code={"kick watch --filter pid:18422 --matched-only"} label="definite matches only" />
+
 ## Next
 
 Both commands have machine-readable output. See [Structured output](/docs/structured-output) for
