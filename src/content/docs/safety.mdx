@@ -46,6 +46,11 @@ shell command, and any warnings.
   acting on incomplete information.
 - **Incomplete Linux ownership scans also block `kill --port`.** Even when one owner is visible,
   Kickoutchi signals nothing if restricted process visibility could hide a co-owner of that port.
+  The refusal comes before any prompt and names the `kick kill --pid PID` command for the verified
+  owner.
+- **A batch is all or nothing before delivery.** When several targets are given, each one is
+  resolved and authorized first. One refusal stops the batch, and protected processes must be killed
+  on their own.
 - **Scoped kills are bounded.** Over-cap or non-converging trees/groups refuse instead of partially
   killing a moving target.
 

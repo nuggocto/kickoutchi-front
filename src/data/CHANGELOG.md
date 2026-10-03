@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-03
+
+### Added
+
+- `kick kill` accepts several targets: repeat `--pid` or `--port`, or separate
+  values with commas, up to 128 per command. Cleaning up many stale processes
+  used to take one command per process with several lines of output each. A
+  batch now resolves every target first and sends nothing if any target
+  cannot be resolved, is protected, or cannot be proven to own its port. It
+  then shows one banner, asks for one confirmation, and prints one summary
+  line with the processes signalled, the exits observed, the confirmed ports
+  no longer visible, and the failures. Only failures, survivors, and
+  still-visible ports get detail lines. Every target keeps the single-process
+  safety checks. The exit code is the most serious outcome across targets.
+  `--tree` and `--group` still take one target.
+
+### Changed
+
+- `kick kill` now checks whether the signalled process exited instead of
+  inferring it from the port. It waits up to two seconds after delivery and
+  reports the exit and the confirmed ports on separate lines. Before, a server
+  that closed its listener on `SIGTERM` but kept running was reported only as
+  "confirmed target ports are no longer visible", which read like a clean exit.
+  Now that case prints a warning that the process is still running, with a
+  `--force` hint after `SIGTERM`. Exit checks compare the process start
+  identity, so a recycled PID counts as exited. Tree and group kills report how
+  many signalled members exited and list survivors. Exit codes are unchanged.
+- `kick list` explains `-` owner cells on stderr instead of leaving them
+  unexplained. Rows are grouped into sockets created by other users whose
+  processes could not be read (named by account and UID, for example
+  `root (uid 0)`), sockets with no attributed owner, and sockets that no
+  readable process holds. Notes also flag rows that show a PID but no process
+  name. Stdout and JSON output are unchanged. Linux keeps the socket UID from
+  `/proc/net/*` for these explanations, where it was parsed and discarded
+  before.
+- `kick kill --port` and `kick inspect --port` say why a visible port has no
+  visible owner, for example that the socket belongs to another user and how
+  many processes could not be read, instead of only "no owning PID is
+  available".
+- An unprivileged Linux `kick kill --port` that cannot prove the visible owner
+  is the only holder of the socket is now refused before the confirmation
+  prompt. Before, it printed the banner, asked for confirmation, and then
+  failed with "ownership ... became unavailable", although nothing had
+  changed. The error now gives the cause, at least N processes could not be
+  read, and the `kick kill --pid PID` command that targets the verified owner
+  with the same scope and mode. The exit code is still 4.
+- Human output now shows clues that a process is stale. On Linux, `kick list`
+  notes listed processes whose executable was deleted or replaced after they
+  started, with the original path, and `kick inspect` and the kill banners show
+  the same fact. Before, only JSON carried it, as a raw ` (deleted)` suffix on
+  the path. Kickoutchi confirms the deletion from the running inode's link
+  count, so a file really named `x (deleted)` is not reported. `kick inspect`
+  also notes when the target's parent is PID 1 or a systemd service manager,
+  which means its launcher may have exited and left it orphaned.
+
 ## [1.4.6] - 2026-10-02
 
 ### Fixed
@@ -1136,7 +1191,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tracing` diagnostics routed to stderr only, never the TUI surface.
 - Unit tests for the quit predicate, including the key-release edge case.
 
-[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.4.6...HEAD
+[Unreleased]: https://github.com/nuggocto/kickoutchi/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/nuggocto/kickoutchi/compare/v1.4.6...v1.5.0
 [1.4.6]: https://github.com/nuggocto/kickoutchi/compare/v1.4.5...v1.4.6
 [1.4.5]: https://github.com/nuggocto/kickoutchi/compare/v1.4.4...v1.4.5
 [1.4.4]: https://github.com/nuggocto/kickoutchi/compare/v1.4.3...v1.4.4

@@ -57,14 +57,19 @@ by design, and omits full command lines. See [Structured output](/docs/structure
 
 Terminate the process owning a port or PID, after confirmation.
 
-<CommandBlock code={"kick kill <--pid PID | --port PORT> [OPTIONS]"} lang="text" label="usage" />
+<CommandBlock
+  code={"kick kill <--pid PID[,PID...] | --port PORT[,PORT...]> [OPTIONS]"}
+  lang="text"
+  label="usage"
+/>
 
-Exactly one of `--pid` / `--port` is required.
+Pass PIDs or ports, not both. Repeat the flag or separate values with commas to kill up to 128
+processes behind one confirmation and one summary. `--tree` and `--group` take one target.
 
 | Option        | Description                                                                                                |
 | ------------- | ---------------------------------------------------------------------------------------------------------- |
-| `--pid PID`   | Terminate a specific PID.                                                                                  |
-| `--port PORT` | Terminate the process that owns this port. Refuses ambiguous ports.                                        |
+| `--pid PID`   | Terminate a specific PID. Repeatable, or comma-separated.                                                  |
+| `--port PORT` | Terminate the process that owns this port. Refuses ambiguous ports. Repeatable, or comma-separated.        |
 | `--force`     | Stronger force confirmation; Unix uses `kill -9`, while Windows delivery is hard termination either way.   |
 | `--yes`       | Skip eligible prompts. Never bypasses protected-process confirmation or fresh scoped-kill safety gates.    |
 | `--tree`      | Terminate the target's whole descendant tree. Conflicts with `--group`.                                    |
@@ -72,6 +77,10 @@ Exactly one of `--pid` / `--port` is required.
 
 The equivalent command shown before confirmation is `kill PID` (terminate) or `kill -9 PID` (force)
 on Linux/macOS, and `taskkill /F /PID PID` on Windows.
+
+After delivery, `kill` waits up to two seconds and reports separately whether each process exited
+and whether its confirmed ports are still visible. A batch's exit code is the most serious outcome
+across its targets: `1`, then `4`, then `6`, then `3`.
 
 Scoped kill confirmations use stronger words: `tree`, `group`, or `force`. The command preview is
 always re-collected fresh at execution time; stale previews are not trusted. `--group` is rejected

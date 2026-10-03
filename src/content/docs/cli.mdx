@@ -38,6 +38,33 @@ The table is plain, whitespace-separated text with no box-drawing • so it stay
 `grep` and `awk`. Withheld metadata shows as `-`. The `LABEL` column appears once you've configured
 [endpoint labels](/docs/config#endpoint-labels).
 
+Below the table, notes on **stderr** explain what the table can't. A `-` in the PID column gets a
+reason: the socket belongs to another user whose processes you can't read (named by account on
+Linux, for example `root (uid 0)`), its owner wasn't attributed, or no readable process holds it at
+all, which is normal for kernel-held sockets. On Linux, processes whose executable was deleted or
+replaced after they started are listed with the original path, a common sign of a stale build or a
+leftover from a package upgrade. Stdout stays a clean table.
+
+<Terminal
+  title="kick list"
+  lines={[
+    { kind: "command", text: "kick list" },
+    { kind: "muted", text: "PROTO  ADDRESS    PORT  PID    PROCESS  STATE" },
+    { kind: "output", text: "TCP    127.0.0.1  3000  18422  devsrv   LISTEN" },
+    { kind: "output", text: "TCP    127.0.0.1  5432  -      -        LISTEN" },
+    { kind: "muted", text: 'note: PID "-" means the socket\'s owner is not visible:' },
+    {
+      kind: "muted",
+      text: "  1 row(s) belong to other users (postgres (uid 970): 1); at least 412 process(es) could not be read (permission denied). Rerun with sudo to see their owners.",
+    },
+    {
+      kind: "muted",
+      text: "note: 1 listed process(es) run an executable that was deleted or replaced after they started (often a stale build or an upgraded package):",
+    },
+    { kind: "muted", text: "  PID 18422 (devsrv): /home/me/app/target/debug/devsrv" },
+  ]}
+/>
+
 Human-readable endpoints retain IPv6 interface scope, for example `[fe80::1%3]:5353`, throughout
 the list table, TUI, inspect, watch, Why, search, diagnostics, and kill confirmations.
 `%unavailable` means the native collector could not report an interface index, which is expected
@@ -103,20 +130,31 @@ Snapshot mode deliberately ignores `--port`, `--process`, `--filter`, `--sort`, 
 
 ## Killing by port or PID
 
-`kill` needs **exactly one** target • a `--port` or a `--pid` • and asks before it does anything.
+`kill` takes ports or PIDs • one target, or several at once • and asks before it does anything.
 
 <Terminal
-  title="kick kill --port 3000"
+  title="kick kill --pid 18422"
   lines={[
-    { kind: "command", text: "kick kill --port 3000" },
+    { kind: "command", text: "kick kill --pid 18422" },
     { kind: "output", text: "Terminate PID 18422 (node)" },
     { kind: "output", text: "Ports: TCP 127.0.0.1:3000" },
     { kind: "output", text: "Command: kill 18422" },
     { kind: "muted", text: "Type y to confirm, or press Enter to cancel: y" },
     { kind: "success", text: "sent SIGTERM to PID 18422 (node)" },
+    { kind: "success", text: "PID 18422 (node) exited" },
     { kind: "success", text: "confirmed target ports are no longer visible" },
   ]}
 />
+
+A delivered signal is not an exit, and a closed listener isn't one either. After delivery, `kill`
+waits up to two seconds and reports both facts on their own lines. A server that closes its
+listener but keeps running gets a warning that it's still running, with a `--force` hint. The exit
+code still means the signal was accepted.
+
+On Linux, an unprivileged `kill --port` usually can't prove the visible owner is the port's only
+holder, because other users' processes can't be read and one of them could share the socket. It's
+refused before any prompt, and the error names the owner and the `kick kill --pid PID` command that
+works.
 
 <CommandBlock
   code={
@@ -128,6 +166,32 @@ Snapshot mode deliberately ignores `--port`, `--process`, `--filter`, `--sort`, 
 - `--force` • stronger force confirmation; Unix uses `kill -9`, while Windows delivery is hard
   termination either way.
 - `--yes` • skip the **normal** prompt for a target you already trust.
+
+### Several targets at once
+
+Repeat `--pid` or `--port`, or separate values with commas, to clean up to 128 processes in one
+command. Every target is resolved first; if any of them can't be resolved, is protected, or can't be
+proven to own its port, Kickoutchi lists the refusals and sends nothing. Otherwise you get one
+banner, one prompt, and one summary line. Only failures, survivors, and ports that stayed visible
+get their own lines.
+
+<Terminal
+  title="kick kill --pid 18422,18510,18611 --yes"
+  lines={[
+    { kind: "command", text: "kick kill --pid 18422,18510,18611 --yes" },
+    { kind: "output", text: "Terminate 3 processes:" },
+    { kind: "output", text: "  PID 18422 (node): TCP 127.0.0.1:3000" },
+    { kind: "output", text: "  PID 18510 (vite): TCP 127.0.0.1:5173" },
+    { kind: "output", text: "  PID 18611 (node): TCP 127.0.0.1:4000" },
+    {
+      kind: "success",
+      text: "summary: sent SIGTERM to 3 of 3 process(es); 3 exited; 3 of 3 confirmed port(s) no longer visible; 0 failed",
+    },
+  ]}
+/>
+
+Each target keeps every single-process check. The exit code is the most serious outcome across
+targets. `--tree` and `--group` still take one target.
 
 <Callout type="safety" title="What --yes does and doesn't do">
   `--yes` opts out of being *asked*, not of being *told*. The target banner and every safety warning
@@ -200,7 +264,8 @@ Neither one signals a process or runs Docker. Full walkthrough:
   works as an occupancy probe.
 - **`kill --port` refuses ambiguous ports** • if two PIDs own one port, it lists the candidates and
   asks you to pick with `--pid` instead of guessing.
-- **A port with no readable owner** exits `4` (permission denied) rather than pretending it can act.
+- **A port with no readable owner** exits `4` (permission denied) rather than pretending it can act,
+  and says why, for example that the socket belongs to another user.
 
 When a `--port` lookup finds no socket but a process _mentions_ that port on its command line,
 Kickoutchi prints a "possible related process" hint to **stderr** so JSON on stdout stays clean.
