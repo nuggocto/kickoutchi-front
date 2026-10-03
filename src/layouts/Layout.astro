@@ -16,7 +16,7 @@ interface Props {
 const {
   title,
   description = SITE.description,
-  image = "/og-image-terminal.jpg",
+  image = "/og-image.jpg",
   noindex = false,
 } = Astro.props;
 
@@ -42,7 +42,7 @@ const ogImage = new URL(image, Astro.site ?? `https://${SITE.domain}`).href;
     <link rel="icon" href="/favicon-light.png" type="image/png" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta name="theme-color" content="#e7ebd9" />
+    <meta name="theme-color" content="#0c0f0a" />
 
     <!-- Open Graph / Twitter -->
     <meta property="og:type" content="website" />

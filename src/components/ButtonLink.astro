@@ -8,14 +8,13 @@ interface Props {
 
 const { href, variant = "primary", external = false, class: className = "" } = Astro.props;
 
-// Chunky moulded-plastic buttons: hard outline + offset shadow, pressed flat
-// on :active like a real device button.
+// Device buttons: hard outline and a flat pixel drop, pressed flat on :active.
 const base =
-  "btn-chunk inline-flex items-center justify-center gap-2 rounded-lg font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+  "btn-chunk inline-flex min-h-11 items-center justify-center gap-2 rounded-md font-bold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
 
 const variants: Record<NonNullable<Props["variant"]>, string> = {
-  primary: "border-2 border-border-strong bg-accent text-accent-fg",
-  secondary: "border-2 border-border-strong bg-surface text-fg hover:text-accent",
+  primary: "border-2 border-black bg-kick text-kick-fg",
+  secondary: "border-2 border-border-strong bg-surface text-fg hover:border-accent",
   ghost: "text-fg hover:bg-surface border-2 border-transparent",
 };
 
@@ -41,14 +40,14 @@ const target = external ? "_blank" : undefined;
       background-color 120ms ease;
   }
   .btn-shadow {
-    box-shadow: 4px 4px 0 0 var(--chunk-shadow);
+    box-shadow: 4px 4px 0 0 var(--drop);
   }
   .btn-shadow:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 5px 5px 0 0 var(--chunk-shadow);
+    box-shadow: 5px 5px 0 0 var(--drop);
   }
   .btn-shadow:active {
     transform: translate(3px, 3px);
-    box-shadow: 1px 1px 0 0 var(--chunk-shadow);
+    box-shadow: 1px 1px 0 0 var(--drop);
   }
 </style>

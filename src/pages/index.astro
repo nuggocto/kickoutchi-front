@@ -1,60 +1,168 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import CopyButton from "../components/CopyButton.astro";
-import VacancyBoard from "../components/VacancyBoard.astro";
+import KickDevice from "../components/KickDevice.astro";
+import SwampHorizon from "../components/SwampHorizon.astro";
 import { INSTALL_METHODS } from "../data/install-methods";
+import { PLATFORM_SUPPORT } from "../data/package-status";
 import { LINKS, SITE } from "../data/links";
 
 /*
-  Landing page type scale: exactly three sizes.
-  text-sm (captions, commands), text-lg (body, subheads), text-display (headlines, the sign).
+  Three type sizes only: text-sm (labels, commands), text-lg (reading),
+  text-display (headlines and the pixel sign).
 */
 
-const unix = INSTALL_METHODS.find((method) => method.id === "installer-unix")!;
-const windows = INSTALL_METHODS.find((method) => method.id === "installer-windows")!;
+const method = (id: string) => INSTALL_METHODS.find((m) => m.id === id)!;
+const unix = method("installer-unix");
+const windows = method("installer-windows");
 
-const demo = [
-  { kind: "command", text: "kick inspect --port 3000" },
-  { kind: "output", text: "Target: PID 18422 (node)" },
-  { kind: "output", text: "Tree (3 processes):" },
-  { kind: "output", text: "  PID 18422 (node) [TCP 127.0.0.1:3000]" },
-  { kind: "output", text: "    PID 18431 (vite)" },
-  { kind: "output", text: "    PID 18444 (esbuild)" },
-  { kind: "muted", text: "To terminate this tree:" },
-  { kind: "muted", text: "kick kill --pid 18422 --tree" },
+/* Pixel stars for the night sky, placed once from a fixed pattern. */
+const STARS = Array.from({ length: 34 }, (_, i) => ({
+  x: (i * 37 + 11) % 100,
+  y: (i * 53 + 7) % 92,
+  big: i % 7 === 0,
+}));
+
+type Line = { kind: "cmd" | "out" | "dim" | "ok"; text: string };
+const cmd = (text: string): Line => ({ kind: "cmd", text });
+const out = (text: string): Line => ({ kind: "out", text });
+const dim = (text: string): Line => ({ kind: "dim", text });
+const ok = (text: string): Line => ({ kind: "ok", text });
+
+const COMMANDS: { id: string; title: string; body: string; href: string; link: string; lines: Line[] }[] = [
+  {
+    id: "list",
+    title: "Find the owner",
+    body: "Port 3000 is busy. See the process behind it before you decide anything. Add --json for scripts.",
+    href: "/docs/cli",
+    link: "List and filter ports",
+    lines: [
+      cmd("kick list --port 3000"),
+      out("PROTO  ADDRESS    PORT  PID    PROCESS  STATE"),
+      out("TCP    127.0.0.1  3000  18422  node     LISTEN"),
+    ],
+  },
+  {
+    id: "inspect",
+    title: "Read the family",
+    body: "Dev servers leave workers behind. Inspect shows the tree, the group, and the exact command to clear it. Read-only.",
+    href: "/docs/scoped-kills",
+    link: "Inspect and scoped kills",
+    lines: [
+      cmd("kick inspect --port 3000"),
+      out("Target: PID 18422 (node)"),
+      out("  Command: node server.mjs"),
+      out("  Ports: TCP 127.0.0.1:3000"),
+      dim("  … ancestors and siblings"),
+      out("Tree (3 processes):"),
+      out("  PID 18422 (node) [TCP 127.0.0.1:3000]"),
+      out("    PID 18431 (vite)"),
+      out("    PID 18444 (esbuild)"),
+      ok("To terminate this tree: kick kill --pid 18422 --tree"),
+    ],
+  },
+  {
+    id: "why",
+    title: "Explain the conflict",
+    body: "Got \"address already in use\"? Why probes the bind and returns the evidence, even when the owner is unclear.",
+    href: "/docs/watch-and-why",
+    link: "Understand bind failures",
+    lines: [
+      cmd("kick why 3000"),
+      out("tcp://127.0.0.1:3000 verdict=owned certainty=proven"),
+      out("  probe=address_in_use message=Address already in use (os error 98)"),
+      out("  evidence code=visible_verified_owner source=linux_procfs"),
+      out("    message=PID 18422 (node) owned the endpoint at snapshot capture"),
+      ok("tcp://[::1]:3000 verdict=bindable_now certainty=proven"),
+      dim("  … fields trimmed"),
+    ],
+  },
+  {
+    id: "watch",
+    title: "Watch it change",
+    body: "One line per change as servers bind, release, or get replaced. Pipe it anywhere.",
+    href: "/docs/watch-and-why",
+    link: "Watch ports live",
+    lines: [
+      cmd("kick watch --port 5173"),
+      out("BIND TCP 127.0.0.1:5173 listen owners=21077 filter=matched certainty=proven"),
+      out("RELEASE TCP 127.0.0.1:5173 listen owners=21077 filter=matched certainty=proven"),
+      dim("  … observed timestamps trimmed"),
+    ],
+  },
+  {
+    id: "kill",
+    title: "Kick it out",
+    body: "One process by default, confirmed by you, checked again right before the signal.",
+    href: "/docs/safety",
+    link: "How confirmation works",
+    lines: [
+      cmd("kick kill --pid 18422"),
+      out("Terminate PID 18422 (node)"),
+      out("Scope: process"),
+      out("Ports: TCP 127.0.0.1:3000"),
+      out("Command: kill 18422"),
+      out("Type y to confirm, or press Enter to cancel: y"),
+      ok("sent SIGTERM to PID 18422 (node)"),
+      ok("confirmed target ports are no longer visible"),
+    ],
+  },
 ];
-const tasks = [
-  { title: "Find the owner", description: "Port 3000 is busy. See the process behind it before deciding what to stop.", command: "kick list --port 3000", href: "/docs/cli", link: "List and filter ports" },
-  { title: "Explain the conflict", description: 'Get evidence behind "address already in use", even when the owner is unclear.', command: "kick why 3000", href: "/docs/watch-and-why", link: "Understand bind failures" },
-  { title: "Watch it change", description: "Keep an eye on ports as servers start, stop, or get replaced.", command: "kick watch", href: "/docs/watch-and-why", link: "Watch ports live" },
+
+const KEYS = [
+  { key: "↵", label: "Details" },
+  { key: "x", label: "Terminate" },
+  { key: "X", label: "Force kill" },
+  { key: "t", label: "Kill tree" },
+  { key: "/", label: "Search" },
+  { key: "m", label: "Full report" },
+  { key: "?", label: "Help" },
+  { key: "q", label: "Quit" },
 ];
-const checks = [
-  "One process by default. Tree cleanup only when you ask.",
-  "Targets are checked again before termination.",
-  "Changed or uncertain targets are refused.",
+
+const PIPELINE = [
+  { title: "Find", body: "One snapshot ties every socket to its owner." },
+  { title: "Inspect", body: "Read the tree and group. Nothing is stopped." },
+  { title: "Confirm", body: "Type y, tree, force, or a protected PID." },
+  { title: "Re-check", body: "Identity, ports, and protection are read again." },
+  { title: "Signal", body: "SIGTERM by default. Any drift and it refuses." },
+];
+
+const CHANNELS = [
+  { name: "Homebrew", where: "macOS, Linux", code: method("homebrew").commands[0].code },
+  { name: "Scoop", where: "Windows", code: method("scoop").commands.map((c) => c.code).join("\n") },
+  { name: "AUR", where: "Arch", code: method("aur-bin").commands[0].code },
+  { name: "Nix", where: "Linux", code: method("nix").commands[0].code },
+  { name: "Cargo", where: "Anywhere Rust runs", code: method("cargo").commands[0].code },
 ];
 ---
 
 <Layout>
   <div class="landing">
-    <!-- Hero: the pitch on top, the motel underneath -->
-    <section class="mx-auto max-w-6xl px-4 pt-10 sm:pt-14">
-      <a href={`/changelog#v${SITE.version}`} class="release-link text-sm">
-        v{SITE.version} is out. Full kill reports in the TUI and safer protected-process prompts
-      </a>
+    <!-- Hero: night sky, the pitch, and the device -->
+    <section class="hero">
+      <svg class="stars" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        {STARS.map((s) => <rect x={s.x} y={s.y} width={s.big ? 0.32 : 0.18} height={s.big ? 0.5 : 0.28} class={s.big ? "star-big" : "star"} />)}
+      </svg>
 
-      <div class="mt-6 grid gap-8 lg:grid-cols-[1.25fr_1fr] lg:gap-14">
-        <h1 class="text-display font-bold tracking-tight">
-          Your ports have squatters, so kick them out.
-        </h1>
+      <div class="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pt-12 pb-6 sm:pt-16 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
+        <div class="min-w-0">
+          <a href={`/changelog#v${SITE.version}`} class="release-chip text-sm">
+            <span class="release-tag font-pixel">v{SITE.version}</span>
+            <span>Full kill reports in the TUI and safer protected-process prompts</span>
+          </a>
 
-        <div class="min-w-0 lg:pt-3">
-          <p class="text-lg leading-relaxed">
-            Find what's using your port. Inspect the process, then clear the stale server from your terminal.
+          <h1 class="mt-7 text-display font-bold tracking-tight">
+            Your ports have squatters.
+            <span class="kick-line font-pixel">Kick them out.</span>
+          </h1>
+
+          <p class="mt-6 max-w-[34rem] text-lg text-muted">
+            Kickoutchi is a TUI and CLI port janitor. See which process owns a local port, read its
+            family, and clear the stale dev server without guessing.
           </p>
-          <p class="mt-2 text-sm text-muted">Free, open-source TUI &amp; CLI. Linux, macOS, and Windows.</p>
 
-          <div id="quick-install" class="quick-install mt-6 scroll-mt-24">
+          <div id="quick-install" class="quick-install mt-8 scroll-mt-24">
             <fieldset>
               <legend class="sr-only">Install for your platform</legend>
               <div class="platforms">
@@ -66,134 +174,201 @@ const checks = [
             </fieldset>
             <div class="install-cmd unix-command">
               <pre class="font-mono text-sm"><code>{unix.commands[0].code}</code></pre>
-              <CopyButton text={unix.commands[0].code} class="copy-install text-sm!" />
+              <CopyButton text={unix.commands[0].code} class="shrink-0" />
             </div>
             <div class="install-cmd windows-command">
               <pre class="font-mono text-sm"><code>{windows.commands[0].code}</code></pre>
-              <CopyButton text={windows.commands[0].code} class="copy-install text-sm!" />
+              <CopyButton text={windows.commands[0].code} class="shrink-0" />
             </div>
-            <p class="mt-3 text-sm text-muted">Then run <code class="font-mono text-fg">kick</code> to open the TUI.</p>
-            <p class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-              <a href="/install" class="ink-link">Other install methods</a>
-              <a href="#see-it" class="ink-link">See it in action ↓</a>
+            <p class="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted">
+              <span>Then run <code class="kbd-inline font-mono">kick</code> to open the TUI.</span>
+              <a href="/install" class="ink-link">Homebrew, Scoop, AUR, Nix, Cargo →</a>
             </p>
           </div>
         </div>
+
+        <div class="min-w-0">
+          <KickDevice />
+        </div>
       </div>
 
-      <div class="mt-12 sm:mt-16">
-        <VacancyBoard />
-      </div>
+      <SwampHorizon />
     </section>
 
     <!-- The real TUI -->
-    <section id="see-it" class="mx-auto max-w-6xl scroll-mt-20 px-4 pt-20 sm:pt-28">
-      <div class="grid gap-6 lg:grid-cols-[1.25fr_1fr] lg:items-end lg:gap-14">
-        <h2 class="text-display font-bold tracking-tight">Meet your port janitor.</h2>
+    <section id="see-it" class="mx-auto max-w-6xl scroll-mt-20 px-4 pt-24 sm:pt-32">
+      <div class="section-head">
         <div>
-          <p class="text-lg leading-relaxed">Browse open ports, select a process, and see exactly what owns it.</p>
-          <a href="/docs/tui" class="ink-link mt-2 inline-block text-sm">Take the TUI tour</a>
+          <p class="eyebrow">The TUI</p>
+          <h2 class="mt-4 text-display font-bold tracking-tight">Meet your port janitor.</h2>
         </div>
+        <p class="text-lg text-muted">
+          Run <code class="kbd-inline font-mono">kick</code> with no arguments. Every open port, its
+          owner, and the details of whatever you select. Browsing never stops anything.
+        </p>
       </div>
 
-      <figure class="mt-10">
+      <figure class="mt-12">
         <div class="screen-frame">
           <div class="screen-bar font-mono text-sm">
-            <span><span class="text-[#b7d073]">$</span> kick</span>
-            <span class="opacity-70">TUI on Linux</span>
+            <span><span class="text-term-accent">$</span> kick</span>
+            <span class="text-faint">TUI · Linux</span>
           </div>
           <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Kickoutchi TUI screenshot. Scroll horizontally to see the full terminal on smaller screens.">
-            <img src="/previews/kickoutchi-tui.webp" alt="Kickoutchi 1.4.2 showing a selected Node.js process on port 3000, its listening address, process details, and keyboard shortcuts for inspecting or terminating it." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
+            <img src="/previews/kickoutchi-tui.webp" alt="Kickoutchi showing a selected Node.js process on port 3000, its listening address, process details, and keyboard shortcuts for inspecting or terminating it." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
           </div>
         </div>
-        <figcaption class="mt-3 flex flex-wrap justify-between gap-2 text-sm text-muted">
-          <span>Captured from Kickoutchi v1.4.2 with a local demo server. <span class="sm:hidden">Swipe the terminal to see the full table.</span></span>
+        <figcaption class="mt-3 flex flex-wrap justify-between gap-2 text-sm text-faint">
+          <span>Captured from a real session with a local demo server.</span>
           <a href="/previews/kickoutchi-tui.webp" target="_blank" rel="noopener noreferrer" class="ink-link">View full size ↗</a>
         </figcaption>
       </figure>
 
-      <div class="keys mt-10 grid gap-6 sm:grid-cols-2">
-        <div class="flex gap-4">
-          <kbd class="key font-mono text-lg">↵</kbd>
-          <p class="text-lg leading-snug"><strong class="block">Inspect first</strong><span class="text-sm text-muted">Open process details with Enter. Browsing doesn't terminate anything.</span></p>
-        </div>
-        <div class="flex gap-4">
-          <kbd class="key font-mono text-lg">x</kbd>
-          <p class="text-lg leading-snug"><strong class="block">Review, then confirm</strong><span class="text-sm text-muted">Press x to review the target. Confirm to stop it, or Escape to cancel.</span></p>
-        </div>
-      </div>
+      <ul class="keys mt-12" aria-label="Main TUI keys">
+        {KEYS.map((k) => (
+          <li class="key-item">
+            <kbd class="key font-mono text-lg">{k.key}</kbd>
+            <span class="text-sm text-muted">{k.label}</span>
+          </li>
+        ))}
+      </ul>
 
-      <details class="confirm-peek mt-8">
-        <summary class="text-sm font-semibold">See the confirmation step</summary>
-        <p class="mt-3 text-sm text-muted">The prompt names the process and every affected port. Nothing stops until you confirm.</p>
-        <div class="screen-frame mt-3 overflow-x-auto" tabindex="0" role="region" aria-label="Termination confirmation screenshot. Scroll horizontally on smaller screens.">
-          <img src="/previews/kickoutchi-confirm.webp" alt="The real confirmation dialog identifies the Node.js process, lists its ports 3000, 5173, and 8080, and offers y to confirm or Escape to cancel." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
+      <details class="confirm-peek mt-10">
+        <summary class="text-sm">See the confirmation step</summary>
+        <p class="mt-3 max-w-2xl text-sm text-muted">
+          The prompt names the process and every affected port. Warnings wrap in full, and nothing
+          stops until you confirm.
+        </p>
+        <div class="screen-frame mt-4 overflow-x-auto" tabindex="0" role="region" aria-label="Termination confirmation screenshot. Scroll horizontally on smaller screens.">
+          <img src="/previews/kickoutchi-confirm.webp" alt="The confirmation dialog identifies the Node.js process, lists its ports 3000, 5173, and 8080, and offers y to confirm or Escape to cancel." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
         </div>
       </details>
     </section>
 
-    <!-- CLI shortcuts, as a ledger -->
-    <section class="mx-auto max-w-6xl px-4 pt-20 sm:pt-28">
-      <div class="grid gap-6 lg:grid-cols-[1.25fr_1fr] lg:items-end lg:gap-14">
-        <h2 class="text-display font-bold tracking-tight">Get straight to it.</h2>
-        <p class="text-lg leading-relaxed">Already know the port? Use the CLI for a quick answer, or add JSON output to your scripts.</p>
+    <!-- The CLI, as a command deck -->
+    <section class="mx-auto max-w-6xl px-4 pt-24 sm:pt-32">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">The CLI</p>
+          <h2 class="mt-4 text-display font-bold tracking-tight">Get straight to it.</h2>
+        </div>
+        <p class="text-lg text-muted">
+          Already know the port? Five verbs cover the job. Every transcript below uses the real
+          output format.
+        </p>
       </div>
 
-      <ul class="ledger mt-10">
-        {tasks.map((task) => (
-          <li class="ledger-row">
-            <div>
-              <h3 class="text-lg font-bold">{task.title}</h3>
-              <p class="mt-1 text-lg leading-snug text-muted">{task.description}</p>
-            </div>
+      <div class="deck mt-12">
+        <fieldset class="deck-tabs">
+          <legend class="sr-only">Command</legend>
+          {COMMANDS.map((c, i) => (
+            <>
+              <input class="sr-only" type="radio" name="deck" id={`deck-${c.id}`} checked={i === 0} />
+              <label for={`deck-${c.id}`} class="deck-tab font-mono text-sm">{c.id}</label>
+            </>
+          ))}
+        </fieldset>
+
+        {COMMANDS.map((c) => (
+          <div class="deck-panel" data-panel={c.id}>
             <div class="min-w-0">
-              <div class="cli-cmd">
-                <code class="font-mono text-sm">{task.command}</code>
-                <CopyButton text={task.command} class="copy-install text-sm!" />
+              <h3 class="text-lg font-bold">{c.title}</h3>
+              <p class="mt-2 text-lg text-muted">{c.body}</p>
+              <div class="cli-cmd mt-5">
+                <code class="font-mono text-sm">{c.lines[0].text}</code>
+                <CopyButton text={c.lines[0].text} class="shrink-0" />
               </div>
-              <a href={task.href} class="ink-link mt-2 inline-block text-sm">{task.link}</a>
+              <a href={c.href} class="ink-link mt-4 inline-block text-sm">{c.link} →</a>
+            </div>
+            <pre class="transcript font-mono text-sm"><code>{c.lines.map((line) => (
+              <span class:list={["line", `is-${line.kind}`]}>{line.kind === "cmd" && <span class="prompt">$ </span>}{line.text}</span>
+            ))}</code></pre>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- Safety pipeline -->
+    <section class="mx-auto max-w-6xl px-4 pt-24 sm:pt-32">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Safety</p>
+          <h2 class="mt-4 text-display font-bold tracking-tight">Clear the right process.</h2>
+        </div>
+        <p class="text-lg text-muted">
+          A PID can be reused and a port can change hands between two keystrokes. Every kick walks
+          the same path, and it stops the moment the target is no longer the one you confirmed.
+        </p>
+      </div>
+
+      <ol class="pipeline mt-14">
+        {PIPELINE.map((step, i) => (
+          <li class:list={["stop", i === PIPELINE.length - 1 && "stop-last"]}>
+            <span class="stop-dot" aria-hidden="true"></span>
+            <h3 class="font-pixel text-lg">{step.title}</h3>
+            <p class="mt-1 text-sm text-muted">{step.body}</p>
+          </li>
+        ))}
+      </ol>
+
+      <div class="facts mt-12">
+        <p class="fact text-lg"><span class="fact-mark" aria-hidden="true"></span><span>One process by default. Trees and groups only when you ask.</span></p>
+        <p class="fact text-lg"><span class="fact-mark" aria-hidden="true"></span><span>Protected processes need the PID or name typed. <code class="kbd-inline font-mono">--yes</code> can't skip it.</span></p>
+        <p class="fact text-lg"><span class="fact-mark" aria-hidden="true"></span><span>Changed or uncertain targets are refused, never guessed.</span></p>
+      </div>
+      <a href="/docs/safety" class="ink-link mt-8 inline-block text-sm">Read how the safety checks work →</a>
+    </section>
+
+    <!-- Platforms and channels -->
+    <section class="mx-auto max-w-6xl px-4 pt-24 sm:pt-32">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Everywhere</p>
+          <h2 class="mt-4 text-display font-bold tracking-tight">Runs in every swamp.</h2>
+        </div>
+        <p class="text-lg text-muted">
+          Native collection on Linux, macOS, and Windows. No daemon to run. Two binaries ship
+          together: <code class="kbd-inline font-mono">kickoutchi</code> and the short <code class="kbd-inline font-mono">kick</code>.
+        </p>
+      </div>
+
+      <div class="mt-12 grid gap-4 md:grid-cols-3">
+        {PLATFORM_SUPPORT.map((p) => (
+          <div class="pocket-panel p-5">
+            <p class="font-pixel text-lg">{p.platform}</p>
+            <p class="mt-2 text-sm text-muted">{p.detail}</p>
+          </div>
+        ))}
+      </div>
+
+      <ul class="channels mt-10">
+        {CHANNELS.map((c) => (
+          <li class="channel">
+            <div class="channel-head">
+              <span class="font-bold">{c.name}</span>
+              <span class="text-sm text-faint">{c.where}</span>
+            </div>
+            <div class="channel-cmd">
+              <pre class="font-mono text-sm"><code>{c.code}</code></pre>
+              <CopyButton text={c.code} class="shrink-0" />
             </div>
           </li>
         ))}
       </ul>
+      <a href="/install" class="ink-link mt-6 inline-block text-sm">Every install method, with checksums and updates →</a>
     </section>
 
-    <!-- Safety -->
-    <section class="mx-auto max-w-6xl px-4 pt-20 sm:pt-28">
-      <div class="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-        <div>
-          <h2 class="text-display font-bold tracking-tight">Clear the right process.</h2>
-          <p class="mt-5 text-lg leading-relaxed">A stale server can leave a whole process tree behind. Inspect its family before choosing what to stop.</p>
-          <ul class="mt-6 space-y-3">
-            {checks.map((check) => (
-              <li class="check text-lg leading-snug">{check}</li>
-            ))}
-          </ul>
-          <a href="/docs/safety" class="ink-link mt-6 inline-block text-sm">How the safety checks work</a>
-        </div>
-        <figure class="screen-frame min-w-0">
-          <figcaption class="screen-bar font-mono text-sm">
-            <span>Read-only inspection</span>
-            <span class="opacity-70">nothing stopped</span>
-          </figcaption>
-          <pre class="transcript font-mono text-sm"><code>{demo.map((line) => (
-            <span class:list={["line", `is-${line.kind}`]}>{line.kind === "command" && <span class="prompt">$ </span>}{line.text}</span>
-          ))}</code></pre>
-        </figure>
-      </div>
-    </section>
-
-    <!-- Send-off: the sign, lit -->
-    <section class="mx-auto max-w-6xl px-4 pt-20 sm:pt-28">
+    <!-- Send-off -->
+    <section class="mx-auto max-w-6xl px-4 pt-24 sm:pt-32">
       <div class="finale">
         <p class="finale-sign font-pixel text-display">Clear the swamp.</p>
-        <div class="finale-body">
-          <p class="text-lg leading-relaxed">Your next dev server deserves a free port.</p>
-          <p class="mt-2 text-sm opacity-85">Prefer a package manager? Homebrew, Scoop, AUR, Cargo, and Nix are available too.</p>
-          <div class="mt-6 flex flex-wrap items-center gap-5">
-            <a href="/install" class="finale-btn text-lg font-semibold">Choose your install method</a>
-            <a href={LINKS.github} target="_blank" rel="noopener noreferrer" class="text-sm font-semibold underline underline-offset-4">View the source ↗</a>
+        <div>
+          <p class="text-lg">Your next dev server deserves a free port. Free and open source under MIT.</p>
+          <div class="mt-7 flex flex-wrap items-center gap-4">
+            <a href="/install" class="btn btn-kick text-lg">Install Kickoutchi</a>
+            <a href="/docs" class="btn btn-ghost text-lg">Read the docs</a>
           </div>
+          <a href={LINKS.github} target="_blank" rel="noopener noreferrer" class="ink-link mt-6 inline-block text-sm">View the source on GitHub ↗</a>
         </div>
       </div>
     </section>
@@ -201,9 +376,9 @@ const checks = [
 </Layout>
 
 <style>
-  h1,
-  h2 {
-    max-width: 15ch;
+  .landing h1,
+  .landing h2 {
+    max-width: 14ch;
   }
 
   .ink-link {
@@ -216,19 +391,65 @@ const checks = [
   .ink-link:hover {
     color: var(--fg);
   }
+  .kbd-inline {
+    padding: 0.05rem 0.35rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 0.25rem;
+    background: var(--surface-2);
+    color: var(--fg);
+    font-size: var(--text-sm);
+  }
 
-  .release-link {
+  /* ---- Hero ---- */
+  .hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .stars {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 200px);
+    pointer-events: none;
+  }
+  .star {
+    fill: #343d2c;
+  }
+  .star-big {
+    fill: #56604a;
+  }
+
+  .release-chip {
     display: inline-flex;
     align-items: center;
-    padding: 0.35rem 0.8rem;
+    gap: 0.75rem;
+    max-width: 100%;
+    padding: 0.3rem 0.85rem 0.3rem 0.3rem;
     border: 2px solid var(--border-strong);
-    border-radius: 999px;
+    border-radius: 0.4rem;
     background: var(--surface);
-    font-weight: 600;
+    color: var(--muted);
   }
-  .release-link:hover {
-    background: var(--fg);
-    color: var(--bg);
+  .release-chip:hover {
+    border-color: var(--accent);
+    color: var(--fg);
+  }
+  .release-tag {
+    flex-shrink: 0;
+    padding: 0.15rem 0.5rem;
+    border-radius: 0.2rem;
+    background: var(--lcd);
+    color: var(--lcd-ink);
+    letter-spacing: 0.04em;
+  }
+
+  .kick-line {
+    display: block;
+    margin-top: 0.4rem;
+    color: var(--kick);
+    font-weight: 600;
   }
 
   /* ---- Quick install ---- */
@@ -236,7 +457,7 @@ const checks = [
     display: inline-flex;
     border: 2px solid var(--border-strong);
     border-bottom: 0;
-    border-radius: 0.5rem 0.5rem 0 0;
+    border-radius: 0.4rem 0.4rem 0 0;
     overflow: hidden;
   }
   .platforms label {
@@ -252,8 +473,8 @@ const checks = [
     border-left: 2px solid var(--border-strong);
   }
   .platforms input:checked + label {
-    background: var(--fg);
-    color: var(--bg);
+    background: var(--term-accent);
+    color: var(--term-accent-fg);
   }
   .platforms input:focus-visible + label {
     outline: 3px solid var(--kick);
@@ -269,10 +490,10 @@ const checks = [
     gap: 0.75rem;
     padding: 0.9rem 0.9rem 0.9rem 1rem;
     border: 2px solid var(--border-strong);
-    border-radius: 0 0.5rem 0.5rem 0.5rem;
-    background: var(--fg);
-    color: #d9e0c4;
-    box-shadow: 5px 5px 0 0 rgb(26 35 27 / 0.2);
+    border-radius: 0 0.4rem 0.4rem 0.4rem;
+    background: var(--term-bg);
+    color: var(--term-fg);
+    box-shadow: 4px 4px 0 0 var(--drop);
   }
   .install-cmd pre {
     flex: 1;
@@ -284,41 +505,77 @@ const checks = [
        leave its two leading spaces stranded on a blank line. */
     word-break: break-all;
   }
-  .install-cmd :global(.copy-install) {
-    flex-shrink: 0;
+
+  /* ---- Section heads ---- */
+  .section-head {
+    display: grid;
+    gap: 1.5rem;
+  }
+  @media (min-width: 1024px) {
+    .section-head {
+      grid-template-columns: 1.2fr 1fr;
+      align-items: end;
+      gap: 4rem;
+    }
   }
 
   /* ---- Screens ---- */
   .screen-frame {
     overflow: hidden;
-    border: 3px solid var(--border-strong);
-    border-radius: 0.6rem;
-    background: #10130e;
-    box-shadow: 6px 6px 0 0 var(--chunk-shadow);
+    border: 2px solid var(--border-strong);
+    border-radius: 0.5rem;
+    background: var(--term-bg);
+    box-shadow: 6px 6px 0 0 var(--drop);
   }
   .screen-bar {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
     padding: 0.6rem 1rem;
-    border-bottom: 2px solid #303725;
-    color: #d7dcc4;
+    border-bottom: 2px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--fg);
+  }
+
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem 1rem;
+    padding: 0;
+    list-style: none;
+  }
+  @media (min-width: 640px) {
+    .keys {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1024px) {
+    .keys {
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+  }
+  .key-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
   .key {
     display: flex;
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    width: 3rem;
-    height: 3rem;
-    border: 2px solid var(--border-strong);
-    border-radius: 0.5rem;
-    background: var(--surface);
-    box-shadow: 0 4px 0 0 var(--chunk-shadow);
-  }
-  .keys strong {
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 2px solid #11140d;
+    border-radius: 0.4rem;
+    background: var(--shell);
+    color: var(--lcd-ink);
     font-weight: 700;
+    box-shadow:
+      inset -2px -3px 0 0 var(--shell-shade),
+      0 3px 0 0 #000;
   }
+
   .confirm-peek summary {
     display: inline-flex;
     align-items: center;
@@ -326,72 +583,105 @@ const checks = [
     min-height: 2.75rem;
     cursor: pointer;
     color: var(--accent);
+    font-weight: 600;
   }
   .confirm-peek summary::marker {
     color: var(--kick);
   }
 
-  /* ---- CLI ledger ---- */
-  .ledger {
+  /* ---- Command deck ---- */
+  .deck {
+    border: 2px solid var(--border-strong);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    box-shadow: 6px 6px 0 0 var(--drop);
+    overflow: hidden;
+  }
+  .deck-tabs {
+    display: flex;
+    overflow-x: auto;
     margin: 0;
     padding: 0;
-    list-style: none;
-    border-top: 3px solid var(--border-strong);
-  }
-  .ledger-row {
-    display: grid;
-    gap: 1rem;
-    padding: 1.5rem 0;
+    border: 0;
     border-bottom: 2px solid var(--border-strong);
+    background: var(--surface-2);
   }
-  @media (min-width: 768px) {
-    .ledger-row {
-      grid-template-columns: 1.25fr 1fr;
-      gap: 3.5rem;
-      align-items: start;
+  .deck-tab {
+    display: inline-flex;
+    align-items: center;
+    min-height: 3rem;
+    padding: 0 1.25rem;
+    border-right: 2px solid var(--border-strong);
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .deck-tab::before {
+    content: "kick\00a0";
+    color: var(--faint);
+  }
+  .deck-tab:hover {
+    color: var(--fg);
+  }
+  .deck-tabs input:checked + .deck-tab {
+    background: var(--term-accent);
+    color: var(--term-accent-fg);
+    font-weight: 700;
+  }
+  .deck-tabs input:checked + .deck-tab::before {
+    color: rgb(0 0 0 / 0.55);
+  }
+  .deck-tabs input:focus-visible + .deck-tab {
+    outline: 3px solid var(--kick);
+    outline-offset: -3px;
+  }
+  .deck-panel {
+    display: none;
+    gap: 2rem;
+    padding: 1.5rem;
+  }
+  @media (min-width: 900px) {
+    .deck-panel {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
+      padding: 2rem;
+      gap: 2.5rem;
     }
+  }
+  .deck:has(#deck-list:checked) [data-panel="list"],
+  .deck:has(#deck-inspect:checked) [data-panel="inspect"],
+  .deck:has(#deck-why:checked) [data-panel="why"],
+  .deck:has(#deck-watch:checked) [data-panel="watch"],
+  .deck:has(#deck-kill:checked) [data-panel="kill"] {
+    display: grid;
   }
   .cli-cmd {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
-    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    padding: 0.45rem 0.45rem 0.45rem 0.9rem;
     border: 2px solid var(--border-strong);
-    border-radius: 0.5rem;
-    background: var(--surface);
+    border-radius: 0.4rem;
+    background: var(--term-bg);
+    color: var(--term-fg);
+    min-width: 0;
+  }
+  .cli-cmd code {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
   .cli-cmd code::before {
     content: "$ ";
-    color: var(--accent);
-  }
-
-  /* ---- Safety ---- */
-  .check {
-    position: relative;
-    padding-left: 2rem;
-  }
-  .check::before {
-    content: "✓";
-    position: absolute;
-    left: 0;
-    top: 0.05em;
-    display: grid;
-    place-items: center;
-    width: 1.35rem;
-    height: 1.35rem;
-    border: 2px solid var(--border-strong);
-    border-radius: 0.3rem;
-    background: var(--kick);
-    color: var(--fg);
-    font-size: var(--text-sm);
-    font-weight: 700;
-    line-height: 1;
+    color: var(--term-accent);
   }
   .transcript {
+    min-width: 0;
     margin: 0;
-    padding: 1rem;
-    color: #d7dcc4;
+    padding: 1.1rem 1.2rem;
+    border: 2px solid var(--border-strong);
+    border-radius: 0.4rem;
+    background: var(--term-bg);
+    color: var(--term-fg);
     line-height: 1.7;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
@@ -400,28 +690,154 @@ const checks = [
     display: block;
   }
   .transcript .prompt {
-    color: #b7d073;
+    color: var(--term-accent);
+    font-weight: 700;
+  }
+  .transcript .is-cmd {
     font-weight: 600;
   }
-  .transcript .is-muted {
-    color: #8f9683;
+  .transcript .is-out {
+    color: var(--term-out);
+  }
+  .transcript .is-dim {
+    color: var(--term-dim);
+  }
+  .transcript .is-ok {
+    color: var(--term-accent);
+  }
+
+  /* ---- Safety pipeline ---- */
+  .pipeline {
+    display: grid;
+    padding: 0;
+    list-style: none;
+  }
+  .stop {
+    position: relative;
+    padding: 0 0 2rem 2.6rem;
+  }
+  /* The track between stops: a dashed pixel line. */
+  .stop::before {
+    content: "";
+    position: absolute;
+    left: 0.6rem;
+    top: 1.6rem;
+    bottom: 0;
+    border-left: 3px dashed var(--border-strong);
+  }
+  .stop-last::before {
+    display: none;
+  }
+  .stop-dot {
+    position: absolute;
+    left: 0;
+    top: 0.15rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 3px solid var(--accent);
+    background: var(--bg);
+  }
+  .stop-last .stop-dot {
+    border-color: var(--kick);
+    background: var(--kick);
+  }
+  .stop h3 {
+    line-height: 1.3;
+    letter-spacing: 0.03em;
+  }
+  @media (min-width: 900px) {
+    .pipeline {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 1.5rem;
+    }
+    .stop {
+      padding: 2.6rem 0 0;
+    }
+    .stop::before {
+      left: 1.9rem;
+      right: -1.1rem;
+      top: 0.6rem;
+      bottom: auto;
+      border-left: 0;
+      border-top: 3px dashed var(--border-strong);
+    }
+    .stop-dot {
+      top: 0;
+    }
+  }
+
+  .facts {
+    display: grid;
+    gap: 1rem;
+    max-width: 48rem;
+  }
+  .fact {
+    display: flex;
+    gap: 0.9rem;
+    margin: 0;
+  }
+  .fact-mark {
+    flex-shrink: 0;
+    width: 0.65rem;
+    height: 0.65rem;
+    margin-top: 0.55em;
+    background: var(--kick);
+  }
+
+  /* ---- Channels ---- */
+  .channels {
+    display: grid;
+    padding: 0;
+    list-style: none;
+    border-top: 2px solid var(--border-strong);
+  }
+  .channel {
+    display: grid;
+    gap: 0.6rem;
+    padding: 1rem 0;
+    border-bottom: 2px solid var(--border);
+  }
+  @media (min-width: 768px) {
+    .channel {
+      grid-template-columns: 12rem minmax(0, 1fr);
+      align-items: center;
+      gap: 2rem;
+    }
+  }
+  .channel-head {
+    display: flex;
+    flex-direction: column;
+  }
+  .channel-cmd {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+  .channel-cmd pre {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    color: var(--fg);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   /* ---- Finale ---- */
   .finale {
     display: grid;
     gap: 2rem;
-    padding: 2.5rem 1.25rem;
-    border: 3px solid var(--border-strong);
-    border-radius: 0.75rem;
+    padding: 2.5rem 1.5rem;
+    border: 2px solid var(--border-strong);
+    border-radius: 0.5rem;
     background:
-      repeating-linear-gradient(0deg, rgb(0 0 0 / 0.07) 0 2px, transparent 2px 28px),
-      var(--accent);
-    color: var(--accent-fg);
+      repeating-linear-gradient(90deg, rgb(255 255 255 / 0.025) 0 2px, transparent 2px 22px),
+      var(--surface);
+    box-shadow: 6px 6px 0 0 var(--drop);
   }
   @media (min-width: 900px) {
     .finale {
-      grid-template-columns: 1.25fr 1fr;
+      grid-template-columns: 1.15fr 1fr;
       align-items: center;
       gap: 3.5rem;
       padding: 3.5rem;
@@ -430,31 +846,40 @@ const checks = [
   .finale-sign {
     justify-self: start;
     margin: 0;
-    padding: 0.2em 0.45em 0.28em;
-    border-radius: 0.2em;
-    background: var(--fg);
+    padding: 0.2em 0.4em 0.26em;
+    border: 3px solid #000;
+    border-radius: 0.15em;
+    background: #070806;
     color: var(--kick);
-    text-shadow:
-      0 0 0.08em var(--kick),
-      0 0 0.35em rgb(240 85 44 / 0.55);
     line-height: 1;
   }
-  .finale-btn {
+  .btn {
     display: inline-flex;
     align-items: center;
     min-height: 3rem;
-    padding: 0 1.25rem;
-    border: 2px solid var(--border-strong);
-    border-radius: 0.5rem;
-    background: var(--kick);
-    color: var(--fg);
-    box-shadow: 4px 4px 0 0 var(--chunk-shadow);
+    padding: 0 1.3rem;
+    border: 2px solid #000;
+    border-radius: 0.4rem;
+    font-weight: 700;
+    box-shadow: 4px 4px 0 0 #000;
     transition:
       transform 90ms ease,
       box-shadow 90ms ease;
   }
-  .finale-btn:active {
+  .btn-kick {
+    background: var(--kick);
+    color: var(--kick-fg);
+  }
+  .btn-ghost {
+    background: var(--surface);
+    border-color: var(--border-strong);
+    color: var(--fg);
+  }
+  .btn-ghost:hover {
+    border-color: var(--accent);
+  }
+  .btn:active {
     transform: translate(3px, 3px);
-    box-shadow: 1px 1px 0 0 var(--chunk-shadow);
+    box-shadow: 1px 1px 0 0 #000;
   }
 </style>

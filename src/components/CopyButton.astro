@@ -9,7 +9,7 @@ const { text, class: className = "" } = Astro.props;
 <button
   type="button"
   class:list={[
-    "copy-button inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2 py-1 text-xs font-medium text-muted transition-colors hover:border-accent hover:text-accent",
+    "copy-button inline-flex items-center gap-1.5 rounded border border-border-strong bg-surface-2 px-2 py-1 text-sm font-medium text-muted transition-colors hover:border-accent hover:text-accent",
     className,
   ]}
   data-clipboard={text}

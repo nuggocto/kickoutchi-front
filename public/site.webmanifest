@@ -4,8 +4,8 @@
   "description": "A TUI and CLI port janitor for finding open local ports, inspecting process families, and safely kicking stale dev servers out.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f1edde",
-  "theme_color": "#f1edde",
+  "background_color": "#0c0f0a",
+  "theme_color": "#0c0f0a",
   "icons": [
     {
       "src": "/icon-192.png",

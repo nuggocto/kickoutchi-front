@@ -28,58 +28,78 @@
 }
 
 /*
-  Kickoutchi design system: the swamp motel.
+  Kickoutchi after dark.
 
-  Ports are rooms, stale servers are squatters, and the tool is the big green
-  boot. The site borrows that vocabulary:
+  The brand is a pocket device: a cream pixel egg with a green LCD, a red
+  kick button, a squatter critter, and the boot. At night the swamp goes
+  dark and the device is the brightest thing in it.
 
-  - pond-water paper, bog ink, moss walls
-  - chunky ink outlines + hard offset shadows
-  - one neon "kick" orange for the sign, the boot, and the act of kicking
-  - pixel type for signage, a grotesk for everything read, mono for commands
-  - three type sizes: text-sm, text-lg, text-display
-
-  Light theme only, by design: dark surfaces are reserved for terminal screens
-  and the neon signs.
+  - one dark theme, no light variant
+  - LCD green for screens, cream for the device and reading text
+  - kick orange only for the act of kicking (buttons, the boot, the sign)
+  - hard pixel edges and flat offset shadows; nothing glows
+  - three families: pixel for signage, a grotesk for reading, mono for commands
+  - three sizes: text-sm, text-lg, text-display (the scale below is closed)
 */
 
 @theme {
+  --font-*: initial;
   --font-sans: "Space Grotesk Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, "SFMono-Regular", "Menlo", monospace;
   --font-pixel: "Pixelify Sans Variable", "Space Grotesk Variable", system-ui, sans-serif;
 
-  /* The third and largest size, next to text-sm and text-lg. */
-  --text-display: clamp(2.5rem, 1.1rem + 5.4vw, 5.25rem);
-  --text-display--line-height: 0.98;
+  --text-*: initial;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.55;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.6;
+  --text-display: clamp(2.25rem, 1.05rem + 4.4vw, 4.75rem);
+  --text-display--line-height: 1;
 }
 
-/* ---- Semantic colour tokens ---- */
+/* ---- Colour tokens (dark only) ---- */
 :root {
-  color-scheme: light;
-  --bg: #e7ebd9;
-  --fg: #1a231b;
-  --muted: #4f5847;
-  --border: #c2c9ad;
-  --border-strong: #1a231b;
-  --surface: #f3f5ea;
-  --surface-2: #dde3c9;
-  --accent: #365426;
-  --accent-fg: #f3f5ea;
-  --kick: #f0552c;
-  --warning: #7a5410;
-  --warning-soft: #efe3bf;
-  --danger: #9c3320;
-  --danger-soft: #f1d8d0;
-  --ring: #365426;
-  /* Hard offset shadow = printed ink. */
-  --chunk-shadow: #1a231b;
+  color-scheme: dark;
+  --bg: #000000;
+  --fg: #ebe7d5;
+  --muted: #a8a698;
+  --faint: #6e6c62;
+  --border: #1f1f1d;
+  --border-strong: #33332f;
+  --surface: #0b0b0a;
+  --surface-2: #151513;
+  --accent: #b2cf72;
+  --accent-fg: #000000;
+  --kick: #ff6b3d;
+  --kick-fg: #160b06;
+  --lcd: #b9c991;
+  --lcd-ink: #1c2616;
+  --lcd-ghost: #a8ba7d;
+  --shell: #ece5cf;
+  --shell-shade: #cfc6aa;
+  --warning: #e8b85c;
+  --warning-soft: #2a2412;
+  --danger: #ff7f6b;
+  --danger-soft: #2c1511;
+  --ring: #b2cf72;
+  /* Flat offset shadow: a pixel drop, never a blur. On a black page the
+     drop is a step lighter than the page so it still reads. */
+  --drop: #1a1a18;
+  /* Terminal screens borrow the real TUI's palette: cyan selection and
+     prompts on near-black, neutral greys for output. */
+  --term-bg: #0a0a0a;
+  --term-fg: #ece9e0;
+  --term-out: #bdbab0;
+  --term-dim: #6e6c62;
+  --term-accent: #5fd3e0;
+  --term-accent-fg: #000000;
 }
 
-/* Expose the semantic tokens to Tailwind utilities (bg-bg, text-fg, …). */
 @theme inline {
   --color-bg: var(--bg);
   --color-fg: var(--fg);
   --color-muted: var(--muted);
+  --color-faint: var(--faint);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-surface: var(--surface);
@@ -87,11 +107,16 @@
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-fg);
   --color-kick: var(--kick);
+  --color-kick-fg: var(--kick-fg);
+  --color-lcd: var(--lcd);
+  --color-lcd-ink: var(--lcd-ink);
+  --color-shell: var(--shell);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-ring: var(--ring);
+  --color-term-accent: var(--term-accent);
 }
 
 @layer base {
@@ -104,17 +129,19 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    background-color: var(--bg);
   }
 
   body {
     background-color: var(--bg);
     color: var(--fg);
     font-family: var(--font-sans);
+    font-size: var(--text-lg);
+    line-height: var(--text-lg--line-height);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
-  /* Visible, theme-matched keyboard focus. */
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
@@ -133,8 +160,8 @@
     text-wrap: balance;
   }
 
-  /* Pixel-art assets should stay crisp, not blurry, when scaled. */
-  img[data-pixel] {
+  img[data-pixel],
+  svg[data-pixel] {
     image-rendering: pixelated;
   }
 }
@@ -152,24 +179,21 @@
   }
 }
 
-/* Shiki code blocks keep their own background transparent so `.prose pre`
-   supplies the surface. */
+/* Shiki blocks stay transparent so `.prose pre` supplies the surface. */
 .astro-code {
   background-color: transparent !important;
 }
 
-/* ---- Reusable building blocks ---- */
+/* ---- Building blocks ---- */
 
-/* The moulded-plastic panel: chunky outline + hard offset shadow. Every card
-   on the site is one of these, so the old name keeps working everywhere. */
+/* A dark panel with a flat pixel drop. Every card on the site is one. */
 @utility pocket-panel {
   background-color: var(--surface);
   border: 2px solid var(--border-strong);
-  border-radius: 0.625rem;
-  box-shadow: 5px 5px 0 0 var(--chunk-shadow);
+  border-radius: 0.5rem;
+  box-shadow: 4px 4px 0 0 var(--drop);
 }
 
-/* Interactive variant: lifts against its shadow on hover. */
 @utility pocket-panel-hover {
   transition:
     transform 150ms ease,
@@ -177,12 +201,31 @@
     border-color 150ms ease;
   &:hover {
     transform: translate(-2px, -2px);
-    box-shadow: 7px 7px 0 0 var(--chunk-shadow);
+    box-shadow: 6px 6px 0 0 var(--drop);
     border-color: var(--accent);
   }
 }
 
-/* Dark terminal glass with scanlines (Terminal.astro). */
+/* Small pixel signage above headlines. */
+@utility eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  font-family: var(--font-pixel);
+  font-size: var(--text-sm);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  &::before {
+    content: "";
+    width: 0.6em;
+    height: 0.6em;
+    background: var(--kick);
+  }
+}
+
+/* Faint scanlines for terminal screens. Texture only, no light. */
 @utility crt-overlay {
   position: relative;
   &::after {
@@ -192,8 +235,8 @@
     pointer-events: none;
     background: repeating-linear-gradient(
       0deg,
-      rgb(0 0 0 / 0.16) 0px,
-      rgb(0 0 0 / 0.16) 1px,
+      rgb(0 0 0 / 0.18) 0px,
+      rgb(0 0 0 / 0.18) 1px,
       transparent 1px,
       transparent 3px
     );
@@ -203,31 +246,53 @@
 /* ---- Long-form docs typography ---- */
 .prose {
   color: var(--fg);
-  font-size: 1rem;
+  font-size: var(--text-lg);
   line-height: 1.75;
 }
 .prose > * + * {
   margin-top: 1.1em;
 }
 .prose h2 {
-  margin-top: 2.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 2.75rem;
   margin-bottom: 0.6rem;
-  font-size: 1.6rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  padding-top: 1.25rem;
+  border-top: 2px dashed var(--border-strong);
+  font-family: var(--font-pixel);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   scroll-margin-top: 6rem;
+}
+.prose h2 code {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.prose h2::before {
+  content: "";
+  flex-shrink: 0;
+  width: 0.55rem;
+  height: 0.55rem;
+  background: var(--kick);
 }
 .prose h3 {
   margin-top: 1.8rem;
   margin-bottom: 0.4rem;
-  font-size: 1.25rem;
-  font-weight: 600;
+  color: var(--accent);
+  font-size: var(--text-lg);
+  font-weight: 700;
   scroll-margin-top: 6rem;
 }
 .prose h4 {
   margin-top: 1.4rem;
-  font-size: 1.05rem;
-  font-weight: 600;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   scroll-margin-top: 6rem;
 }
 .prose h2 + *,
@@ -238,7 +303,7 @@
 .prose a {
   color: var(--accent);
   text-decoration: underline;
-  text-underline-offset: 2px;
+  text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }
 .prose a:hover {
@@ -246,7 +311,7 @@
 }
 .prose strong {
   color: var(--fg);
-  font-weight: 600;
+  font-weight: 700;
 }
 .prose ul,
 .prose ol {
@@ -262,14 +327,17 @@
   content: "";
   position: absolute;
   left: -1.1rem;
-  top: 0.7em;
+  top: 0.72em;
   height: 0.35rem;
   width: 0.35rem;
-  border-radius: 1px;
   background-color: var(--accent);
 }
 .prose ol {
   list-style: decimal;
+}
+.prose ol > li::marker {
+  color: var(--accent);
+  font-family: var(--font-mono);
 }
 .prose li + li {
   margin-top: 0.4rem;
@@ -281,53 +349,52 @@
 /* Inline code (not Shiki blocks). */
 .prose :not(pre) > code {
   font-family: var(--font-mono);
-  font-size: 0.85em;
+  font-size: var(--text-sm);
   background-color: var(--surface-2);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   padding: 0.1rem 0.35rem;
-  border-radius: 0.35rem;
+  border-radius: 0.25rem;
   color: var(--fg);
-  /* `pre-wrap`, not `nowrap`: a short token like `--tree` has no space to break
-     at and still stays intact, while a long space-separated string (a key-hint
-     line, a filter list) wraps instead of pushing the page wider than the
-     viewport on a phone. */
+  /* `pre-wrap`, not `nowrap`: short tokens stay intact while long
+     space-separated strings wrap instead of widening the page on a phone. */
   white-space: pre-wrap;
 }
 /* Inline code kinds, tagged at build time by src/lib/rehype-code-kinds.mjs.
-   Commands look like a terminal, flags take the moss accent, keys look like
-   keycaps. The prompt glyph is generated content, so it is never copied. */
+   Commands read like an LCD readout, flags take the moss accent, keys look
+   like device buttons. The prompt glyph is generated content, never copied. */
 .prose code.code-cmd {
-  background-color: var(--fg);
-  border-color: var(--fg);
-  color: #e7ebd9;
+  background-color: var(--lcd);
+  border-color: var(--lcd);
+  color: var(--lcd-ink);
 }
 .prose code.code-cmd::before {
   content: "›";
   margin-right: 0.4em;
-  color: #b7d073;
   font-weight: 700;
 }
 .prose code.code-flag {
-  background-color: rgb(54 84 38 / 0.1);
-  border-color: rgb(54 84 38 / 0.4);
+  background-color: rgb(178 207 114 / 0.1);
+  border-color: rgb(178 207 114 / 0.45);
   color: var(--accent);
   font-weight: 600;
 }
 .prose code.code-key {
-  background-color: var(--surface);
-  border-color: var(--border-strong);
-  box-shadow: 0 2px 0 0 var(--border-strong);
+  background-color: var(--shell);
+  border-color: var(--shell-shade);
+  color: var(--lcd-ink);
+  box-shadow: 0 2px 0 0 var(--shell-shade);
+  font-weight: 700;
 }
 .prose pre {
   margin-top: 1.25rem;
   margin-bottom: 1.25rem;
   padding: 1rem 1.1rem;
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  background-color: var(--surface);
+  border: 2px solid var(--border-strong);
+  border-radius: 0.5rem;
+  background-color: var(--term-bg);
   overflow-x: auto;
-  font-size: 0.875rem;
-  line-height: 1.6;
+  font-size: var(--text-sm);
+  line-height: 1.65;
 }
 .prose pre code {
   font-family: var(--font-mono);
@@ -340,25 +407,25 @@
 }
 .prose hr {
   border: none;
-  border-top: 1px solid var(--border);
+  border-top: 2px dashed var(--border-strong);
   margin: 2rem 0;
 }
 .prose table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   display: block;
   overflow-x: auto;
 }
 .prose th,
 .prose td {
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   padding: 0.5rem 0.75rem;
   text-align: left;
 }
 .prose thead th {
   background-color: var(--surface-2);
-  font-weight: 600;
+  font-weight: 700;
 }
 .prose code,
 .prose kbd {
@@ -367,4 +434,23 @@
 .prose .not-prose {
   margin-top: 1.25rem;
   margin-bottom: 1.25rem;
+}
+
+/* Section titles outside the docs body share the docs h2 look. */
+@utility section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-pixel);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  &::before {
+    content: "";
+    flex-shrink: 0;
+    width: 0.55rem;
+    height: 0.55rem;
+    background: var(--kick);
+  }
 }

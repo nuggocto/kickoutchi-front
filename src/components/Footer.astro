@@ -6,7 +6,7 @@ import { LINKS, SITE } from "../data/links";
 const year = new Date().getFullYear();
 ---
 
-<footer class="mt-16 border-t-2 border-border-strong bg-surface/40 sm:mt-20">
+<footer class="mt-24 border-t-2 border-border-strong bg-surface sm:mt-32">
   <div class="mx-auto max-w-6xl px-4 py-12">
     <div class="grid grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4 lg:gap-10">
       <div class="space-y-3">
@@ -23,7 +23,7 @@ const year = new Date().getFullYear();
       {
         FOOTER_NAV.map((group) => (
           <div>
-            <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-accent">{group.title}</h2>
+            <h2 class="eyebrow mb-4">{group.title}</h2>
             <ul class="space-y-2">
               {group.items.map((item) => (
                 <li>
@@ -31,7 +31,7 @@ const year = new Date().getFullYear();
                     href={item.href}
                     target={item.external ? "_blank" : undefined}
                     rel={item.external ? "noopener noreferrer" : undefined}
-                    class="text-sm text-muted transition-colors hover:text-accent"
+                    class="text-sm text-muted transition-colors hover:text-fg"
                   >
                     {item.label}
                   </a>
@@ -44,7 +44,7 @@ const year = new Date().getFullYear();
     </div>
 
     <div
-      class="mt-10 flex flex-col gap-3 border-t border-border pt-6 text-sm text-muted sm:flex-row sm:items-center sm:justify-between"
+      class="mt-10 flex flex-col gap-3 border-t-2 border-dashed border-border-strong pt-6 text-sm text-muted sm:flex-row sm:items-center sm:justify-between"
     >
       <p>
         © {year} {SITE.name}, released under the{" "}
@@ -65,7 +65,7 @@ const year = new Date().getFullYear();
        flex centering so any horizontal overflow stays symmetric, and bottom
        padding so the word breathes above the page edge. -->
   <div class="pointer-events-none flex select-none justify-center overflow-hidden px-4 pb-8" aria-hidden="true">
-    <p class="font-pixel text-display leading-none tracking-tight text-fg/[0.08] whitespace-nowrap">
+    <p class="font-pixel text-display leading-none tracking-tight text-fg/[0.06] whitespace-nowrap">
       KICKOUTCHI
     </p>
   </div>

@@ -20,9 +20,10 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
   description="Install Kickoutchi on Linux, macOS, or Windows • release installer, direct archives, Cargo, Nix, Homebrew, Scoop, and AUR."
 >
   <section class="mx-auto max-w-5xl px-4 pt-14 pb-8">
-    <h1 class="text-4xl font-bold tracking-tight sm:text-5xl">Install Kickoutchi</h1>
-    <p class="mt-4 max-w-2xl text-lg text-muted">
-      Pick your swamp path: installer, archive, Cargo, Nix, or your platform's package manager.
+    <p class="eyebrow">Install</p>
+    <h1 class="mt-4 text-display font-bold tracking-tight">Pick your swamp path.</h1>
+    <p class="mt-6 max-w-2xl text-lg text-muted">
+      Installer, archive, Cargo, Nix, or your platform's package manager.
       Linux, macOS, and Windows get native listing, inspect, watch, why, and explicit tree cleanup;
       process-group cleanup stays Unix-only.
     </p>
@@ -49,7 +50,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
 
   <!-- Recommended -->
   <section class="mx-auto max-w-5xl px-4 py-8">
-    <h2 class="mb-1 text-2xl font-bold tracking-tight">Recommended</h2>
+    <h2 class="section-title mb-2">Recommended</h2>
     <p class="mb-6 text-muted">Official installers, the updater, and direct release archives.</p>
     <div class="grid gap-5 lg:grid-cols-2">
       {recommended.map((method) => <InstallMethodCard method={method} />)}
@@ -58,7 +59,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
 
   <!-- From source -->
   <section class="mx-auto max-w-5xl px-4 py-8">
-    <h2 class="mb-1 text-2xl font-bold tracking-tight">From source</h2>
+    <h2 class="section-title mb-2">From source</h2>
     <p class="mb-6 text-muted">Build from the Git repository with Cargo, or run the Nix flake directly.</p>
     <div class="grid gap-5 lg:grid-cols-2">
       {source.map((method) => <InstallMethodCard method={method} />)}
@@ -67,7 +68,7 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
 
   <!-- Packages -->
   <section class="mx-auto max-w-5xl px-4 py-8">
-    <h2 class="mb-1 text-2xl font-bold tracking-tight">Package managers</h2>
+    <h2 class="section-title mb-2">Package managers</h2>
     <p class="mb-6 text-muted">
       Homebrew (Linux/macOS), Scoop (Windows), and the AUR (Arch) are all live and carry the current
       release.
@@ -93,18 +94,18 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
   <!-- Status -->
   <section class="mx-auto max-w-5xl px-4 py-8">
     <div class="pocket-panel p-6 sm:p-8">
-      <h2 class="text-2xl font-bold tracking-tight">Platform &amp; package status</h2>
+      <h2 class="section-title">Platform &amp; package status</h2>
       <div class="mt-6 grid gap-4 sm:grid-cols-3">
         {
           PLATFORM_SUPPORT.map((p) => (
-            <div class="rounded-xl border border-border bg-surface-2/50 p-4">
-              <p class="font-semibold text-fg">{p.platform}</p>
+            <div class="rounded-md border-2 border-border bg-surface-2 p-4">
+              <p class="font-pixel text-fg">{p.platform}</p>
               <p class="mt-2 text-sm text-muted">{p.detail}</p>
             </div>
           ))
         }
       </div>
-      <div class="mt-6 rounded-xl border border-border bg-surface-2/50 p-4 text-sm">
+      <div class="mt-6 rounded-md border-2 border-border bg-surface-2 p-4 text-sm">
         <p class="font-semibold text-fg">Available packages</p>
         <p class="mt-1 text-muted">{availablePackages.map((pkg) => pkg.name).join(", ")}</p>
       </div>
@@ -128,9 +129,9 @@ const pendingPackages = PACKAGE_STATUS.filter((pkg) => pkg.status !== "available
 
   <section class="mx-auto max-w-5xl px-4 py-10">
     <div class="flex flex-col items-center gap-4 text-center">
-      <h2 class="text-2xl font-bold tracking-tight">Installed? Start here.</h2>
-      <p class="max-w-xl text-muted">
-        Follow the TUI walkthrough, or open the command reference for a headless workflow.
+      <h2 class="font-pixel text-display text-kick">Installed?</h2>
+      <p class="max-w-xl text-lg text-muted">
+        Start here. Follow the TUI walkthrough, or open the command reference for a headless workflow.
       </p>
       <div class="flex flex-wrap justify-center gap-3">
         <ButtonLink href="/docs">Read the docs</ButtonLink>

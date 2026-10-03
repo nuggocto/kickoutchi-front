@@ -27,15 +27,16 @@ const remainingGroups = groups
     </aside>
 
     <article class="min-w-0">
-      <header class="mb-8 border-b border-border pb-6">
-        <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Documentation</h1>
-        <p class="mt-3 max-w-2xl text-lg text-muted">
+      <header class="mb-8 border-b-2 border-border-strong pb-8">
+        <p class="eyebrow">Documentation</p>
+        <h1 class="mt-4 text-display font-bold tracking-tight">Read the manual.</h1>
+        <p class="mt-6 max-w-2xl text-lg text-muted">
           Start with an interface, a read-only diagnostic, or a termination guide. The reference
           pages cover exact syntax, config, output contracts, and failure cases.
         </p>
       </header>
 
-      <div class="prose mb-8 rounded-lg border-2 border-border-strong bg-surface px-4 py-3">
+      <div class="prose mb-8 rounded-md border-2 border-border-strong bg-surface px-4 py-3">
         <p>
           <strong>Reading the docs:</strong> <code class="code-cmd">kick list</code> is a command
           you can run, <code class="code-flag">--tree</code> is a flag you add to one, and{" "}
@@ -45,32 +46,32 @@ const remainingGroups = groups
 
       <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <a href="/docs/tui" class="pocket-panel pocket-panel-hover group p-6">
-          <p class="font-pixel text-xs uppercase tracking-widest text-accent">The swamp tour</p>
-          <h2 class="mt-1 text-xl font-semibold text-fg group-hover:text-accent">TUI walkthrough</h2>
+          <p class="font-pixel text-sm uppercase tracking-wider text-accent">The swamp tour</p>
+          <h2 class="mt-2 text-lg font-bold text-fg group-hover:text-accent">TUI walkthrough</h2>
           <p class="mt-2 text-sm text-muted">
             Browse and filter the live port table, open process details, and confirm one-process or
             tree cleanup.
           </p>
         </a>
         <a href="/docs/cli" class="pocket-panel pocket-panel-hover group p-6">
-          <p class="font-pixel text-xs uppercase tracking-widest text-accent">The swamp shortcut</p>
-          <h2 class="mt-1 text-xl font-semibold text-fg group-hover:text-accent">CLI walkthrough</h2>
+          <p class="font-pixel text-sm uppercase tracking-wider text-accent">The swamp shortcut</p>
+          <h2 class="mt-2 text-lg font-bold text-fg group-hover:text-accent">CLI walkthrough</h2>
           <p class="mt-2 text-sm text-muted">
             Run headless commands for tables, stable JSON, exact filters, process inspection, and
             scoped termination.
           </p>
         </a>
         <a href="/docs/watch-and-why" class="pocket-panel pocket-panel-hover group p-6">
-          <p class="font-pixel text-xs uppercase tracking-widest text-accent">Look, don't touch</p>
-          <h2 class="mt-1 text-xl font-semibold text-fg group-hover:text-accent">Watch &amp; Why</h2>
+          <p class="font-pixel text-sm uppercase tracking-wider text-accent">Look, don't touch</p>
+          <h2 class="mt-2 text-lg font-bold text-fg group-hover:text-accent">Watch &amp; Why</h2>
           <p class="mt-2 text-sm text-muted">
             Observe socket changes or probe a failed bind. Both return evidence without sending
             signals.
           </p>
         </a>
         <a href="/docs/scoped-kills" class="pocket-panel pocket-panel-hover group p-6">
-          <p class="font-pixel text-xs uppercase tracking-widest text-accent">The big green boot</p>
-          <h2 class="mt-1 text-xl font-semibold text-fg group-hover:text-accent">Scoped kills</h2>
+          <p class="font-pixel text-sm uppercase tracking-wider text-accent">The big green boot</p>
+          <h2 class="mt-2 text-lg font-bold text-fg group-hover:text-accent">Scoped kills</h2>
           <p class="mt-2 text-sm text-muted">
             Inspect first, then use tree kill for dev stacks that leave workers behind. Linux/macOS
             also include process-group kill for POSIX groups.
@@ -86,13 +87,13 @@ const remainingGroups = groups
       {
         remainingGroups.map((group) => (
           <section class="mt-10">
-            <h2 class="mb-4 text-lg font-semibold text-fg">{group.section}</h2>
+            <h2 class="section-title mb-4">{group.section}</h2>
             <ul class="grid gap-3 sm:grid-cols-2">
               {group.items.map((item) => (
                 <li>
                   <a
                     href={docHref(item)}
-                    class="group flex h-full flex-col rounded-xl border border-border bg-surface p-4 transition-colors hover:border-accent"
+                    class="group pocket-panel pocket-panel-hover flex h-full flex-col p-4"
                   >
                     <span class="font-medium text-fg group-hover:text-accent">{item.data.title}</span>
                     <span class="mt-1 text-sm text-muted">{item.data.description}</span>
@@ -104,7 +105,7 @@ const remainingGroups = groups
         ))
       }
 
-      <div class="mt-10 rounded-xl border border-border bg-surface-2/40 p-5 text-sm text-muted">
+      <div class="mt-10 rounded-md border-2 border-dashed border-border-strong p-5 text-sm text-muted">
         Found an incorrect command, option, or output field? <a href={LINKS.issues} target="_blank" rel="noopener noreferrer" class="text-accent hover:underline">Open an issue</a>.
       </div>
     </article>

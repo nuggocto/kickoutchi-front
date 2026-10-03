@@ -1,0 +1,161 @@
+---
+/**
+ * The night swamp under the hero: pixel reeds and cattails over still water,
+ * then a ticker of real commands and outcomes running along the bank.
+ * Generated once at build time from a fixed seed, so it never shifts.
+ */
+
+const COLS = 480;
+const ROWS = 30;
+const WATER = 24;
+
+function mulberry32(seed: number) {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rand = mulberry32(0x6b69636b);
+
+type Px = { x: number; y: number; w: number; h: number; c: string };
+const pixels: Px[] = [];
+
+// Water, with sparse ripple dashes.
+pixels.push({ x: 0, y: WATER, w: COLS, h: ROWS - WATER, c: "water" });
+for (let y = WATER + 1; y < ROWS; y += 2) {
+  for (let x = 0; x < COLS; x += 1) {
+    if (rand() < 0.035) pixels.push({ x, y, w: 2 + Math.floor(rand() * 4), h: 1, c: "ripple" });
+  }
+}
+
+// Reed clumps standing in the water.
+let x = 0;
+while (x < COLS) {
+  x += 2 + Math.floor(rand() * 9);
+  const stalks = 1 + Math.floor(rand() * 4);
+  for (let s = 0; s < stalks && x < COLS; s++, x += 1 + Math.floor(rand() * 2)) {
+    const height = 5 + Math.floor(rand() * 16);
+    const top = WATER - height;
+    pixels.push({ x, y: top, w: 1, h: height, c: rand() < 0.5 ? "reed" : "reed-2" });
+    if (rand() < 0.35) pixels.push({ x, y: top - 3, w: 1, h: 3, c: "cattail" });
+    if (rand() < 0.3) pixels.push({ x: x + 1, y: top + 2 + Math.floor(rand() * 3), w: 1, h: 2, c: "reed-2" });
+  }
+}
+
+// Lily pads floating between clumps.
+for (let i = 0; i < 26; i++) {
+  const px = Math.floor(rand() * COLS);
+  pixels.push({ x: px, y: WATER + 1 + Math.floor(rand() * 3), w: 3 + Math.floor(rand() * 2), h: 1, c: "pad" });
+}
+
+const TICKER = [
+  "kick inspect --port 3000",
+  "SQUATTER FOUND",
+  "kick kill --pid 18422 --tree",
+  "SIGTERM → 3 procs",
+  "port :3000 free",
+  "kick why 5173",
+  "verdict=owned certainty=proven",
+  "kick watch --port 8080",
+  "BIND TCP 127.0.0.1:8080",
+  "kick list --json",
+];
+---
+
+<div class="horizon" aria-hidden="true">
+  <svg
+    class="reeds"
+    viewBox={`0 0 ${COLS} ${ROWS}`}
+    width={COLS * 4}
+    height={ROWS * 4}
+    shape-rendering="crispEdges"
+    data-pixel
+  >
+    {pixels.map((p) => <rect x={p.x} y={p.y} width={p.w} height={p.h} class={p.c} />)}
+  </svg>
+</div>
+
+<div class="ticker font-mono text-sm" aria-hidden="true">
+  <div class="ticker-track">
+    {[0, 1].map(() => (
+      <span class="ticker-run">
+        {TICKER.map((item) => (
+          <span class="ticker-item">
+            <span class="diamond">◆</span>
+            {item}
+          </span>
+        ))}
+      </span>
+    ))}
+  </div>
+</div>
+
+<style>
+  .horizon {
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    height: 120px;
+  }
+  .reeds {
+    flex-shrink: 0;
+    display: block;
+  }
+  .water {
+    fill: #0b1512;
+  }
+  .ripple {
+    fill: #17261f;
+  }
+  .reed {
+    fill: #1b2615;
+  }
+  .reed-2 {
+    fill: #222f19;
+  }
+  .cattail {
+    fill: #3b2b1b;
+  }
+  .pad {
+    fill: #1f3320;
+  }
+
+  .ticker {
+    overflow: hidden;
+    border-top: 2px solid var(--border-strong);
+    border-bottom: 2px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--muted);
+  }
+  .ticker-track {
+    display: flex;
+    width: max-content;
+    animation: ticker 60s linear infinite;
+  }
+  .ticker-run {
+    display: flex;
+  }
+  .ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.7rem 0 0.7rem 1.75rem;
+    white-space: nowrap;
+  }
+  .diamond {
+    color: var(--kick);
+  }
+  @keyframes ticker {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ticker-track {
+      animation: none;
+    }
+  }
+</style>

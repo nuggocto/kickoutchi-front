@@ -33,7 +33,7 @@ const lines = code.split("\n").map((text, i, all) => ({
 
 <figure
   class:list={[
-    "command-block group not-prose overflow-hidden rounded-lg border-2 border-border-strong",
+    "command-block group not-prose overflow-hidden rounded-md border-2 border-border-strong",
     isShell ? "command-shell" : "bg-surface",
     className,
   ]}
@@ -41,20 +41,20 @@ const lines = code.split("\n").map((text, i, all) => ({
   <figcaption
     class:list={[
       "flex items-center justify-between gap-3 border-b-2 px-3 py-1.5",
-      isShell ? "border-[#303725] bg-[#141a14]" : "border-border-strong bg-surface-2/60",
+      isShell ? "border-border-strong bg-surface" : "border-border-strong bg-surface-2",
     ]}
   >
-    <span class:list={["font-mono text-sm", isShell ? "text-[#b7c4a0]" : "text-fg"]}>
+    <span class:list={["font-mono text-sm", isShell ? "text-muted" : "text-fg"]}>
       {label ?? langLabel[lang]}
     </span>
     <CopyButton text={code} />
   </figcaption>
-  <pre class="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"><code class:list={["font-mono", isShell ? "break-all text-[#e7ebd9]" : "break-words text-fg [overflow-wrap:anywhere]"]}>{isShell ? lines.map((line, i) => (<span class:list={["line", line.prompt && "has-prompt"]}>{line.text}{i < lines.length - 1 && "\n"}</span>)) : code}</code></pre>
+  <pre class="px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap"><code class:list={["font-mono", isShell ? "break-all text-fg" : "break-words text-fg [overflow-wrap:anywhere]"]}>{isShell ? lines.map((line, i) => (<span class:list={["line", line.prompt && "has-prompt"]}>{line.text}{i < lines.length - 1 && "\n"}</span>)) : code}</code></pre>
 </figure>
 
 <style>
   .command-shell {
-    background-color: var(--fg);
+    background-color: var(--term-bg);
   }
   /* Beat the docs' `.prose pre` card (element-qualified for specificity):
      the figure owns its surface. */
@@ -67,7 +67,7 @@ const lines = code.split("\n").map((text, i, all) => ({
   /* Generated content: the prompt shows but never lands in a copy. */
   .has-prompt::before {
     content: "$ ";
-    color: #b7d073;
+    color: var(--term-accent);
     font-weight: 600;
   }
 </style>

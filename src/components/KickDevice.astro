@@ -1,0 +1,587 @@
+---
+/**
+ * The hero toy: a pixel Kickoutchi egg with a working LCD.
+ *
+ * SCAN walks the occupied ports, INSPECT reads the process tree, KICK asks
+ * for confirmation and only kicks on the second press, like the real tool.
+ * The readout underneath shows the matching command and its real output
+ * format. Nothing on the visitor's machine is touched. Without JS the device
+ * stays a static screen showing the first squatter.
+ */
+
+/** Shell grid. The LCD and buttons below are placed on the same cells. */
+const W = 56;
+const H = 64;
+const LCD = { x: 10, y: 16, w: 36, h: 20 };
+const BEZEL = { x: 8, y: 14, w: 40, h: 24 };
+const BUTTONS = [
+  { act: "scan", label: "Scan", cx: 16.5, cy: 46.5, r: 3.5 },
+  { act: "kick", label: "Kick", cx: 28, cy: 48, r: 4.5 },
+  { act: "inspect", label: "Inspect", cx: 39.5, cy: 46.5, r: 3.5 },
+];
+
+type Cell = "ink" | "hi" | "body" | "shade" | "deep" | "bezel" | "socket";
+
+const halfWidth = (y: number) => {
+  const t = ((y + 0.5) / H) * 2 - 1;
+  return (W / 2 - 1) * Math.sqrt(Math.max(0, 1 - t * t)) * (1 + 0.1 * t);
+};
+const inside = (x: number, y: number) =>
+  y >= 0 && y < H && Math.abs(x + 0.5 - W / 2) <= halfWidth(y);
+
+function cellAt(x: number, y: number): Cell | null {
+  if (!inside(x, y)) return null;
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (!inside(x + dx, y + dy)) return "ink";
+    }
+  }
+  const inBezel = x >= BEZEL.x && x < BEZEL.x + BEZEL.w && y >= BEZEL.y && y < BEZEL.y + BEZEL.h;
+  const corner =
+    (x === BEZEL.x || x === BEZEL.x + BEZEL.w - 1) && (y === BEZEL.y || y === BEZEL.y + BEZEL.h - 1);
+  if (inBezel && !corner) return "bezel";
+  for (const b of BUTTONS) {
+    if (Math.hypot(x + 0.5 - b.cx, y + 0.5 - b.cy) <= b.r + 1.2) return "socket";
+  }
+  // Rim lighting: highlight the upper-left edge, shade the lower-right edge,
+  // and keep the face flat so the screen and buttons read cleanly.
+  const t = ((y + 0.5) / H) * 2 - 1;
+  const nx = ((x + 0.5 - W / 2) / halfWidth(y)) * Math.sqrt(Math.max(0, 1 - t * t));
+  const edge = 1 - Math.hypot(nx, t);
+  const light = -nx * 0.7 - t * 0.7;
+  const dark = nx * 0.7 + t * 0.7;
+  if (light > 0.3 && edge < 0.09) return "hi";
+  if (dark > 0.35 && edge < 0.06) return "deep";
+  if (dark > 0.2 && edge < 0.13) return "shade";
+  return "body";
+}
+
+/** Row runs of one colour, so the shell is a few hundred rects, not 3,000. */
+const runs: { x: number; y: number; w: number; c: Cell }[] = [];
+for (let y = 0; y < H; y++) {
+  let start = 0;
+  let current: Cell | null = null;
+  for (let x = 0; x <= W; x++) {
+    const c = x < W ? cellAt(x, y) : null;
+    if (c !== current) {
+      if (current) runs.push({ x: start, y, w: x - start, c: current });
+      start = x;
+      current = c;
+    }
+  }
+}
+
+const px = (map: string[]) =>
+  map.flatMap((row, y) => [...row].flatMap((cell, x) => (cell === "1" ? [{ x, y }] : [])));
+
+const SPRITES = {
+  blob: px(["..1..1..", "..1111..", ".111111.", "11.11.11", "11111111", "11111111", ".111111.", ".1.11.1."]),
+  bug: px(["1......1", ".1....1.", "..1111..", ".111111.", "11.11.11", ".111111.", "1.1111.1", "1......1"]),
+  snake: px(["....111.", "...1.1.1", "...11111", "....11..", "..111...", ".11.....", ".11111..", "...11111"]),
+};
+const BOOT = px([".111......", ".111......", ".1111.....", ".11111....", ".111111...", ".11111111.", "1111111111", "1111111111"]);
+const CHECK = px([".......1", "......11", ".....11.", "1...11..", "11.11...", ".111....", "..1.....", "........"]);
+
+const ROOMS = [
+  { port: "3000", proc: "node", pid: "18422", sprite: "blob", tree: ["node    18422", "├ vite   18431", "└ esbuild 18444"] },
+  { port: "5173", proc: "vite", pid: "21077", sprite: "bug", tree: ["vite    21077", "└ esbuild 21093"] },
+  { port: "8080", proc: "python", pid: "9021", sprite: "snake", tree: ["python  9021"] },
+];
+const first = ROOMS[0];
+const pct = (n: number, of: number) => `${(n / of) * 100}%`;
+---
+
+<div class="device-wrap" data-device={JSON.stringify(ROOMS)} data-state="found" data-room="0">
+  <div class="device">
+    <svg class="shell" viewBox={`0 0 ${W} ${H}`} shape-rendering="crispEdges" aria-hidden="true" data-pixel>
+      {runs.map((r) => <rect x={r.x} y={r.y} width={r.w} height="1" class={`c-${r.c}`} />)}
+    </svg>
+
+    <p class="brand font-pixel text-sm" aria-hidden="true" style={`top:${pct(9.5, H)}`}>KICKOUTCHI</p>
+
+    <div
+      class="lcd"
+      style={`left:${pct(LCD.x, W)};top:${pct(LCD.y, H)};width:${pct(LCD.w, W)};height:${pct(LCD.h, H)}`}
+    >
+      <div class="lcd-bar font-pixel text-sm" aria-hidden="true">
+        <span>PORT <span data-b="port">{first.port}</span></span>
+        <span data-b="corner">PID {first.pid}</span>
+      </div>
+
+      <div class="lcd-body" aria-hidden="true">
+        <div class="view view-stage">
+          <div class="stage">
+            {Object.entries(SPRITES).map(([name, cells]) => (
+              <svg class="sprite critter" data-sprite={name} viewBox="0 0 8 8" shape-rendering="crispEdges">
+                {cells.map((p) => <rect x={p.x} y={p.y} width="1" height="1" />)}
+              </svg>
+            ))}
+            <svg class="sprite boot" viewBox="0 0 10 8" shape-rendering="crispEdges">
+              {BOOT.map((p) => <rect x={p.x} y={p.y} width="1" height="1" />)}
+            </svg>
+            <svg class="sprite check" viewBox="0 0 8 8" shape-rendering="crispEdges">
+              {CHECK.map((p) => <rect x={p.x} y={p.y} width="1" height="1" />)}
+            </svg>
+          </div>
+          <p class="lcd-msg font-pixel text-sm">
+            <span class="msg-1" data-b="line1">SQUATTER FOUND</span>
+            <span class="msg-2" data-b="line2">{first.proc} · 3 procs</span>
+          </p>
+        </div>
+        <pre class="view view-tree font-mono text-sm" data-b="tree">{first.tree.join("\n")}</pre>
+      </div>
+    </div>
+
+    {
+      BUTTONS.map((b) => (
+        <>
+          <button
+            type="button"
+            class:list={["device-btn", `device-btn-${b.act}`]}
+            data-act={b.act}
+            style={`left:${pct(b.cx - b.r, W)};top:${pct(b.cy - b.r, H)};width:${pct(b.r * 2, W)}`}
+          >
+            <span class="sr-only">{b.label}</span>
+          </button>
+          <span
+            class="btn-label font-pixel text-sm"
+            aria-hidden="true"
+            style={`left:${pct(b.cx, W)};top:${pct(b.cy + b.r + 1.4, H)}`}
+          >
+            {b.label.toUpperCase()}
+          </span>
+        </>
+      ))
+    }
+  </div>
+
+  <div class="readout font-mono text-sm" aria-hidden="true">
+    <p><span class="prompt">$</span> <span data-b="cmd">kick list --port {first.port}</span></p>
+    <p class="out" data-b="out">TCP    127.0.0.1  {first.port}  {first.pid}  {first.proc}  LISTEN</p>
+  </div>
+  <p class="sr-only" role="status" aria-live="polite" data-status>
+    Demo device: {first.proc} is squatting on port {first.port}. Use Scan, Inspect, or Kick.
+  </p>
+  <p class="hint text-sm text-muted">It's a toy. Press <b>scan</b>, <b>inspect</b>, or <b>kick</b>. Your machine stays untouched.</p>
+</div>
+
+<style>
+  .device-wrap {
+    --cell: calc(100% / 56);
+    width: 100%;
+    max-width: 25rem;
+    margin-inline: auto;
+  }
+  .device {
+    position: relative;
+    aspect-ratio: 56 / 64;
+    filter: drop-shadow(8px 8px 0 var(--drop));
+  }
+  .shell {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .c-ink {
+    fill: #11140d;
+  }
+  .c-hi {
+    fill: #fbf8ec;
+  }
+  .c-body {
+    fill: var(--shell);
+  }
+  .c-shade {
+    fill: var(--shell-shade);
+  }
+  .c-deep {
+    fill: #b3a988;
+  }
+  .c-bezel {
+    fill: #23281c;
+  }
+  .c-socket {
+    fill: #c2b897;
+  }
+
+  .brand {
+    position: absolute;
+    left: 0;
+    right: 0;
+    margin: 0;
+    text-align: center;
+    letter-spacing: 0.22em;
+    color: #4a4a38;
+    line-height: 1;
+  }
+
+  /* ---- The LCD ---- */
+  .lcd {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 2px;
+    color: var(--lcd-ink);
+    background-color: var(--lcd);
+    /* Dot-matrix ghost grid: one line per shell cell. */
+    background-image:
+      linear-gradient(90deg, rgb(28 38 22 / 0.07) 1px, transparent 1px),
+      linear-gradient(0deg, rgb(28 38 22 / 0.07) 1px, transparent 1px);
+    background-size: calc(100% / 36) calc(100% / 20);
+  }
+  .lcd-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem 0.25rem;
+    border-bottom: 2px solid var(--lcd-ink);
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .lcd-body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+  }
+  .view {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+  }
+  .view-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.4rem;
+  }
+  .view-tree {
+    display: none;
+    padding: 0.45rem 0.6rem;
+    line-height: 1.45;
+    white-space: pre;
+    overflow: hidden;
+  }
+  .device-wrap[data-state="inspect"] .view-stage {
+    display: none;
+  }
+  .device-wrap[data-state="inspect"] .view-tree {
+    display: block;
+  }
+
+  .stage {
+    position: relative;
+    width: 40%;
+    aspect-ratio: 2 / 1;
+  }
+  .sprite {
+    position: absolute;
+    bottom: 0;
+    height: 100%;
+    fill: var(--lcd-ink);
+    visibility: hidden;
+  }
+  .critter {
+    left: 50%;
+    translate: -50% 0;
+  }
+  .device-wrap[data-sprite="blob"] [data-sprite="blob"],
+  .device-wrap[data-sprite="bug"] [data-sprite="bug"],
+  .device-wrap[data-sprite="snake"] [data-sprite="snake"] {
+    visibility: visible;
+  }
+  .device-wrap:not([data-sprite]) [data-sprite="blob"] {
+    visibility: visible;
+  }
+  .device-wrap[data-state="found"] .critter,
+  .device-wrap[data-state="inspect"] .critter {
+    animation: bob 1s steps(1) infinite;
+  }
+  .device-wrap[data-state="confirm"] .critter {
+    animation: shiver 0.3s steps(1) infinite;
+  }
+  .device-wrap[data-state="free"] .critter,
+  .device-wrap[data-state="clear"] .critter {
+    visibility: hidden !important;
+  }
+  @keyframes bob {
+    50% {
+      transform: translateY(-12.5%);
+    }
+  }
+  @keyframes shiver {
+    50% {
+      transform: translateX(6%);
+    }
+  }
+
+  .boot {
+    left: -10%;
+    height: 100%;
+  }
+  .device-wrap[data-state="kicking"] .boot {
+    visibility: visible;
+    animation: boot-swing 520ms steps(4) forwards;
+  }
+  .device-wrap[data-state="kicking"] .critter {
+    animation: critter-fly 640ms steps(6) 220ms forwards;
+  }
+  @keyframes boot-swing {
+    0% {
+      transform: translateX(-90%) rotate(18deg);
+    }
+    70% {
+      transform: translateX(10%) rotate(-10deg);
+    }
+    100% {
+      transform: translateX(10%) rotate(-10deg);
+      opacity: 0;
+    }
+  }
+  @keyframes critter-fly {
+    to {
+      transform: translate(260%, -160%) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  .check {
+    left: 50%;
+    translate: -50% 0;
+  }
+  .device-wrap[data-state="free"] .check,
+  .device-wrap[data-state="clear"] .check {
+    visibility: visible;
+  }
+
+  .lcd-msg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    line-height: 1.2;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .device-wrap[data-state="confirm"] .msg-2 {
+    animation: blink 0.8s steps(1) infinite;
+  }
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  /* ---- Buttons ---- */
+  .device-btn {
+    position: absolute;
+    aspect-ratio: 1;
+    padding: 0;
+    border: 3px solid #11140d;
+    border-radius: 999px;
+    background: var(--shell);
+    box-shadow:
+      inset -3px -4px 0 0 var(--shell-shade),
+      0 3px 0 0 #11140d;
+    cursor: pointer;
+    transition:
+      transform 70ms ease,
+      box-shadow 70ms ease;
+  }
+  .device-btn-kick {
+    background: #e2492b;
+    box-shadow:
+      inset -4px -5px 0 0 #a8301a,
+      0 4px 0 0 #11140d;
+  }
+  .device-btn:active {
+    transform: translateY(3px);
+    box-shadow:
+      inset -2px -2px 0 0 var(--shell-shade),
+      0 0 0 0 #11140d;
+  }
+  .device-btn-kick:active {
+    box-shadow:
+      inset -2px -2px 0 0 #a8301a,
+      0 0 0 0 #11140d;
+  }
+  .device-btn:focus-visible {
+    outline: 3px solid var(--kick);
+    outline-offset: 3px;
+  }
+  .btn-label {
+    position: absolute;
+    translate: -50% 0;
+    margin: 0;
+    color: #4a4a38;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  /* ---- Readout under the device ---- */
+  .readout {
+    margin-top: 1.75rem;
+    padding: 0.7rem 0.9rem;
+    border: 2px solid var(--border-strong);
+    border-radius: 0.4rem;
+    background: var(--term-bg);
+    color: var(--term-fg);
+    min-height: 4.6rem;
+  }
+  .readout p {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .readout .prompt {
+    color: var(--term-accent);
+    font-weight: 700;
+  }
+  .readout .out {
+    color: var(--term-out);
+  }
+  .hint {
+    margin-top: 0.75rem;
+    text-align: center;
+  }
+  .hint b {
+    color: var(--fg);
+    font-weight: 600;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .device-wrap .critter,
+    .device-wrap .boot,
+    .device-wrap .msg-2 {
+      animation: none !important;
+    }
+  }
+</style>
+
+<script>
+  interface Room {
+    port: string;
+    proc: string;
+    pid: string;
+    sprite: string;
+    tree: string[];
+  }
+  type State = "found" | "inspect" | "confirm" | "kicking" | "free" | "clear";
+
+  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function wire(root: HTMLElement) {
+    const rooms: Room[] = JSON.parse(root.dataset.device ?? "[]");
+    const freed = rooms.map(() => false);
+    const status = root.querySelector<HTMLElement>("[data-status]")!;
+    let index = 0;
+    let state: State = "found";
+    let timer = 0;
+
+    const bind = (key: string, value: string) => {
+      for (const el of root.querySelectorAll<HTMLElement>(`[data-b="${key}"]`)) el.textContent = value;
+    };
+    const procs = (room: Room) => (room.tree.length === 1 ? "1 proc" : `${room.tree.length} procs`);
+    const listRow = (room: Room) =>
+      `TCP    127.0.0.1  ${room.port}  ${room.pid.padEnd(5)}  ${room.proc}  LISTEN`;
+
+    function render(next: State, announce: string) {
+      state = next;
+      const room = rooms[index];
+      root.dataset.state = next;
+      root.dataset.sprite = room.sprite;
+      bind("port", next === "clear" ? "----" : room.port);
+      bind("tree", room.tree.join("\n"));
+
+      const screens: Record<State, [string, string, string, string, string]> = {
+        found: ["SQUATTER FOUND", `${room.proc} · ${procs(room)}`, `PID ${room.pid}`, `kick list --port ${room.port}`, listRow(room)],
+        inspect: ["", "", `PID ${room.pid}`, `kick inspect --port ${room.port}`, `Tree (${room.tree.length} processes): read-only, nothing stopped`],
+        confirm: [`KICK ${room.proc}?`, "PRESS KICK AGAIN", `PID ${room.pid}`, `kick kill --port ${room.port}`, "Type y to confirm, or press Enter to cancel:"],
+        kicking: ["KICKING…", "", `PID ${room.pid}`, `kick kill --port ${room.port}`, "Type y to confirm, or press Enter to cancel: y"],
+        free: [`PORT ${room.port}`, "IS FREE", "FREE", `kick kill --port ${room.port}`, `sent SIGTERM to PID ${room.pid} (${room.proc})`],
+        clear: ["ALL CLEAR", "PRESS SCAN", "0 LEFT", `kick list --port ${room.port}`, "no open ports match the filter"],
+      };
+      const [line1, line2, corner, cmd, out] = screens[next];
+      bind("line1", line1);
+      bind("line2", line2);
+      bind("corner", corner);
+      bind("cmd", cmd);
+      bind("out", out);
+      status.textContent = announce;
+    }
+
+    function show(i: number) {
+      index = i;
+      const room = rooms[i];
+      if (freed[i]) render("free", `Port ${room.port} is free.`);
+      else render("found", `${room.proc} is squatting on port ${room.port}. Inspect it or kick it out.`);
+    }
+
+    function scan() {
+      if (state === "clear") {
+        freed.fill(false);
+        show(0);
+        return;
+      }
+      const remaining = rooms.map((_, i) => i).filter((i) => !freed[i]);
+      if (remaining.length === 0) {
+        render("clear", "All ports are clear. Press Scan to let the squatters back in.");
+        return;
+      }
+      const nextIndex = remaining.find((i) => i > index) ?? remaining[0];
+      show(nextIndex);
+    }
+
+    function kick() {
+      const room = rooms[index];
+      if (state === "found" || state === "inspect") {
+        render("confirm", `Kick ${room.proc} off port ${room.port}? Press Kick again to confirm, or Scan to cancel.`);
+        return;
+      }
+      if (state !== "confirm") return;
+      freed[index] = true;
+      render("kicking", `Stopping ${room.proc}.`);
+      timer = window.setTimeout(
+        () => {
+          const left = freed.filter((f) => !f).length;
+          render("free", `Port ${room.port} is free. Sent SIGTERM to PID ${room.pid}. ${left} squatter${left === 1 ? "" : "s"} left.`);
+        },
+        REDUCED ? 80 : 900,
+      );
+    }
+
+    function inspect() {
+      const room = rooms[index];
+      if (state === "inspect") show(index);
+      else if (state === "found" || state === "confirm")
+        render("inspect", `Process tree for ${room.proc}: ${room.tree.join(", ")}. Nothing was stopped.`);
+    }
+
+    root.addEventListener("click", (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLElement>("[data-act]");
+      if (!button || state === "kicking") return;
+      window.clearTimeout(timer);
+      if (button.dataset.act === "scan") scan();
+      else if (button.dataset.act === "kick") kick();
+      else inspect();
+    });
+
+    show(0);
+  }
+
+  function wireAll() {
+    for (const root of document.querySelectorAll<HTMLElement>("[data-device]:not([data-wired])")) {
+      root.dataset.wired = "true";
+      wire(root);
+    }
+  }
+
+  wireAll();
+  document.addEventListener("astro:page-load", wireAll);
+</script>

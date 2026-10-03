@@ -21,13 +21,13 @@ const { title = "kick • local ports", lines, class: className = "" } = Astro.p
       <span class="terminal-icon" aria-hidden="true">
         <span class="terminal-caret"></span>
       </span>
-      <span class="font-mono text-xs">{title}</span>
+      <span class="font-mono text-sm">{title}</span>
     </div>
-    <span class="hidden font-mono text-xs tracking-wider opacity-60 sm:inline" aria-hidden="true">
+    <span class="hidden font-mono text-sm tracking-wider opacity-60 sm:inline" aria-hidden="true">
       80×24
     </span>
   </figcaption>
-  <div class="screen crt-overlay overflow-hidden px-3 py-3 font-mono text-xs leading-relaxed sm:px-4 sm:py-4 sm:text-sm">
+  <div class="screen crt-overlay overflow-hidden px-3 py-3 font-mono text-sm leading-relaxed sm:px-4 sm:py-4">
     <pre class="whitespace-pre-wrap"><code>{lines.map((line) => (
         <span class:list={["line", `is-${line.kind ?? "output"}`]}>{line.kind === "command" && <span class="prompt">{line.prompt ?? "$"} </span>}<span class="content">{line.text}</span></span>
       ))}</code></pre>
@@ -35,19 +35,16 @@ const { title = "kick • local ports", lines, class: className = "" } = Astro.p
 </figure>
 
 <style>
-  /* A real terminal is dark — an intentional "device screen" focal point on
-     the light page. */
+  /* A terminal screen in the shared terminal palette (global.css). */
   .terminal {
-    --term-bg: #0b0d08;
-    --term-chrome: #141810;
-    --term-fg: #d7dcc4;
-    --term-prompt: #b7d073;
-    --term-comment: #7e8a6a;
-    --term-muted: #8a8f7e;
-    --term-success: #9fd07a;
+    --term-chrome: var(--surface);
+    --term-prompt: var(--term-accent);
+    --term-comment: var(--term-dim);
+    --term-muted: var(--term-out);
+    --term-success: var(--term-accent);
     --term-warning: #e0b357;
     background-color: var(--term-bg);
-    box-shadow: 5px 5px 0 0 var(--chunk-shadow);
+    box-shadow: 5px 5px 0 0 var(--drop);
   }
   .chrome {
     background-color: var(--term-chrome);
@@ -60,9 +57,9 @@ const { title = "kick • local ports", lines, class: className = "" } = Astro.p
     width: 0.95rem;
     align-items: center;
     justify-content: center;
-    border: 1px solid #303725;
+    border: 1px solid var(--border-strong);
     border-radius: 0.25rem;
-    background-color: #0d100a;
+    background-color: var(--term-bg);
   }
   .terminal-caret {
     height: 0.35rem;
@@ -73,10 +70,7 @@ const { title = "kick • local ports", lines, class: className = "" } = Astro.p
   }
   .screen {
     color: var(--term-fg);
-    /* Soft phosphor glow behind the text. */
-    background:
-      radial-gradient(120% 90% at 50% 0%, rgb(183 208 115 / 0.06), transparent 70%),
-      var(--term-bg);
+    background: var(--term-bg);
   }
   /* Inside `.prose` (the docs body), the global `pre` rule would paint a light
      card over the screen and leave light-on-dark text unreadable. The terminal

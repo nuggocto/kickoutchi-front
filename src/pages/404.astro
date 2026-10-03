@@ -6,11 +6,14 @@ import ButtonLink from "../components/ButtonLink.astro";
 
 <Layout title="Page not found" noindex>
   <section class="mx-auto flex max-w-xl flex-col items-center px-4 py-24 text-center">
-    <LogoMark alt="" width={96} height={96} class="mb-6 size-24 object-contain" />
-    <p class="font-pixel text-5xl text-accent">404</p>
-    <h1 class="mt-3 text-2xl font-bold tracking-tight">Nothing's listening here</h1>
-    <p class="mt-3 text-muted">
-      This corner of the swamp is empty • the page you wanted moved on or never existed.
+    <LogoMark alt="" width={96} height={96} class="mb-8 size-24 object-contain" />
+    <div class="lcd-404 w-full max-w-sm">
+      <p class="font-pixel text-display">404</p>
+      <p class="mt-2 font-mono text-sm">no open ports match the filter</p>
+    </div>
+    <h1 class="mt-8 text-lg font-bold">Nothing's listening here.</h1>
+    <p class="mt-2 text-lg text-muted">
+      This corner of the swamp is empty. The page moved on or never existed.
     </p>
     <div class="mt-8 flex flex-wrap justify-center gap-3">
       <ButtonLink href="/">Back home</ButtonLink>
@@ -18,3 +21,18 @@ import ButtonLink from "../components/ButtonLink.astro";
     </div>
   </section>
 </Layout>
+
+<style>
+  .lcd-404 {
+    padding: 1.5rem 1rem 1.25rem;
+    border: 6px solid #23281c;
+    border-radius: 0.4rem;
+    background-color: var(--lcd);
+    background-image:
+      linear-gradient(90deg, rgb(28 38 22 / 0.07) 1px, transparent 1px),
+      linear-gradient(0deg, rgb(28 38 22 / 0.07) 1px, transparent 1px);
+    background-size: 8px 8px;
+    color: var(--lcd-ink);
+    box-shadow: 6px 6px 0 0 var(--drop);
+  }
+</style>

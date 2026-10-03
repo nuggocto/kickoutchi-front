@@ -14,8 +14,8 @@ export default defineConfig({
     // Mark inline code as a command, flag, or key so commands stand out.
     rehypePlugins: [rehypeCodeKinds],
     shikiConfig: {
-      // Light-only site: single Shiki theme; `.prose pre` supplies the surface.
-      theme: "github-light",
+      // Dark-only site: one Shiki theme; `.prose pre` supplies the surface.
+      theme: "vitesse-black",
       wrap: true,
     },
   },
