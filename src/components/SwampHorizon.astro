@@ -1,7 +1,6 @@
 ---
 /**
- * The night swamp under the hero: pixel reeds and cattails over still water,
- * then a ticker of real commands and outcomes running along the bank.
+ * The night swamp under the hero: pixel reeds and cattails over still water.
  * Generated once at build time from a fixed seed, so it never shifts.
  */
 
@@ -50,19 +49,6 @@ for (let i = 0; i < 26; i++) {
   const px = Math.floor(rand() * COLS);
   pixels.push({ x: px, y: WATER + 1 + Math.floor(rand() * 3), w: 3 + Math.floor(rand() * 2), h: 1, c: "pad" });
 }
-
-const TICKER = [
-  "kick inspect --port 3000",
-  "SQUATTER FOUND",
-  "kick kill --pid 18422 --tree",
-  "SIGTERM → 3 procs",
-  "port :3000 free",
-  "kick why 5173",
-  "verdict=owned certainty=proven",
-  "kick watch --port 8080",
-  "BIND TCP 127.0.0.1:8080",
-  "kick list --json",
-];
 ---
 
 <div class="horizon" aria-hidden="true">
@@ -76,21 +62,6 @@ const TICKER = [
   >
     {pixels.map((p) => <rect x={p.x} y={p.y} width={p.w} height={p.h} class={p.c} />)}
   </svg>
-</div>
-
-<div class="ticker font-mono text-sm" aria-hidden="true">
-  <div class="ticker-track">
-    {[0, 1].map(() => (
-      <span class="ticker-run">
-        {TICKER.map((item) => (
-          <span class="ticker-item">
-            <span class="diamond">◆</span>
-            {item}
-          </span>
-        ))}
-      </span>
-    ))}
-  </div>
 </div>
 
 <style>
@@ -121,41 +92,5 @@ const TICKER = [
   }
   .pad {
     fill: #1f3320;
-  }
-
-  .ticker {
-    overflow: hidden;
-    border-top: 2px solid var(--border-strong);
-    border-bottom: 2px solid var(--border-strong);
-    background: var(--surface);
-    color: var(--muted);
-  }
-  .ticker-track {
-    display: flex;
-    width: max-content;
-    animation: ticker 60s linear infinite;
-  }
-  .ticker-run {
-    display: flex;
-  }
-  .ticker-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.9rem;
-    padding: 0.7rem 0 0.7rem 1.75rem;
-    white-space: nowrap;
-  }
-  .diamond {
-    color: var(--kick);
-  }
-  @keyframes ticker {
-    to {
-      transform: translateX(-50%);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .ticker-track {
-      animation: none;
-    }
   }
 </style>
