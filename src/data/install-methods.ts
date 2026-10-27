@@ -25,10 +25,10 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     platforms: ["linux", "macos"],
     group: "recommended",
     summary:
-      "Downloads the matching GitHub Release archive and installs both binaries on your PATH.",
+      "Fetches the installer from the latest GitHub Release, then downloads the matching archive and installs both binaries on your PATH.",
     commands: [
       {
-        code: "curl --proto '=https' --tlsv1.2 -LsSf \\\n  https://github.com/nuggocto/kickoutchi/releases/latest/download/kickoutchi-installer.sh \\\n  | sh",
+        code: "curl --proto '=https' --tlsv1.2 -LsSf https://kickoutchi.com/install.sh | sh",
         lang: "sh",
       },
     ],
@@ -42,7 +42,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     summary: "Downloads the Windows release archive and installs both binaries on your PATH.",
     commands: [
       {
-        code: 'powershell -ExecutionPolicy Bypass -NoProfile -Command "irm https://github.com/nuggocto/kickoutchi/releases/latest/download/kickoutchi-installer.ps1 | iex"',
+        code: 'powershell -ExecutionPolicy Bypass -NoProfile -Command "irm https://kickoutchi.com/install.ps1 | iex"',
         lang: "powershell",
       },
     ],
