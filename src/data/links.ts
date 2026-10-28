@@ -23,10 +23,8 @@ const REPO_BRANCH = "shrek";
 const linksSchema = z.object({
   github: z.url(),
   releases: z.url(),
-  latestRelease: z.url(),
   issues: z.url(),
   license: z.url(),
-  readme: z.url(),
   aurPackaging: z.url(),
   aurBin: z.url(),
 });
@@ -34,16 +32,8 @@ const linksSchema = z.object({
 export const LINKS = linksSchema.parse({
   github: REPO,
   releases: `${REPO}/releases`,
-  latestRelease: `${REPO}/releases/latest`,
   issues: `${REPO}/issues`,
   license: `${REPO}/blob/${REPO_BRANCH}/LICENSE`,
-  readme: `${REPO}/blob/${REPO_BRANCH}/README.md`,
   aurPackaging: `${REPO}/tree/${REPO_BRANCH}/packaging/arch`,
   aurBin: "https://aur.archlinux.org/packages/kickoutchi-bin",
 });
-
-/** Direct release-download URLs used by the install flow. */
-export const RELEASE_ASSETS = {
-  installerSh: `${REPO}/releases/latest/download/kickoutchi-installer.sh`,
-  installerPs1: `${REPO}/releases/latest/download/kickoutchi-installer.ps1`,
-} as const;
