@@ -190,8 +190,7 @@ Records omit full command lines.
 ## `kickoutchi.why/1` • one document
 
 `why --json` emits a single object with the same verdicts, certainty, evidence, gaps, labels, and
-aggregate exit status as the human output. It never collects full command lines and never runs
-Docker.
+aggregate exit status as the `--verbose` human output. It never collects full command lines.
 
 Output is streamed, so any legal bounded result shape is emitted rather than being rejected for
 overall size.

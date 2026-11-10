@@ -37,12 +37,13 @@ owner wasn't attributed, or a socket no readable process holds, which is normal 
 sockets. Re-run with higher privileges to fill in the owners. JSON keeps the row, with `null`
 fields and `"permission": "partial"`.
 
-## `kill --port` is refused before asking anything
+## `kill --port` prints a note about unreadable processes
 
-On Linux, an unprivileged user can't read other users' processes, and any of them could share the
-port's socket. Kickoutchi can't prove the visible owner is the only holder, so it refuses to signal
-by port. The error names the verified owner and the command that works, for example
-`kick kill --pid 18422`. Run that, or rerun with `sudo`.
+On Linux, an unprivileged user can't read other users' processes, so Kickoutchi can't prove that
+nobody else shares the port's socket. When the port has one verified owner, it prints a note and
+targets that owner by PID, with the same checks as `kick kill --pid`. If a hidden process does share
+the socket, the after-kill report says the port is still visible; rerun with `sudo` to see it. A
+port whose owner itself can't be read is still refused, with the reason.
 
 ## Permission denied when killing
 
@@ -148,17 +149,6 @@ to `100ms`) to narrow the window • you cannot close it.
 
 See [Endpoint labels](/docs/config#endpoint-labels) for the validation rules.
 
-## Docker-owned port details are partial or unavailable
-
-Docker context is **enrichment**, shown when the Docker CLI is available • it's never required for
-normal port listing. Without the Docker CLI, you'll still see the port and process, just not the
-container mapping.
-
-Kickoutchi also disables PATH-resolved Docker enrichment while running as root, set-ID, with Linux
-capabilities, or from an elevated Windows token. This prevents a writable `docker` executable on
-`PATH` from crossing a privilege boundary. Run Kickoutchi without elevation when you specifically
-need optional container metadata; elevate only when OS process permissions require it.
-
 ## Linux: kernel too old for pidfd termination
 
 Listing ports works on older kernels, but safe `pidfd`-based termination needs **Linux 5.3+**. On a
@@ -188,10 +178,11 @@ there is nothing left to resume.
 ## Windows tree kill reports incomplete metadata or partial containment
 
 Windows tree kill has no `SIGSTOP` equivalent. It preflights before the Job Object commit and fails
-closed if missing creation-time metadata could hide a descendant. After commit it freezes the job
-for a final validation sweep, and if a live member can't join the job it withholds termination
-entirely rather than terminating that one process individually • doing so would reopen the
-descendant-spawn window it just closed. Delivered, already-exited, unconfirmed, and not-terminated
+closed if missing creation-time metadata could hide a descendant. After commit it re-proves the
+final job membership before termination, and if a live member can't join the job it withholds
+termination entirely rather than terminating that one process individually • doing so would let
+that process's children escape the job. A tree that keeps starting processes during the final
+check is refused; run the kill again. Delivered, already-exited, unconfirmed, and not-terminated
 PIDs are all reported separately instead of collapsing into "success".
 
 ## Windows: `--group` or TUI `t`/`T` is unavailable

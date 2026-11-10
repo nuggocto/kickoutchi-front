@@ -108,10 +108,10 @@ Windows tree kill uses Job Object containment rather than a freeze-first signal 
 - It preflights the confirmed root and observed tree before any Job Object assignment.
 - It refuses before commit for unsafe PIDs, protected descendants, incomplete metadata, identity
   drift, or an over-cap tree.
-- It proves Job Object freeze/thaw support on an empty disposable job before touching the target.
-- It treats assigning the root to the Job Object as the irreversible commit boundary.
-- It freezes the committed job for a final validation sweep, closing the descendant-spawn window,
-  and reapplies `--yes` warning authorization during that sweep.
+- It treats assigning the root to the Job Object as the irreversible commit boundary. Children
+  that members start after that join the job automatically.
+- It re-proves the final job membership, identities, and names, and reapplies `--yes` warning
+  authorization, before terminating the job.
 - It withholds all termination when a live member cannot join the job, rather than terminating that
   process individually and reopening the containment gap.
 - It terminates contained members with hard termination and reports delivered, already-exited,

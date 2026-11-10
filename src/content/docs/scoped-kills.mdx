@@ -77,15 +77,14 @@ not reported as a thaw failure.
 On Windows, tree kill uses Job Object containment instead of pretending there is a `SIGSTOP`
 equivalent:
 
-- Prove freeze/thaw support on an empty disposable Job Object before touching the target.
 - Re-check the confirmed root and tree before the Job Object commit.
 - Refuse before commit for unsafe PIDs, protected descendants, incomplete metadata, identity drift,
   or an over-cap tree.
 - Assign the root to a Job Object as the irreversible commit boundary, then converge descendants
-  into the same containment.
-- Freeze the committed job for a final bounded validation sweep, closing the descendant-spawn
-  window before termination, and reapply `--yes` warning authorization during that sweep. A late
-  child that needs fresh review withholds the whole termination.
+  into the same containment. Children that members start after that join the job automatically.
+- Re-prove the final job membership, identities, and names, and reapply `--yes` warning
+  authorization, before termination. A late child that needs fresh review, or a tree that keeps
+  changing during this check, withholds the whole termination.
 - Withhold all termination if a live member cannot join the job. Terminating it individually would
   reopen the containment gap, so nothing is signalled instead.
 - Terminate contained members with `TerminateJobObject`. Windows tree termination is hard

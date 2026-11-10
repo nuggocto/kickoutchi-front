@@ -32,6 +32,7 @@ These work with or without a subcommand.
 | ---------------------------- | -------------------------------------------------------------------------------------------- |
 | `--config FILE`              | Use an alternate config file instead of the platform default.                                |
 | `--refresh-interval SECONDS` | Override the configured refresh interval (1–3600). Out of range is a usage error (exit `2`). |
+| `-v`, `--verbose`            | Show every probe result, evidence item, and gap in `why` output.                             |
 
 ## `list`
 
@@ -122,7 +123,7 @@ Stream bounded socket changes until interrupted or the duration expires. Read-on
 
 Events are `baseline`, `bind`, `release`, `replacement`, and `collection_gap`. A failed initial
 collection exits `1`; after a valid baseline, the **third consecutive** failure exits `1`. Ctrl-C,
-duration expiry, and a closed consumer exit `0`. Docker is never invoked in the polling loop.
+duration expiry, and a closed consumer exit `0`. The polling loop never runs external tools.
 
 ## `why`
 
@@ -143,6 +144,9 @@ is closed immediately.
 | `--dual-stack`      | Require dual-stack behaviour. Mutually exclusive with `--ipv6-only`.     |
 | `--reuse-address`   | Enable address reuse for the diagnostic bind.                            |
 | `--json`            | Print one `kickoutchi.why/1` document instead of human evidence.         |
+
+Human output is one line per endpoint, such as `TCP 127.0.0.1:3000  in use by PID 18422 (node)`.
+Add the global `--verbose` flag for the full evidence.
 
 The default query probes TCP on `127.0.0.1`, then `::1`. The matrix is protocol-major and capped at
 **eight endpoints**. For a multi-endpoint query the aggregate exit code takes the worst result:

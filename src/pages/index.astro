@@ -69,12 +69,9 @@ const COMMANDS: { id: string; title: string; body: string; href: string; link: s
     link: "Understand bind failures",
     lines: [
       cmd("kick why 3000"),
-      out("tcp://127.0.0.1:3000 verdict=owned certainty=proven"),
-      out("  probe=address_in_use message=Address already in use (os error 98)"),
-      out("  evidence code=visible_verified_owner source=linux_procfs"),
-      out("    message=PID 18422 (node) owned the endpoint at snapshot capture"),
-      ok("tcp://[::1]:3000 verdict=bindable_now certainty=proven"),
-      dim("  … fields trimmed"),
+      out("TCP 127.0.0.1:3000  in use by PID 18422 (node)"),
+      ok("TCP [::1]:3000      free"),
+      dim("add --verbose for every probe, evidence item, and gap"),
     ],
   },
   {
@@ -150,7 +147,7 @@ const CHANNELS = [
         <div class="min-w-0">
           <a href={`/changelog#v${SITE.version}`} class="release-chip text-sm">
             <span class="release-tag font-pixel">v{SITE.version}</span>
-            <span>Retry hints that work, and a matched-only mode for watch</span>
+            <span>kill --port that works on a desktop, and a one-line why</span>
           </a>
 
           <h1 class="mt-7 text-display font-bold tracking-tight">

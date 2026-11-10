@@ -15,7 +15,7 @@ import CommandBlock from "../../components/CommandBlock.astro";
 import Terminal from "../../components/Terminal.astro";
 
 `why` combines one process snapshot with a short-lived bind probe. `watch` compares successive
-native snapshots. Neither command sends signals or invokes Docker.
+native snapshots. Neither command sends signals.
 
 ## `why` • the real reason a bind fails
 
@@ -26,8 +26,10 @@ taking one snapshot, then **attempting the exact bind** and closing it immediate
   title="kick why 3000"
   lines={[
     { kind: "command", text: "kick why 3000" },
+    { kind: "output", text: "TCP 127.0.0.1:3000  in use by PID 18422 (node)  [web dev]" },
+    { kind: "output", text: "TCP [::1]:3000      free" },
+    { kind: "command", text: "kick why 3000 --verbose" },
     { kind: "muted", text: "WHY port=3000 protocols=TCP addresses=127.0.0.1,::1 snapshot=partial" },
-    { kind: "muted", text: "scope kind=current_network_namespace identifier=net:[4026531833]" },
     { kind: "output", text: "tcp://127.0.0.1:3000 verdict=owned certainty=proven label=web dev" },
     { kind: "output", text: "  probe=address_in_use raw_os_error=98" },
     { kind: "output", text: "  evidence code=visible_verified_owner source=linux_procfs" },
@@ -41,7 +43,9 @@ taking one snapshot, then **attempting the exact bind** and closing it immediate
 />
 
 Note the two rows. `127.0.0.1:3000` is taken; `[::1]:3000` is free. A tool that reports "port 3000
-is busy" hides exactly that distinction.
+is busy" hides exactly that distinction. The default output is one line per endpoint; `--verbose`
+adds the probe result, evidence, and gaps behind each verdict, and `--json` emits the same facts as
+one `kickoutchi.why/1` document.
 
 ### Which endpoints get probed
 

@@ -44,9 +44,8 @@ The screen is split into four regions, top to bottom:
 <Callout type="note" title="Reading IPv4 and IPv6 rows">
   `127.0.0.1` and `::1` are loopback addresses. `0.0.0.0` and `::` are wildcard addresses for
   every applicable interface. An address beginning with `fe80::` is IPv6 link-local. A suffix such
-  as `%3` identifies an interface; `%unavailable` means the native collector could not report that
-  index, which is expected on Linux and macOS. It is not part of the literal IP address or an
-  error.
+  as `%3` identifies an interface. Linux and macOS cannot report that index, so their IPv6 rows show
+  the plain address.
 
 `public` describes a wildcard bind, not proven Internet reachability. `local` means a concrete
 non-loopback address, and `loopback` is machine-only. A `-` under `PID` or `PROCESS` means
@@ -108,7 +107,7 @@ The details panel always reflects the selected row. Press `Enter` for the full *
 which also lazily loads the owner UID, the process's children, and any protected-process warnings.
 The UID and children appear only when they were read from the same process as the row, so a reused
 PID never mixes two processes in one view.
-When the Docker CLI is available, Docker-owned ports show their container context here too.
+When a row's owner belongs to another user, the panel says the owner is hidden and suggests `sudo`.
 
 ## Kicking a process out
 
