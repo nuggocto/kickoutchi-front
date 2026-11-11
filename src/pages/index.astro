@@ -1,27 +1,22 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import CopyButton from "../components/CopyButton.astro";
-import KickDevice from "../components/KickDevice.astro";
-import SwampHorizon from "../components/SwampHorizon.astro";
+import SquatterScene from "../components/SquatterScene.astro";
 import { INSTALL_METHODS } from "../data/install-methods";
 import { PLATFORM_SUPPORT } from "../data/package-status";
 import { LINKS, SITE } from "../data/links";
 
 /*
-  Three type sizes only: text-sm (labels, commands), text-lg (reading),
-  text-display (headlines and the pixel sign).
+  Three type sizes only: text-sm (commands, notes), text-lg (reading),
+  text-display (headlines). Three families: pixel for headlines, grotesk for
+  reading, mono for anything you can type. The page is plain black: no
+  filled panels, no shadows. Kick orange is spent on the boot and the two
+  buttons that act.
 */
 
 const method = (id: string) => INSTALL_METHODS.find((m) => m.id === id)!;
 const unix = method("installer-unix");
 const windows = method("installer-windows");
-
-/* Pixel stars for the night sky, placed once from a fixed pattern. */
-const STARS = Array.from({ length: 34 }, (_, i) => ({
-  x: (i * 37 + 11) % 100,
-  y: (i * 53 + 7) % 92,
-  big: i % 7 === 0,
-}));
 
 type Line = { kind: "cmd" | "out" | "dim" | "ok"; text: string };
 const cmd = (text: string): Line => ({ kind: "cmd", text });
@@ -137,92 +132,70 @@ const CHANNELS = [
 
 <Layout>
   <div class="landing">
-    <!-- Hero: night sky, the pitch, and the device -->
+    <!-- Hero: the pitch, the install line, and a port with a squatter on it -->
     <section class="hero">
-      <svg class="stars" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-        {STARS.map((s) => <rect x={s.x} y={s.y} width={s.big ? 0.32 : 0.18} height={s.big ? 0.5 : 0.28} class={s.big ? "star-big" : "star"} />)}
-      </svg>
+      <div class="wrap">
+        <div class="split hero-top">
+          <h1 class="headline font-pixel text-display">Your ports have squatters. Kick them out.</h1>
 
-      <div class="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pt-12 pb-6 sm:pt-16 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
-        <div class="min-w-0">
-          <a href={`/changelog#v${SITE.version}`} class="release-chip text-sm">
-            <span class="release-tag font-pixel">v{SITE.version}</span>
-            <span>kill --port that works on a desktop, and a one-line why</span>
-          </a>
+          <div class="min-w-0">
+            <p class="text-lg text-muted">
+              Kickoutchi is a TUI and CLI port janitor. See which process owns a local port, read
+              its family, and clear the stale dev server without guessing.
+            </p>
 
-          <h1 class="mt-7 text-display font-bold tracking-tight">
-            Your ports have squatters.
-            <span class="kick-line font-pixel">Kick them out.</span>
-          </h1>
-
-          <p class="mt-6 max-w-[34rem] text-lg text-muted">
-            Kickoutchi is a TUI and CLI port janitor. See which process owns a local port, read its
-            family, and clear the stale dev server without guessing.
-          </p>
-
-          <div id="quick-install" class="quick-install mt-8 scroll-mt-24">
-            <fieldset>
-              <legend class="sr-only">Install for your platform</legend>
-              <div class="platforms">
+            <div id="quick-install" class="quick-install mt-6 scroll-mt-24">
+              <fieldset class="platforms">
+                <legend class="sr-only">Install for your platform</legend>
                 <input class="sr-only" type="radio" name="install-platform" id="install-unix" value="unix" checked />
                 <label for="install-unix" class="text-sm">Linux &amp; macOS</label>
                 <input class="sr-only" type="radio" name="install-platform" id="install-windows" value="windows" />
                 <label for="install-windows" class="text-sm">Windows</label>
+              </fieldset>
+              <div class="install-cmd unix-command">
+                <pre class="font-mono text-sm"><code>{unix.commands[0].code}</code></pre>
+                <CopyButton text={unix.commands[0].code} class="shrink-0 bg-transparent!" />
               </div>
-            </fieldset>
-            <div class="install-cmd unix-command">
-              <pre class="font-mono text-sm"><code>{unix.commands[0].code}</code></pre>
-              <CopyButton text={unix.commands[0].code} class="shrink-0" />
+              <div class="install-cmd windows-command">
+                <pre class="font-mono text-sm"><code>{windows.commands[0].code}</code></pre>
+                <CopyButton text={windows.commands[0].code} class="shrink-0 bg-transparent!" />
+              </div>
+              <p class="mt-3 text-sm text-muted">
+                Then run <code class="font-mono text-fg">kick</code>. Or use{" "}
+                <a href="/install" class="ink-link">Homebrew, Scoop, AUR, Nix, or Cargo</a>.
+              </p>
             </div>
-            <div class="install-cmd windows-command">
-              <pre class="font-mono text-sm"><code>{windows.commands[0].code}</code></pre>
-              <CopyButton text={windows.commands[0].code} class="shrink-0" />
-            </div>
-            <p class="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted">
-              <span>Then run <code class="kbd-inline font-mono">kick</code> to open the TUI.</span>
-              <a href="/install" class="ink-link">Homebrew, Scoop, AUR, Nix, Cargo →</a>
-            </p>
           </div>
         </div>
 
-        <div class="min-w-0">
-          <KickDevice />
+        <div class="hero-scene">
+          <SquatterScene />
         </div>
       </div>
-
-      <SwampHorizon />
+      <div class="ground" aria-hidden="true"></div>
     </section>
 
     <!-- The real TUI -->
-    <section id="see-it" class="mx-auto max-w-6xl scroll-mt-20 px-4 pt-24 sm:pt-32">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">The TUI</p>
-          <h2 class="mt-4 text-display font-bold tracking-tight">Meet your port janitor.</h2>
-        </div>
+    <section id="see-it" class="wrap band scroll-mt-20">
+      <div class="split">
+        <h2 class="headline font-pixel text-display">Meet your port janitor.</h2>
         <p class="text-lg text-muted">
-          Run <code class="kbd-inline font-mono">kick</code> with no arguments. Every open port, its
+          Run <code class="font-mono text-fg">kick</code> with no arguments. Every open port, its
           owner, and the details of whatever you select. Browsing never stops anything.
         </p>
       </div>
 
       <figure class="mt-12">
-        <div class="screen-frame">
-          <div class="screen-bar font-mono text-sm">
-            <span><span class="text-term-accent">$</span> kick</span>
-            <span class="text-faint">TUI · Linux</span>
-          </div>
-          <div class="overflow-x-auto" tabindex="0" role="region" aria-label="Kickoutchi TUI screenshot. Scroll horizontally to see the full terminal on smaller screens.">
-            <img src="/previews/kickoutchi-tui.webp" alt="Kickoutchi showing a selected Node.js process on port 3000, its listening address, process details, and keyboard shortcuts for inspecting or terminating it." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
-          </div>
+        <div class="screen overflow-x-auto" tabindex="0" role="region" aria-label="Kickoutchi TUI screenshot. Scroll horizontally to see the full terminal on smaller screens.">
+          <img src="/previews/kickoutchi-tui.webp" alt="Kickoutchi showing a selected Node.js process on port 3000, its listening address, process details, and keyboard shortcuts for inspecting or terminating it." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
         </div>
         <figcaption class="mt-3 flex flex-wrap justify-between gap-2 text-sm text-faint">
           <span>Captured from a real session with a local demo server.</span>
-          <a href="/previews/kickoutchi-tui.webp" target="_blank" rel="noopener noreferrer" class="ink-link">View full size ↗</a>
+          <a href="/previews/kickoutchi-tui.webp" target="_blank" rel="noopener noreferrer" class="ink-link">View full size</a>
         </figcaption>
       </figure>
 
-      <ul class="keys mt-12" aria-label="Main TUI keys">
+      <ul class="keys mt-10" aria-label="Main TUI keys">
         {KEYS.map((k) => (
           <li class="key-item">
             <kbd class="key font-mono text-lg">{k.key}</kbd>
@@ -231,54 +204,50 @@ const CHANNELS = [
         ))}
       </ul>
 
-      <details class="confirm-peek mt-10">
+      <details class="confirm-peek mt-8">
         <summary class="text-sm">See the confirmation step</summary>
         <p class="mt-3 max-w-2xl text-sm text-muted">
           The prompt names the process and every affected port. Warnings wrap in full, and nothing
           stops until you confirm.
         </p>
-        <div class="screen-frame mt-4 overflow-x-auto" tabindex="0" role="region" aria-label="Termination confirmation screenshot. Scroll horizontally on smaller screens.">
+        <div class="screen mt-4 overflow-x-auto" tabindex="0" role="region" aria-label="Termination confirmation screenshot. Scroll horizontally on smaller screens.">
           <img src="/previews/kickoutchi-confirm.webp" alt="The confirmation dialog identifies the Node.js process, lists its ports 3000, 5173, and 8080, and offers y to confirm or Escape to cancel." width="1320" height="624" class="block w-full min-w-[680px]" loading="lazy" />
         </div>
       </details>
     </section>
 
-    <!-- The CLI, as a command deck -->
-    <section class="mx-auto max-w-6xl px-4 pt-24 sm:pt-32">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">The CLI</p>
-          <h2 class="mt-4 text-display font-bold tracking-tight">Get straight to it.</h2>
-        </div>
+    <!-- The CLI: five verbs, one transcript at a time -->
+    <section class="wrap band">
+      <div class="split">
+        <h2 class="headline font-pixel text-display">Get straight to it.</h2>
         <p class="text-lg text-muted">
           Already know the port? Five verbs cover the job. Every transcript below uses the real
           output format.
         </p>
       </div>
 
-      <div class="deck mt-12">
-        <fieldset class="deck-tabs">
+      <div class="verbs mt-12">
+        <fieldset class="verb-list">
           <legend class="sr-only">Command</legend>
           {COMMANDS.map((c, i) => (
             <>
-              <input class="sr-only" type="radio" name="deck" id={`deck-${c.id}`} checked={i === 0} />
-              <label for={`deck-${c.id}`} class="deck-tab font-mono text-sm">{c.id}</label>
+              <input class="sr-only" type="radio" name="verb" id={`verb-${c.id}`} checked={i === 0} />
+              <label for={`verb-${c.id}`} class="verb">
+                <span class="verb-cmd font-mono text-lg">kick {c.id}</span>
+                <span class="verb-title text-sm">{c.title}</span>
+              </label>
             </>
           ))}
         </fieldset>
 
         {COMMANDS.map((c) => (
-          <div class="deck-panel" data-panel={c.id}>
-            <div class="min-w-0">
-              <h3 class="text-lg font-bold">{c.title}</h3>
-              <p class="mt-2 text-lg text-muted">{c.body}</p>
-              <div class="cli-cmd mt-5">
-                <code class="font-mono text-sm">{c.lines[0].text}</code>
-                <CopyButton text={c.lines[0].text} class="shrink-0" />
-              </div>
-              <a href={c.href} class="ink-link mt-4 inline-block text-sm">{c.link} →</a>
+          <div class="verb-panel" data-panel={c.id}>
+            <p class="max-w-xl text-lg text-muted">{c.body}</p>
+            <div class="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+              <a href={c.href} class="ink-link">{c.link}</a>
+              <CopyButton text={c.lines[0].text} class="bg-transparent!" />
             </div>
-            <pre class="transcript font-mono text-sm"><code>{c.lines.map((line) => (
+            <pre class="transcript mt-8 font-mono text-sm"><code>{c.lines.map((line) => (
               <span class:list={["line", `is-${line.kind}`]}>{line.kind === "cmd" && <span class="prompt">$ </span>}{line.text}</span>
             ))}</code></pre>
           </div>
@@ -286,87 +255,83 @@ const CHANNELS = [
       </div>
     </section>
 
-    <!-- Safety pipeline -->
-    <section class="mx-auto max-w-6xl px-4 pt-24 sm:pt-32">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Safety</p>
-          <h2 class="mt-4 text-display font-bold tracking-tight">Clear the right process.</h2>
-        </div>
+    <!-- Safety: the path every kick walks -->
+    <section class="wrap band">
+      <div class="split">
+        <h2 class="headline font-pixel text-display">Clear the right process.</h2>
         <p class="text-lg text-muted">
           A PID can be reused and a port can change hands between two keystrokes. Every kick walks
           the same path, and it stops the moment the target is no longer the one you confirmed.
         </p>
       </div>
 
-      <ol class="pipeline mt-14">
-        {PIPELINE.map((step, i) => (
-          <li class:list={["stop", i === PIPELINE.length - 1 && "stop-last"]}>
-            <span class="stop-dot" aria-hidden="true"></span>
-            <h3 class="font-pixel text-lg">{step.title}</h3>
-            <p class="mt-1 text-sm text-muted">{step.body}</p>
-          </li>
-        ))}
-      </ol>
+      <div class="split mt-12 safety">
+        <ol class="path">
+          {PIPELINE.map((step, i) => (
+            <li class="step">
+              <span class="step-n font-mono text-sm" aria-hidden="true">{i + 1}</span>
+              <h3 class="step-title font-pixel text-lg">{step.title}</h3>
+              <p class="step-body text-lg text-muted">{step.body}</p>
+            </li>
+          ))}
+        </ol>
 
-      <div class="facts mt-12">
-        <p class="fact text-lg"><span class="fact-mark" aria-hidden="true"></span><span>One process by default. Trees and groups only when you ask.</span></p>
-        <p class="fact text-lg"><span class="fact-mark" aria-hidden="true"></span><span>Protected processes need the PID or name typed. <code class="kbd-inline font-mono">--yes</code> can't skip it.</span></p>
-        <p class="fact text-lg"><span class="fact-mark" aria-hidden="true"></span><span>Changed or uncertain targets are refused, never guessed.</span></p>
+        <div class="min-w-0">
+          <ul class="facts">
+            <li class="text-lg">One process by default. Trees and groups only when you ask.</li>
+            <li class="text-lg">Protected processes need the PID or name typed. <code class="font-mono text-sm">--yes</code> can't skip it.</li>
+            <li class="text-lg">Changed or uncertain targets are refused, never guessed.</li>
+          </ul>
+          <a href="/docs/safety" class="ink-link mt-6 inline-block text-sm">Read how the safety checks work</a>
+        </div>
       </div>
-      <a href="/docs/safety" class="ink-link mt-8 inline-block text-sm">Read how the safety checks work →</a>
     </section>
 
     <!-- Platforms and channels -->
-    <section class="mx-auto max-w-6xl px-4 pt-24 sm:pt-32">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Everywhere</p>
-          <h2 class="mt-4 text-display font-bold tracking-tight">Runs in every swamp.</h2>
-        </div>
+    <section class="wrap band">
+      <div class="split">
+        <h2 class="headline font-pixel text-display">Runs in every swamp.</h2>
         <p class="text-lg text-muted">
           Native collection on Linux, macOS, and Windows. No daemon to run. Two binaries ship
-          together: <code class="kbd-inline font-mono">kickoutchi</code> and the short <code class="kbd-inline font-mono">kick</code>.
+          together: <code class="font-mono text-fg">kickoutchi</code> and the short <code class="font-mono text-fg">kick</code>.
         </p>
       </div>
 
-      <div class="mt-12 grid gap-4 md:grid-cols-3">
+      <dl class="platform-list mt-12">
         {PLATFORM_SUPPORT.map((p) => (
-          <div class="pocket-panel p-5">
-            <p class="font-pixel text-lg">{p.platform}</p>
-            <p class="mt-2 text-sm text-muted">{p.detail}</p>
+          <div>
+            <dt class="font-pixel text-lg">{p.platform}</dt>
+            <dd class="mt-1 text-sm text-muted">{p.detail}</dd>
           </div>
         ))}
-      </div>
+      </dl>
 
-      <ul class="channels mt-10">
+      <ul class="channels mt-12">
         {CHANNELS.map((c) => (
           <li class="channel">
-            <div class="channel-head">
-              <span class="font-bold">{c.name}</span>
+            <p class="channel-head">
+              <span class="text-lg font-bold">{c.name}</span>
               <span class="text-sm text-faint">{c.where}</span>
-            </div>
-            <div class="channel-cmd">
-              <pre class="font-mono text-sm"><code>{c.code}</code></pre>
-              <CopyButton text={c.code} class="shrink-0" />
-            </div>
+            </p>
+            <pre class="font-mono text-sm"><code>{c.code}</code></pre>
+            <CopyButton text={c.code} class="shrink-0 justify-self-start bg-transparent!" />
           </li>
         ))}
       </ul>
-      <a href="/install" class="ink-link mt-6 inline-block text-sm">Every install method, with checksums and updates →</a>
+      <a href="/install" class="ink-link mt-6 inline-block text-sm">Every install method, with checksums and updates</a>
     </section>
 
     <!-- Send-off -->
-    <section class="mx-auto max-w-6xl px-4 pt-24 sm:pt-32">
-      <div class="finale">
-        <p class="finale-sign font-pixel text-display">Clear the swamp.</p>
-        <div>
-          <p class="text-lg">Your next dev server deserves a free port. Free and open source under MIT.</p>
-          <div class="mt-7 flex flex-wrap items-center gap-4">
-            <a href="/install" class="btn btn-kick text-lg">Install Kickoutchi</a>
-            <a href="/docs" class="btn btn-ghost text-lg">Read the docs</a>
+    <section class="wrap band">
+      <div class="split finale">
+        <h2 class="headline font-pixel text-display">Clear the swamp.</h2>
+        <div class="min-w-0">
+          <p class="text-lg text-muted">Your next dev server deserves a free port. Free and open source under MIT.</p>
+          <div class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-4">
+            <a href="/install" class="btn-kick font-pixel text-lg">Install Kickoutchi</a>
+            <a href="/docs" class="ink-link text-lg">Read the docs</a>
+            <a href={LINKS.github} target="_blank" rel="noopener noreferrer" class="ink-link text-lg">Source on GitHub</a>
           </div>
-          <a href={LINKS.github} target="_blank" rel="noopener noreferrer" class="ink-link mt-6 inline-block text-sm">View the source on GitHub ↗</a>
         </div>
       </div>
     </section>
@@ -374,9 +339,34 @@ const CHANNELS = [
 </Layout>
 
 <style>
-  .landing h1,
-  .landing h2 {
-    max-width: 14ch;
+  /* ---- Page frame ---- */
+  .wrap {
+    width: 100%;
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  .band {
+    padding-top: clamp(6rem, 12vw, 10rem);
+  }
+  /* One two-column rhythm for the whole page: wide left, narrow right. */
+  .split {
+    display: grid;
+    gap: 1.5rem;
+  }
+  @media (min-width: 1024px) {
+    .split {
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+      align-items: end;
+      column-gap: 3rem;
+    }
+  }
+  .headline {
+    max-width: 24ch;
+    margin: 0;
+    font-weight: 500;
+    line-height: 0.95;
+    letter-spacing: -0.01em;
   }
 
   .ink-link {
@@ -389,94 +379,59 @@ const CHANNELS = [
   .ink-link:hover {
     color: var(--fg);
   }
-  .kbd-inline {
-    padding: 0.05rem 0.35rem;
-    border: 1px solid var(--border-strong);
-    border-radius: 0.25rem;
-    background: var(--surface-2);
-    color: var(--fg);
-    font-size: var(--text-sm);
-  }
 
   /* ---- Hero ---- */
   .hero {
-    position: relative;
-    overflow: hidden;
-    background: var(--bg);
+    overflow-x: clip;
+    padding-top: clamp(2.5rem, 5vw, 4rem);
   }
-  .stars {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: calc(100% - 200px);
-    pointer-events: none;
+  .hero-top {
+    align-items: start;
   }
-  .star {
-    fill: #343d2c;
+  .hero-scene {
+    margin-top: clamp(2.5rem, 5vw, 4rem);
   }
-  .star-big {
-    fill: #56604a;
+  /* The ground the digits stand on: a row of pixels across the whole page. */
+  .ground {
+    height: 4px;
+    background: repeating-linear-gradient(90deg, var(--border-strong) 0 8px, transparent 8px 16px);
   }
 
-  .release-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    max-width: 100%;
-    padding: 0.3rem 0.85rem 0.3rem 0.3rem;
-    border: 2px solid var(--border-strong);
-    border-radius: 0.4rem;
-    background: var(--surface);
-    color: var(--muted);
-  }
-  .release-chip:hover {
-    border-color: var(--accent);
-    color: var(--fg);
-  }
-  .release-tag {
-    flex-shrink: 0;
-    padding: 0.15rem 0.5rem;
-    border-radius: 0.2rem;
-    background: var(--lcd);
-    color: var(--lcd-ink);
-    letter-spacing: 0.04em;
-  }
-
-  .kick-line {
-    display: block;
-    margin-top: 0.4rem;
-    color: var(--kick);
-    font-weight: 600;
-  }
-
-  /* ---- Quick install ---- */
   .platforms {
-    display: inline-flex;
-    border: 2px solid var(--border-strong);
-    border-bottom: 0;
-    border-radius: 0.4rem 0.4rem 0 0;
-    overflow: hidden;
+    display: flex;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
   }
   .platforms label {
     display: inline-flex;
     align-items: center;
+    gap: 0.5rem;
     min-height: 2.75rem;
-    padding: 0 1rem;
-    font-weight: 600;
     color: var(--muted);
+    font-weight: 600;
     cursor: pointer;
   }
-  .platforms label + input + label {
-    border-left: 2px solid var(--border-strong);
+  .platforms label::before {
+    content: "";
+    width: 0.5rem;
+    height: 0.5rem;
+    border: 2px solid var(--faint);
+  }
+  .platforms label:hover {
+    color: var(--fg);
   }
   .platforms input:checked + label {
-    background: var(--term-accent);
-    color: var(--term-accent-fg);
+    color: var(--fg);
+  }
+  .platforms input:checked + label::before {
+    border-color: var(--accent);
+    background: var(--accent);
   }
   .platforms input:focus-visible + label {
-    outline: 3px solid var(--kick);
-    outline-offset: -3px;
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   .quick-install:has(#install-unix:checked) .windows-command,
   .quick-install:has(#install-windows:checked) .unix-command {
@@ -486,12 +441,8 @@ const CHANNELS = [
     display: flex;
     align-items: flex-start;
     gap: 0.75rem;
-    padding: 0.9rem 0.9rem 0.9rem 1rem;
+    padding: 0.85rem 0.85rem 0.85rem 1rem;
     border: 2px solid var(--border-strong);
-    border-radius: 0 0.4rem 0.4rem 0.4rem;
-    background: var(--term-bg);
-    color: var(--term-fg);
-    box-shadow: 4px 4px 0 0 var(--drop);
   }
   .install-cmd pre {
     flex: 1;
@@ -499,46 +450,21 @@ const CHANNELS = [
     margin: 0;
     line-height: 1.6;
     white-space: pre-wrap;
-    /* break-all, not overflow-wrap: the indented URL line would otherwise
-       leave its two leading spaces stranded on a blank line. */
     word-break: break-all;
   }
-
-  /* ---- Section heads ---- */
-  .section-head {
-    display: grid;
-    gap: 1.5rem;
-  }
-  @media (min-width: 1024px) {
-    .section-head {
-      grid-template-columns: 1.2fr 1fr;
-      align-items: end;
-      gap: 4rem;
-    }
+  .install-cmd code::before {
+    content: "$ ";
+    color: var(--term-accent);
   }
 
   /* ---- Screens ---- */
-  .screen-frame {
-    overflow: hidden;
+  .screen {
     border: 2px solid var(--border-strong);
-    border-radius: 0.5rem;
-    background: var(--term-bg);
-    box-shadow: 6px 6px 0 0 var(--drop);
   }
-  .screen-bar {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.6rem 1rem;
-    border-bottom: 2px solid var(--border-strong);
-    background: var(--surface);
-    color: var(--fg);
-  }
-
   .keys {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 1.25rem 1rem;
+    gap: 1rem;
     padding: 0;
     list-style: none;
   }
@@ -562,136 +488,126 @@ const CHANNELS = [
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border: 2px solid #11140d;
-    border-radius: 0.4rem;
-    background: var(--shell);
-    color: var(--lcd-ink);
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 2px solid var(--fg);
+    color: var(--fg);
     font-weight: 700;
-    box-shadow:
-      inset -2px -3px 0 0 var(--shell-shade),
-      0 3px 0 0 #000;
   }
-
   .confirm-peek summary {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
     min-height: 2.75rem;
     cursor: pointer;
     color: var(--accent);
     font-weight: 600;
-  }
-  .confirm-peek summary::marker {
-    color: var(--kick);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
   }
 
-  /* ---- Command deck ---- */
-  .deck {
-    border: 2px solid var(--border-strong);
-    border-radius: 0.5rem;
-    background: var(--surface);
-    box-shadow: 6px 6px 0 0 var(--drop);
-    overflow: hidden;
+  /* ---- Verbs ---- */
+  .verbs {
+    display: grid;
+    gap: 2rem;
   }
-  .deck-tabs {
+  @media (min-width: 1024px) {
+    .verbs {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+      column-gap: 3rem;
+    }
+  }
+  .verb-list {
     display: flex;
-    overflow-x: auto;
+    flex-direction: column;
     margin: 0;
     padding: 0;
     border: 0;
+    border-top: 2px solid var(--border-strong);
+  }
+  .verb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0 1rem;
+    padding: 0.9rem 0 0.9rem 1.5rem;
     border-bottom: 2px solid var(--border-strong);
-    background: var(--surface-2);
-  }
-  .deck-tab {
-    display: inline-flex;
-    align-items: center;
-    min-height: 3rem;
-    padding: 0 1.25rem;
-    border-right: 2px solid var(--border-strong);
-    color: var(--muted);
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .deck-tab::before {
-    content: "kick\00a0";
     color: var(--faint);
+    cursor: pointer;
+    position: relative;
   }
-  .deck-tab:hover {
+  .verb::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    translate: 0 -50%;
+    background: var(--kick);
+    visibility: hidden;
+  }
+  .verb-cmd {
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .verb:hover .verb-cmd {
     color: var(--fg);
   }
-  .deck-tabs input:checked + .deck-tab {
-    background: var(--term-accent);
-    color: var(--term-accent-fg);
-    font-weight: 700;
+  .verb-list input:checked + .verb {
+    color: var(--muted);
   }
-  .deck-tabs input:checked + .deck-tab::before {
-    color: rgb(0 0 0 / 0.55);
+  .verb-list input:checked + .verb::before {
+    visibility: visible;
   }
-  .deck-tabs input:focus-visible + .deck-tab {
-    outline: 3px solid var(--kick);
-    outline-offset: -3px;
+  .verb-list input:checked + .verb .verb-cmd {
+    color: var(--fg);
   }
-  .deck-panel {
+  .verb-list input:focus-visible + .verb {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+  }
+  .verb-panel {
     display: none;
-    gap: 2rem;
-    padding: 1.5rem;
-  }
-  @media (min-width: 900px) {
-    .deck-panel {
-      grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
-      padding: 2rem;
-      gap: 2.5rem;
-    }
-  }
-  .deck:has(#deck-list:checked) [data-panel="list"],
-  .deck:has(#deck-inspect:checked) [data-panel="inspect"],
-  .deck:has(#deck-why:checked) [data-panel="why"],
-  .deck:has(#deck-watch:checked) [data-panel="watch"],
-  .deck:has(#deck-kill:checked) [data-panel="kill"] {
-    display: grid;
-  }
-  .cli-cmd {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.45rem 0.45rem 0.45rem 0.9rem;
-    border: 2px solid var(--border-strong);
-    border-radius: 0.4rem;
-    background: var(--term-bg);
-    color: var(--term-fg);
     min-width: 0;
+    padding-top: 0.9rem;
   }
-  .cli-cmd code {
-    min-width: 0;
-    overflow-wrap: anywhere;
-  }
-  .cli-cmd code::before {
-    content: "$ ";
-    color: var(--term-accent);
+  .verbs:has(#verb-list:checked) [data-panel="list"],
+  .verbs:has(#verb-inspect:checked) [data-panel="inspect"],
+  .verbs:has(#verb-why:checked) [data-panel="why"],
+  .verbs:has(#verb-watch:checked) [data-panel="watch"],
+  .verbs:has(#verb-kill:checked) [data-panel="kill"] {
+    display: block;
   }
   .transcript {
-    min-width: 0;
-    margin: 0;
-    padding: 1.1rem 1.2rem;
-    border: 2px solid var(--border-strong);
-    border-radius: 0.4rem;
-    background: var(--term-bg);
-    color: var(--term-fg);
+    margin-bottom: 0;
     line-height: 1.7;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+  }
+  /* On narrow screens a wrapped table row is unreadable, so scroll it. */
+  @media (max-width: 1023px) {
+    .transcript {
+      white-space: pre;
+      overflow-x: auto;
+    }
+  }
+  @media (min-width: 1024px) {
+    /* Tall enough for the longest transcript, so switching verbs never
+       moves the text underneath. */
+    .transcript {
+      min-height: calc(10 * 1.7em);
+    }
   }
   .transcript .line {
     display: block;
   }
   .transcript .prompt {
     color: var(--term-accent);
-    font-weight: 700;
   }
   .transcript .is-cmd {
+    color: var(--fg);
     font-weight: 600;
   }
   .transcript .is-out {
@@ -701,88 +617,82 @@ const CHANNELS = [
     color: var(--term-dim);
   }
   .transcript .is-ok {
-    color: var(--term-accent);
+    color: var(--accent);
   }
 
-  /* ---- Safety pipeline ---- */
-  .pipeline {
-    display: grid;
+  /* ---- Safety ---- */
+  .safety {
+    align-items: start;
+  }
+  .path {
+    margin: 0;
     padding: 0;
     list-style: none;
+    border-top: 2px solid var(--border-strong);
   }
-  .stop {
-    position: relative;
-    padding: 0 0 2rem 2.6rem;
+  .step {
+    display: grid;
+    grid-template-columns: 1.5rem minmax(0, 1fr);
+    gap: 0.15rem 0.75rem;
+    align-items: baseline;
+    padding: 0.9rem 0;
+    border-bottom: 2px solid var(--border-strong);
   }
-  /* The track between stops: a dashed pixel line. */
-  .stop::before {
-    content: "";
-    position: absolute;
-    left: 0.6rem;
-    top: 1.6rem;
-    bottom: 0;
-    border-left: 3px dashed var(--border-strong);
+  .step-n {
+    color: var(--faint);
   }
-  .stop-last::before {
-    display: none;
+  .step-title {
+    margin: 0;
+    font-weight: 500;
+    letter-spacing: 0.02em;
   }
-  .stop-dot {
-    position: absolute;
-    left: 0;
-    top: 0.15rem;
-    width: 1.5rem;
-    height: 1.5rem;
-    border: 3px solid var(--accent);
-    background: var(--bg);
+  .step-body {
+    grid-column: 2;
+    margin: 0;
   }
-  .stop-last .stop-dot {
-    border-color: var(--kick);
-    background: var(--kick);
-  }
-  .stop h3 {
-    line-height: 1.3;
-    letter-spacing: 0.03em;
-  }
-  @media (min-width: 900px) {
-    .pipeline {
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 1.5rem;
+  @media (min-width: 640px) {
+    .step {
+      grid-template-columns: 1.5rem 7rem minmax(0, 1fr);
     }
-    .stop {
-      padding: 2.6rem 0 0;
-    }
-    .stop::before {
-      left: 1.9rem;
-      right: -1.1rem;
-      top: 0.6rem;
-      bottom: auto;
-      border-left: 0;
-      border-top: 3px dashed var(--border-strong);
-    }
-    .stop-dot {
-      top: 0;
+    .step-body {
+      grid-column: 3;
     }
   }
-
+  .step:last-child .step-title {
+    color: var(--kick);
+  }
   .facts {
     display: grid;
     gap: 1rem;
-    max-width: 48rem;
-  }
-  .fact {
-    display: flex;
-    gap: 0.9rem;
     margin: 0;
+    padding: 0.9rem 0 0;
+    list-style: none;
   }
-  .fact-mark {
-    flex-shrink: 0;
-    width: 0.65rem;
-    height: 0.65rem;
-    margin-top: 0.55em;
-    background: var(--kick);
+  .facts li {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+  .facts li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 0.5rem;
+    height: 0.5rem;
+    background: var(--accent);
   }
 
-  /* ---- Channels ---- */
+  /* ---- Platforms and channels ---- */
+  .platform-list {
+    display: grid;
+    gap: 1.5rem 3rem;
+    margin-bottom: 0;
+  }
+  @media (min-width: 768px) {
+    .platform-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
   .channels {
     display: grid;
     padding: 0;
@@ -791,93 +701,48 @@ const CHANNELS = [
   }
   .channel {
     display: grid;
-    gap: 0.6rem;
-    padding: 1rem 0;
-    border-bottom: 2px solid var(--border);
+    gap: 0.5rem;
+    padding: 0.9rem 0;
+    border-bottom: 2px solid var(--border-strong);
   }
   @media (min-width: 768px) {
     .channel {
-      grid-template-columns: 12rem minmax(0, 1fr);
+      grid-template-columns: 14rem minmax(0, 1fr) auto;
       align-items: center;
       gap: 2rem;
     }
   }
   .channel-head {
     display: flex;
-    flex-direction: column;
-  }
-  .channel-cmd {
-    display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 0.75rem;
-    min-width: 0;
+    margin: 0;
   }
-  .channel-cmd pre {
-    flex: 1;
+  .channel pre {
     min-width: 0;
     margin: 0;
-    color: var(--fg);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
 
-  /* ---- Finale ---- */
-  .finale {
-    display: grid;
-    gap: 2rem;
-    padding: 2.5rem 1.5rem;
-    border: 2px solid var(--border-strong);
-    border-radius: 0.5rem;
-    background:
-      repeating-linear-gradient(90deg, rgb(255 255 255 / 0.025) 0 2px, transparent 2px 22px),
-      var(--surface);
-    box-shadow: 6px 6px 0 0 var(--drop);
-  }
-  @media (min-width: 900px) {
-    .finale {
-      grid-template-columns: 1.15fr 1fr;
-      align-items: center;
-      gap: 3.5rem;
-      padding: 3.5rem;
-    }
-  }
-  .finale-sign {
-    justify-self: start;
-    margin: 0;
-    padding: 0.2em 0.4em 0.26em;
-    border: 3px solid #000;
-    border-radius: 0.15em;
-    background: #070806;
-    color: var(--kick);
-    line-height: 1;
-  }
-  .btn {
+  /* ---- Send-off ---- */
+  .btn-kick {
     display: inline-flex;
     align-items: center;
     min-height: 3rem;
-    padding: 0 1.3rem;
-    border: 2px solid #000;
-    border-radius: 0.4rem;
-    font-weight: 700;
-    box-shadow: 4px 4px 0 0 #000;
-    transition:
-      transform 90ms ease,
-      box-shadow 90ms ease;
-  }
-  .btn-kick {
+    padding: 0 1.4rem;
+    border: 2px solid var(--kick);
     background: var(--kick);
     color: var(--kick-fg);
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
-  .btn-ghost {
-    background: var(--surface);
-    border-color: var(--border-strong);
-    color: var(--fg);
+  .btn-kick:hover {
+    background: transparent;
+    color: var(--kick);
   }
-  .btn-ghost:hover {
-    border-color: var(--accent);
-  }
-  .btn:active {
-    transform: translate(3px, 3px);
-    box-shadow: 1px 1px 0 0 #000;
+  .btn-kick:focus-visible {
+    outline: 2px solid var(--fg);
+    outline-offset: 3px;
   }
 </style>
