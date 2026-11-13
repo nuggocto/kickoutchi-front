@@ -30,6 +30,15 @@ By default Kickoutchi looks in your platform config directory:
 
 Point at a different file with the global `--config FILE` flag.
 
+### Under sudo
+
+`sudo` normally resets `HOME`, which would point Kickoutchi at root's config. On Linux and macOS,
+`sudo kick` instead looks in the home directory of the user who ran sudo first, so your protected
+names, labels, and confirmation settings still apply. Root reads that file only if it is a regular
+file owned by that user; anything else there, such as a symlink to another user's file, is an error.
+If that user has no file, root's default path is read as before. Your own `XDG_CONFIG_HOME` is not
+visible under sudo, so pass a file kept there with `--config`.
+
 <Callout type="note" title="Missing files, two different rules">
   No file at the **default** path just means "use the built-in defaults" • that's the normal
   first-run state. But a file you **explicitly** pass with `--config` must exist; a missing one is
@@ -166,6 +175,7 @@ applied to protected processes at kill time.
 
 With `hide_system_processes = true`, the default view drops conservative system/service rows: PID 0
 and 1, direct children of PID 1, and a short list of well-known OS process names (plus PID ≤ 4 and
-children of `services.exe` on Windows). It's deliberately cautious • a protected app like
+children of `services.exe` on Windows). A row whose owner is hidden has no PID to classify and stays
+visible, so the option hides more under `sudo`. It's deliberately cautious • a protected app like
 `postgres` is **not** treated as a system process just because it's protected; those are two
 different ideas.

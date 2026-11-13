@@ -53,8 +53,17 @@ ownership metadata was unavailable, not that the socket has no owner.
 
 </Callout>
 
-Rows are colour-coded: **protected** processes and rows with **partial metadata** (visible socket,
-unreadable owner) are tinted so you notice them before acting.
+Row styles tell you what you can act on:
+
+- **Bold** • the owner could be read. These are usually your own processes.
+- **Plain** • the owner is hidden. The socket is visible, but the process holding it could not be
+  read, usually because it belongs to another user. `sudo kick` shows these owners.
+- **Yellow** • the PID is known, but some of its details could not be read.
+- **Red** • a protected process. Killing one asks you to type its PID or name.
+
+Bold and plain rows use your terminal's default foreground, and yellow and red come from its ANSI
+palette, so the table follows your terminal theme. Set `NO_COLOR` to drop the colours; bold and
+reverse video remain. The help modal (`?`) repeats this legend.
 
 ## Moving around
 
