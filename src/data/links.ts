@@ -1,4 +1,5 @@
 import { z } from "zod";
+import release from "./release.json";
 
 /** Canonical project identity and every off-site link, validated once here. */
 
@@ -12,9 +13,17 @@ export const SITE = {
   /** Canonical binary name; `kick` is the short daily-use shortcut. */
   binary: "kickoutchi",
   shortBinary: "kick",
-  /** Latest published release; mirrors the repository release version. */
-  version: "1.7.0",
+  /** Latest published release; `src/data/release.json` is the single source,
+   *  shared with the build check that pins `public/install.sh`. */
+  version: release.version,
   author: "nugget",
+} as const;
+
+/** The release installer this site serves at /install.sh: an exact copy of
+ *  that release's `kickoutchi-installer.sh`, checked by `pnpm build`. */
+export const INSTALLER = {
+  sha256: release.installerSha256,
+  releaseAsset: `https://github.com/nuggocto/kickoutchi/releases/download/v${release.version}/kickoutchi-installer.sh`,
 } as const;
 
 const REPO = "https://github.com/nuggocto/kickoutchi";

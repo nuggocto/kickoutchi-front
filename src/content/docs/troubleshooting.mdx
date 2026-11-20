@@ -120,7 +120,7 @@ current bindability is genuinely unknown. Re-run with elevation if you need a re
 
 A poll failed. Kickoutchi keeps the last valid snapshot rather than discarding it, so the failure
 can't manufacture a wave of false `release` events, and it retries. If three consecutive polls fail,
-`watch` flushes the third gap and exits `1`. Gaps ignore your endpoint filters on purpose • you
+`watch` flushes the third gap, prints why it stopped on stderr, and exits `1`. Gaps ignore your endpoint filters on purpose • you
 always find out that you stopped seeing.
 
 ## `watch` shows `filter=indeterminate`

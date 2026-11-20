@@ -25,13 +25,14 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     platforms: ["linux", "macos"],
     group: "recommended",
     summary:
-      "Fetches the installer from the latest GitHub Release, then downloads the matching archive and installs both binaries on your PATH.",
+      "Runs the current release's installer, which downloads the archive for your platform, checks its SHA-256, and installs both binaries in ~/.cargo/bin.",
     commands: [
       {
-        code: "curl --proto '=https' --tlsv1.2 -LsSf https://kickoutchi.com/install.sh | sh",
+        code: "curl -fsS https://kickoutchi.com/install.sh | sh",
         lang: "sh",
       },
     ],
+    note: "The installer adds ~/.cargo/bin to PATH in your shell profile; open a new terminal before running kick. Set KICKOUTCHI_NO_MODIFY_PATH=1 to skip the profile change. Prebuilt Linux binaries need glibc 2.31 or newer (Debian 11, Ubuntu 20.04, or later).",
   },
   {
     id: "installer-windows",

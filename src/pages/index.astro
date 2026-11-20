@@ -4,7 +4,7 @@ import CopyButton from "../components/CopyButton.astro";
 import SquatterScene from "../components/SquatterScene.astro";
 import { INSTALL_METHODS } from "../data/install-methods";
 import { PLATFORM_SUPPORT } from "../data/package-status";
-import { LINKS, SITE } from "../data/links";
+import { LINKS } from "../data/links";
 
 /*
   Three type sizes only: text-sm (commands, notes), text-lg (reading),
@@ -161,7 +161,7 @@ const CHANNELS = [
                 <CopyButton text={windows.commands[0].code} class="shrink-0 bg-transparent!" />
               </div>
               <p class="mt-3 text-sm text-muted">
-                Then run <code class="font-mono text-fg">kick</code>. Or use{" "}
+                Open a new terminal, then run <code class="font-mono text-fg">kick</code>. Or use{" "}
                 <a href="/install" class="ink-link">Homebrew, Scoop, AUR, Nix, or Cargo</a>.
               </p>
             </div>
