@@ -153,10 +153,11 @@ the port is closed, a plain `--pid` kill no longer applies, so the hint is
 `kick kill --pid PID --tree --force`, which also stops the process's children. The exit code still
 means the signal was accepted.
 
-On Linux, an unprivileged `kill --port` usually can't prove the visible owner is the port's only
-holder, because other users' processes can't be read and one of them could share the socket. It's
-refused before any prompt, and the error names the owner and the `kick kill --pid PID` command that
-works.
+On Linux, an unprivileged `kill --port` usually can't inspect other users' processes to prove no
+hidden process shares the socket. If the port has no readable owner, `kill --port` refuses before
+any prompt (exit `4`). When it finds one verified owner and only unrelated processes are unreadable,
+it prints a note, targets that verified owner while still checking the port for a second visible
+owner on revalidation, and reports afterward whether the port cleared.
 
 <CommandBlock
   code={

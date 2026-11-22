@@ -25,7 +25,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     platforms: ["linux", "macos"],
     group: "recommended",
     summary:
-      "Runs the current release's installer, which downloads the archive for your platform, checks its SHA-256, and installs both binaries in ~/.cargo/bin.",
+      "Runs the current release's installer, which downloads the archive and updater for your platform, verifies their embedded SHA-256 checksums, and installs the binaries in ~/.cargo/bin.",
     commands: [
       {
         code: "curl -fsS https://kickoutchi.com/install.sh | sh",
@@ -40,7 +40,8 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     status: "available",
     platforms: ["windows"],
     group: "recommended",
-    summary: "Downloads the Windows release archive and installs both binaries on your PATH.",
+    summary:
+      "Downloads the Windows release archive and updater, verifies their embedded SHA-256 checksums, and installs the binaries on your PATH.",
     commands: [
       {
         code: 'powershell -ExecutionPolicy Bypass -NoProfile -Command "irm https://kickoutchi.com/install.ps1 | iex"',

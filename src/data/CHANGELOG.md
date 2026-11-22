@@ -7,6 +7,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-11-22
+
+### Fixed
+
+- The Windows release installer verifies the SHA-256 of its ZIP and updater
+  before replacing any installed files. It also checks the ZIP before unpacking.
+- The Unix release installer (`kickoutchi-installer.sh`) now verifies the
+  SHA-256 of both the archive and the updater against embedded release digests
+  before replacing installed files, supporting `sha256sum`, `shasum`, and
+  `openssl` and refusing installation when verification is unavailable.
+- On Linux, `kill` verifies that `/proc` resolves PIDs in Kickoutchi's own PID
+  namespace (`/proc/self` symlink and single-entry `NSpid:`) before opening any
+  `pidfd` or taking a scoped-kill snapshot, preventing `SIGSTOP` from hitting
+  the wrong process in a nested PID namespace sharing an ancestor `/proc`.
+- On Linux, `--tree` and `--group` snapshots fail closed when `/proc` visibility
+  is restricted by `hidepid` or cannot be verified from `/proc/mounts`,
+  reporting the specific mount or `hidepid` cause while keeping read-only
+  `inspect` usable.
+- On Linux, `/proc/<pid>/status` is parsed as raw bytes so an unrelated process
+  with a non-UTF-8 `Name:` no longer aborts `--tree` or `--group` scans.
+- On Windows, `ProcessSnapshot` preserves unverified parent edges when child
+  metadata cannot be opened or races, and pre-commit tree gates check them
+  before Job Object commit. An unreadable or elevated child of a preview member
+  now refuses the tree kill instead of being dropped silently and surviving.
+- Redirected `kill --port` (on hosts with unrelated process-visibility gaps) now
+  retains the original port selector alongside the verified owner PID through
+  confirmation, revalidation, and multi-target deduplication, refusing if a
+  second visible owner or a port-specific gap appears before delivery.
+- Post-kill port verification now inspects the `NetworkSnapshot` directly:
+  incomplete or raced snapshots report an unconfirmed warning instead of
+  claiming ports cleared, exit polling that outlasts an early empty port check
+  takes a final port observation to catch supervisors rebinding the port, and
+  plain `kick kill --pid PID --force` retry hints are suggested only when the
+  surviving process identity is verified as still owning a visible port.
+- Invalid `kill` requests (such as multi-target `--tree`/`--group` or over-cap
+  target lists) are rejected before collecting a native network snapshot.
+- A TUI kill or tree-kill confirmation whose target becomes protected while it
+  is open now restarts at the PID-or-name prompt and discards what you typed.
+  A protected tree is authorized only by completing the protected-root step,
+  not by the target's protection flag. No current path could raise that flag
+  without the step, so this closes a latent gap rather than a reachable one.
+- On Linux, a tree or group kill never resumes a process by raw PID. A
+  continue without the pidfd kept since the process was stopped is reported
+  as a cleanup failure instead of signalling a PID that may have been reused.
+- On Linux, a stop attempt that fails after it may have stopped the process
+  is always rolled back with `SIGCONT`, matching macOS. Linux and macOS now
+  share one mapping from stop results to cleanup.
+- On macOS, a tree or group kill no longer aborts when a member exits between
+  `SIGSTOP` and the state check. The member is skipped as already gone, as on
+  Linux, and the kill continues.
+- A Linux or macOS tree or group kill that cannot block or read pending
+  termination signals now names that cause. It used to report that
+  enumerating the process tree had failed, though no enumeration ran.
+- `kick watch` stops with an internal-error message instead of panicking if
+  an event ever reaches a batch without the snapshot it refers to. No current
+  input triggers this.
+- An oversized `kick watch` NDJSON record stays refused even if a later write
+  would fit, so a truncated record can never be extended.
+- A multi-target `kick kill` that names one process through several selectors
+  revalidates every selector before signalling it, not only the first. If any
+  confirmed port changed, that process is skipped and reported.
+- A multi-target `kick kill` summary now lists the confirmed ports of a target
+  that no longer owns them. When several selectors name one process, the line
+  names the port that changed rather than the first selector's port.
+- A SIGINT, SIGTERM, or SIGHUP that arrives during a Linux or macOS kill is
+  reported as a cancellation (`kill cancelled`, exit `5`) when Kickoutchi
+  survives to report it, instead of as an unknown or snapshot failure. Tree
+  and group kills still thaw every process they stopped first.
+- When the terminal is too small to show a whole TUI confirmation, the
+  "confirmation cancelled" status appears at once instead of after the next
+  key press or clock tick.
+
+### Changed
+
+- When `kick watch` stops after three consecutive collection failures, it now
+  prints `error: watch stopped after 3 consecutive collection failures` to
+  stderr after flushing the third `collection_gap` record. The exit code is
+  still `1`.
+
+- The tree-kill pipeline records whether to resume each process only once its
+  stop result is known, instead of defaulting to "resume" and relying on every
+  caller to override it. Behavior is unchanged and covered by the existing
+  already-stopped tests.
+- `kick watch` reuses each snapshot's sorted socket index and
+  replacement-readiness table across consecutive polls instead of rebuilding
+  them on the next tick.
+- The GitHub Actions release workflow sets `concurrency.queue: max` alongside
+  `cancel-in-progress: false` so queued releases execute in order without
+  displacing intermediate runs.
+
 ## [1.7.0] - 2026-11-13
 
 ### Changed
@@ -491,288 +581,562 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Simplified internal maintenance code without changing public behavior: documented four module
-  boundaries, reduced configuration-reader preallocation, replaced three infallible sequence
-  serializers with their direct iterator form, and aligned local dependency-policy checks with
-  CI's main and fuzz workspace coverage.
-- Centralized narrowly shared test fixtures so synthetic TCP and UDP rows carry matching
-  listen/bound states and permission-denied ownership scenarios have one source of truth.
-- Made watch polling timing easier to audit by centralizing wall-clock projection, monotonic
-  deadline arithmetic, and cancellation/deadline decisions without changing scheduling or output
-  behavior.
+- Simplified internal maintenance code without changing public behavior:
+  documented four module boundaries, reduced configuration-reader
+  preallocation, replaced three infallible sequence serializers with their
+  direct iterator form, and aligned local dependency-policy checks with CI's
+  main and fuzz workspace coverage.
+- Centralized narrowly shared test fixtures so synthetic TCP and UDP rows carry
+  matching listen/bound states and permission-denied ownership scenarios have
+  one source of truth.
+- Made watch polling timing easier to audit by centralizing wall-clock
+  projection, monotonic deadline arithmetic, and cancellation/deadline
+  decisions without changing scheduling or output behavior.
 
 ### Fixed
 
-- Linux `kill --port` now refuses to signal a visible owner when incomplete process or descriptor
-  visibility leaves an ownership gap without endpoint provenance, since an unobserved process
-  could share the selected socket.
-- Release publication now attests cargo-dist's host-generated `dist-manifest.json` before the
-  public installer journey or package-manager publication. This closes the provenance-gate
-  mismatch found while publishing 1.3.9, where the verifier correctly checked the manifest but the
+- Linux `kill --port` now refuses to signal a visible owner when incomplete
+  process or descriptor visibility leaves an ownership gap without endpoint
+  provenance, since an unobserved process could share the selected socket.
+- Release publication now attests cargo-dist's host-generated
+  `dist-manifest.json` before the public installer journey or package-manager
+  publication. This closes the provenance-gate mismatch found while publishing
+  1.3.9, where the verifier correctly checked the manifest but the
   pre-publication attestation job could not yet include it.
 
 ## [1.3.9] - 2026-07-30
 
 ### Added
 
-- Release assets now receive GitHub artifact attestations in a dedicated least-privileged job after
-  native archive and installer validation. Release publication requires successful attestation,
-  and the post-publication journey verifies every downloaded asset before executing the installer.
-- Added a finite native API boundary audit covering all 119 platform-call blocks, their ownership
-  and buffer invariants, process-identity protections, error handling, native validation, and
-  explicit re-audit triggers.
+- Release assets now receive GitHub artifact attestations in a dedicated
+  least-privileged job after native archive and installer validation. Release
+  publication requires successful attestation, and the post-publication journey
+  verifies every downloaded asset before executing the installer.
 
 ### Changed
 
-- CI now starts supply-chain, Linux, Windows, macOS, and both Nix lanes concurrently, runs
-  formatting and doctests once on Linux, and reports one fail-closed `CI Complete` result after
-  every lane finishes. Push CI is limited to the default `shrek` branch while pull-request and
-  scheduled coverage remain enabled; the existing cancellation policy and cache-free builds are
-  unchanged.
-- Recorded a dated, same-machine Linux performance snapshot for cold/warm startup, `list`,
-  `list --json`, CPU, peak RSS, binary/package size, and exit correctness. Three fixed-seed
-  interleaved sessions provide 3,000 observations per build and workload, including a
-  higher-confidence p99; the v1.3.8 comparison found no meaningful regression, and noisy latency
-  measurements remain outside required pull-request CI.
-- Distribution builds now strip symbol tables while retaining Rust's unwind strategy and cleanup
-  behavior, reducing shipped and installed binary size without changing runtime code paths.
-- Added three pure, bounded parser campaigns for configuration, synthetic Linux process data, and
-  release-archive member paths. Small saved corpora replay in ordinary tests, while exact-toolchain
-  60-second campaigns run only weekly or on manual request; the auxiliary dependency lock receives
-  the same advisory, license, ban, and source checks as the main crate.
-- Windows tree preparation, containment, and post-commit reporting now share the same refusal
-  vocabulary and semantic exit classification used by Unix tree handling. CLI and TUI renderers
-  share stable tree-refusal causes and direct termination descriptions while retaining their
-  interface-specific recovery details.
-- Docker output-drain and child-cleanup workers now use one bounded capacity primitive with atomic
-  multi-slot reservations and independently owned permits. Scoped tree/group confirmation shares
-  only its identical prompt execution; the safety-critical revalidation, freeze/commit, and
-  termination ordering remains explicit.
-- Host-sensitive CLI tests no longer reserve and release an ephemeral port before launching a
-  competing process. Linux no-match diagnostics run in an isolated user/network namespace, and
-  workflow security tests assert native platform coverage and unprivileged metadata generation
-  without pinning incidental runner labels or setup commands.
-- Documented that direct PID termination intentionally permits an ordinary parent process,
-  including the invoking shell, while PID 0, PID 1, Windows System PID 4, Kickoutchi itself, and
-  scoped kills containing Kickoutchi remain refused.
+- CI now starts supply-chain, Linux, Windows, macOS, and both Nix lanes
+  concurrently, runs formatting and doctests once on Linux, and reports one
+  fail-closed `CI Complete` result after every lane finishes. Push CI is limited
+  to the default `shrek` branch while pull-request and scheduled coverage remain
+  enabled; the existing cancellation policy and cache-free builds are unchanged.
+- Recorded a dated, same-machine Linux performance snapshot for cold/warm
+  startup, `list`, `list --json`, CPU, peak RSS, binary/package size, and exit
+  correctness. Three fixed-seed interleaved sessions provide 3,000 observations
+  per build and workload, including a higher-confidence p99; the v1.3.8
+  comparison found no meaningful regression, and noisy latency measurements
+  remain outside required pull-request CI.
+- Distribution builds now strip symbol tables while retaining Rust's unwind
+  strategy and cleanup behavior, reducing shipped and installed binary size
+  without changing runtime code paths.
+- Added three pure, bounded parser campaigns for configuration, synthetic Linux
+  process data, and release-archive member paths. Small saved corpora replay in
+  ordinary tests, while exact-toolchain 60-second campaigns run only weekly or
+  on manual request; the auxiliary dependency lock receives the same advisory,
+  license, ban, and source checks as the main crate.
+- Windows tree preparation, containment, and post-commit reporting now share the
+  same refusal vocabulary and semantic exit classification used by Unix tree
+  handling. CLI and TUI renderers share stable tree-refusal causes and direct
+  termination descriptions while retaining their interface-specific recovery
+  details.
+- Docker output-drain and child-cleanup workers now use one bounded capacity
+  primitive with atomic multi-slot reservations and independently owned permits.
+  Scoped tree/group confirmation shares only its identical prompt execution;
+  the safety-critical revalidation, freeze/commit, and termination ordering
+  remains explicit.
+- Host-sensitive CLI tests no longer reserve and release an ephemeral port
+  before launching a competing process. Linux no-match diagnostics run in an
+  isolated user/network namespace, and workflow security tests assert native
+  platform coverage and unprivileged metadata generation without pinning
+  incidental runner labels or setup commands.
+- Documented that direct PID termination intentionally permits an ordinary
+  parent process, including the invoking shell, while PID 0, PID 1, Windows
+  System PID 4, Kickoutchi itself, and scoped kills containing Kickoutchi remain
+  refused.
 
 ### Removed
 
-- Removed the temporary local benchmark harness and its harness-only tests after recording the
-  reproducible performance snapshot. The bounded parser fuzzing campaigns and saved regression
-  corpora remain part of normal and scheduled verification.
+- Removed the temporary local benchmark harness and its harness-only tests after
+  recording the reproducible performance snapshot. The bounded parser fuzzing
+  campaigns and saved regression corpora remain part of normal and scheduled
+  verification.
 
 ## [1.3.8] - 2026-07-29
 
 ### Changed
 
-- Consolidated small internal policies without changing public behavior: optional process-context
-  limits now live in one platform-neutral location, snapshot and watch sorting use one
-  owner-completeness comparator, and Unix signal and tree-stop deadline mappings each have one
-  implementation.
-- Integration-test configuration directories now use exclusive creation with a process-local
-  monotonic counter, preventing parallel tests from sharing and deleting one another's live
-  directories. The Windows PID-existence probe also reports wait failures instead of treating them
-  as a live process, and bounded synthetic tree fixtures avoid colliding with the running test
-  process.
-- Simplified bounded platform adapters and watch output handling while retaining their existing
-  fail-closed limits, error classifications, and public output.
+- Consolidated small internal policies without changing public behavior:
+  optional process-context limits now live in one platform-neutral location,
+  snapshot and watch sorting use one owner-completeness comparator, and Unix
+  signal and tree-stop deadline mappings each have one implementation.
+- Integration-test configuration directories now use exclusive creation with a
+  process-local monotonic counter, preventing parallel tests from sharing and
+  deleting one another's live directories. The Windows PID-existence probe also
+  reports wait failures instead of treating them as a live process, and bounded
+  synthetic tree fixtures avoid colliding with the running test process.
+- Simplified bounded platform adapters and watch output handling while retaining
+  their existing fail-closed limits, error classifications, and public output.
 
 ### Removed
 
-- Removed a byte-for-byte duplicate ownership-authority test and stale internal branches,
-  annotations, derives, and assignments that carried no behavior.
+- Removed a byte-for-byte duplicate ownership-authority test and stale internal
+  branches, annotations, derives, and assignments that carried no behavior.
 
 ### Fixed
 
-- A Windows port-selected `--tree` kill whose root exits during final preparation now reports
-  `already exited` with the no-match exit status instead of misreporting a changed process identity
-  as a failure.
-- Linux protected-process matching now reproduces the kernel's raw 15-byte `/proc/<pid>/comm`
-  truncation when it splits a UTF-8 code point, so configured non-ASCII protected names cannot
-  silently lose protection after lossy decoding.
-- The TUI details panel now renders one protected-process warning in its reserved row and retains
-  the selected process's permission status at the minimum supported terminal size.
+- A Windows port-selected `--tree` kill whose root exits during final preparation
+  now reports `already exited` with the no-match exit status instead of
+  misreporting a changed process identity as a failure.
+- Linux protected-process matching now reproduces the kernel's raw 15-byte
+  `/proc/<pid>/comm` truncation when it splits a UTF-8 code point, so configured
+  non-ASCII protected names cannot silently lose protection after lossy decoding.
+- The TUI details panel now renders one protected-process warning in its reserved
+  row and retains the selected process's permission status at the minimum
+  supported terminal size.
 
 ## [1.3.7] - 2026-07-28
 
 ### Added
 
-- A copy-ready root `config.example.toml` demonstrates settings and exact-before-wildcard endpoint
-  labels, with parser coverage that keeps the example aligned with the accepted schema.
-- Release qualification now executes native updaters and isolated installers on Linux, macOS, and
-  Windows, repeats the Linux journey through final public URLs, verifies exact Arch metadata, and
-  rebuilds Linux updater artifacts at the documented glibc 2.31 floor.
+- Added a copy-ready root `config.example.toml`, covered by the real config
+  parser tests so its settings and endpoint-label examples cannot drift from the
+  accepted schema.
+- Release validation now executes every native updater, runs generated shell and
+  PowerShell installers with isolated install, config, and temporary roots on
+  Linux, macOS, and Windows before
+  publication, and repeats the Linux install/update journey through the final
+  public GitHub Release URLs. Arch metadata is also compared exactly with native
+  `makepkg --printsrcinfo` output in a digest-pinned container. Linux updater
+  artifacts are rebuilt from the locked `axoupdater-cli 0.10.0` source inside the
+  Debian 11 release containers so they retain the documented glibc 2.31 floor.
 
 ### Changed
 
-- Human-readable endpoints retain IPv6 interface scope in list tables, the TUI, inspect, watch,
-  Why, search, ambiguity diagnostics, and kill confirmations. Legacy list JSON remains unchanged.
-- Internal policy and collection paths were consolidated without changing public behavior.
+- Simplified internal maintenance code without changing public behavior: workflow
+  security contracts now traverse parsed YAML instead of a handwritten
+  indentation reader, public-output errors share one typed implementation, and
+  unnecessary crate-wide visibility, serialization implementations, and stale
+  license allowances were removed.
+- Consolidated duplicated internal logic so each policy is encoded exactly once,
+  without changing public behavior: the TUI tree-confirmation height budget now
+  measures the rendered prompt lines it guards instead of a second copy of the
+  prose, the Unix tree-freeze revalidation shares one gate helper with the
+  Windows and group paths, exact bind-probe requests build on the shared
+  endpoint-identity validator, inspect reports compute each
+  ancestor/sibling/group selection once, snapshot and watch output share one
+  owner-completeness ordering, and the Linux PID scans and platform
+  command-line readers each collapse to a single bounded implementation.
+- Release workflow contract tests now assert structural security properties —
+  every release job carries a bounded timeout and Linux runner images are
+  full-digest-pinned and identical across architectures — instead of
+  hardcoding a second copy of the exact minutes and digest values.
+- Human endpoint output now uses one formatter that retains IPv6 interface scope
+  in list tables, TUI rows and details, inspect reports, watch and Why output,
+  search text, ambiguity diagnostics, and kill confirmations. Legacy list JSON
+  remains unchanged; versioned structured output continues to carry scope as a
+  separate field.
 
 ### Removed
 
-- Dead internal paths, redundant tests, and the inactive in-repository Scoop mirror were removed.
-  The live `nuggocto/scoop-bucket` remains the Scoop source of truth.
+- Removed dead internal code: never-constructed evidence-source variants,
+  unreachable trait defaults and bounds guards, write-only fields, a vestigial
+  platform parameter, and single-caller wrapper functions, plus one unsafe
+  UTF-8 block rewritten with the standard library's safe chunk iterator.
+  Trimmed tautological and duplicate unit tests, and strengthened previously
+  vacuous assertions so tree-thaw, docker-runner, and stale-refresh tests fail
+  under the regressions they exist to catch. No user-visible behavior changed.
+- Removed the inactive in-repository Scoop bootstrap mirror; the live
+  `nuggocto/scoop-bucket` remains the only Scoop source of truth. Removed an
+  opportunistic kernel-race integration test whose normal success path duplicated
+  the mandatory group-kill journey without deterministically exercising a race.
 
 ### Fixed
 
-- Concurrent embedded watch sessions now fail immediately instead of sharing process-global Ctrl-C
-  state. Signal-handler ownership remains fail-closed if restoration fails, and observed
-  cancellation stays latched so a delayed callback cannot cancel a later watch owner.
+- Concurrent embedded watch sessions now fail immediately instead of sharing and
+  corrupting process-global Ctrl-C handler state. Handler ownership is reserved
+  before cancellation state changes, released only after successful restoration,
+  and retained fail-closed if restoration itself fails. Once observed, Ctrl-C
+  cancellation remains latched for the process lifetime so a delayed callback
+  cannot cancel a later embedded watch owner.
 
 ## [1.3.6] - 2026-07-26
 
 ### Added
 
-- Versioned evidence gaps now include nullable `affected_pid_count`. Linux keeps target-relevant
-  PID losses exact while aggregating unrelated bounded owner-scan losses; repeated consistency
-  passes retain the maximum aggregate count rather than summing overlapping observations.
+- Versioned `EvidenceGap` output now carries an always-present nullable
+  `affected_pid_count`. Linux owner scans aggregate PID-scoped losses that have
+  no target socket edge into one positive bounded count while retaining exact
+  target-relevant losses under `pid`; repeated aggregate observations merge by
+  maximum rather than by an invented sum.
 
 ### Changed
 
-- `list --process ""` is now an invalid-argument error (exit `2`) instead of accidentally matching
-  every row with a readable process name.
+- `list --process ""` is now an invalid-argument error (exit `2`) instead of
+  quietly selecting every row whose process name was readable. An empty
+  substring matches every name, so the old result narrowed the list instead of
+  filtering it, and a script passing an unset variable got a wrong answer under
+  a success exit code. Nonempty values are unchanged, whitespace included.
 
 ### Removed
 
-- Automatic weekly GitHub release checks, update caches, install-provenance notices, and the runtime
-  TLS dependency stack were removed. The old boolean `check_for_updates` key remains accepted and
-  ignored for config compatibility. The explicit `kickoutchi-update` helper is unchanged.
+- Removed Kickoutchi's automatic weekly GitHub release check, update cache,
+  install-provenance-based notices, and the associated `ureq`/Rustls TLS
+  dependency stack. The deprecated boolean `check_for_updates` key remains
+  accepted and ignored so existing strict configuration files still load. The
+  cargo-dist-generated standalone `kickoutchi-update` installed by release
+  installers is unchanged.
 
 ### Fixed
 
-- Duplicate cross-pass evidence gaps no longer consume multiple retention slots or make otherwise
-  usable observations look incomplete.
-- Config diagnostics preserve TOML excerpts while keeping path and I/O text terminal-safe, and
-  protected-process limit errors report raw, unique, built-in, and merged counts accurately.
-- TUI worker panics return to owner control flow so the terminal is restored before the failure is
-  reported, including a panic racing with quit.
-- Release qualification separates successful Linux group-kill coverage from race refusal, pins
-  Linux builders by digest, rechecks the release tag, and serializes package publication.
+- Snapshot, watch, and Why output no longer repeats an evidence gap that both
+  consistency passes observed. The repeat carried no evidence the first copy did
+  not and consumed half of each snapshot's gap retention budget, so a host with
+  enough distinct gaps could overflow that budget and then have watch refuse to
+  diff and kill refuse to signal on an observation that was complete enough to
+  act on. A process that exhausts its optional-metadata budget on several fields
+  now also reports one gap instead of one per field.
+- Configuration diagnostics now preserve TOML source excerpts and caret
+  placement while keeping hostile path and I/O text sanitized on one line.
+- Oversized protected-process diagnostics now distinguish the merged total, raw
+  configured entries, unique configured additions, and built-in defaults, so
+  duplicate configured or default names cannot make the count misleading.
+- Linux group-kill real-binary coverage now keeps the capability-required
+  success journey separate from the opportunistic observation-race fail-closed
+  journey, preventing a real race from satisfying the release success gate.
+- TUI background-worker panics now cross a typed result channel to the owner
+  thread, which restores the terminal before reporting the failure instead of a
+  worker panic hook writing while the alternate screen is active.
 
 ## [1.3.5] - 2026-07-26
 
 ### Fixed
 
-- The foreground update check releases its cache lock before starting the
-  detached worker, preserving bounded lock acquisition when several commands
-  launch close together.
-- Homebrew publication and formula installation now run through the canonical
-  tap path and a pinned disposable Homebrew environment, avoiding hosted-runner
-  path and temporary-volume failures.
-- The Arch source package disables link-time optimization that is incompatible
-  with the bundled TLS implementation on the current Rust toolchain.
-- macOS release qualification accepts bounded visibility gaps without weakening
-  the terminal fail-closed behavior required after repeated collection gaps.
+- Homebrew release validation now installs generated formulas in a pinned,
+  disposable Homebrew container, avoiding hosted-runner temporary-volume
+  incompatibilities while preserving version and provenance checks.
+- Homebrew publication now initializes the Linuxbrew path before discovering
+  the canonical tap directory on Ubuntu release runners.
+- macOS release journeys now retain valid release assertions when bounded
+  collection gaps occur both before and after the release event, while still
+  requiring the terminal fail-closed sequence of three consecutive gaps.
+- Homebrew release publication now validates generated formulas from the
+  canonical `nuggocto/tap` path before pushing, matching current Homebrew path
+  enforcement.
+- The Arch source package disables makepkg link-time optimization, which is
+  incompatible with the current Rust toolchain when linking the bundled TLS
+  implementation.
+- The foreground update check explicitly releases its cache lock before
+  spawning the detached worker, preserving the worker's bounded lock-acquisition
+  contract under load.
+- macOS release journeys now validate bounded collection gaps when host socket
+  visibility becomes partial after a valid watch baseline, matching the same
+  fail-closed behavior already accepted before baseline publication.
 
 ## [1.3.1] - 2026-07-26
 
 ### Added
 
-- A silent, timeout-bounded stable-release check runs at most once every seven
-  days outside the foreground command. New-version notices recommend the right
-  update path for Homebrew, Scoop, AUR, Linux Nix, Cargo, or standalone installs,
-  never contaminate structured output, and can be disabled in configuration.
+- Added a silent, timeout-bounded stable-release check that runs at most once
+  every seven days outside the foreground command. New-release notices use
+  install provenance to recommend Homebrew, Scoop, AUR, Linux Nix, Cargo, or the
+  standalone updater without contaminating structured output; configuration can
+  disable the check.
+
+### Removed
+
+- The release runbook and the product recap that `1.3.0` added. Both were
+  maintainer-only working documents, never shipped in a package or archive, and
+  the qualification state they tracked is now recorded in the release itself.
 
 ### Changed
 
-- Nix flake outputs are explicitly Linux-only. Nix, Homebrew, Scoop, and AUR
-  installs now carry provenance markers so update notices can give
-  package-manager-specific guidance.
-- Linux release archives are built in pinned Debian 11 containers with a glibc
-  2.31 compatibility floor, and release validation rejects newer symbol
+- Nix flake outputs are now explicitly Linux-only. The package version is read
+  from `Cargo.toml`, and Linux Nix, Homebrew, Scoop, and AUR installations carry
+  closed provenance markers for manager-correct update instructions. Native
+  macOS archives and Homebrew support are unchanged.
+- Linux release archives are built in pinned Debian 11 containers with a
+  declared glibc 2.31 floor, and release validation rejects newer symbol
   requirements.
+
+- Every surface that only reads a port row now borrows it from the authoritative
+  snapshot instead of receiving an owned legacy copy. List, single-process kill,
+  scoped tree and group kill, inspect, Docker enrichment, and the TUI all speak
+  the borrowed row; the owned form survives only where a row genuinely outlives
+  its snapshot, which is the TUI's stored table, the collection seams whose
+  closures own a snapshot internally, and test fixtures. Kill and inspect also
+  resolve protected-process policy while projecting rows rather than marking
+  them afterwards, removing a second pass over the same data. No command
+  behavior, output, or exit code changes.
 
 ### Fixed
 
-- Linux and macOS scoped termination now observes suspension under one shared
-  deadline and handles pre-stopped processes without leaving targets frozen
-  after refusal or successful termination delivery.
-- Windows tree termination reconciles every live pinned descendant with its
+- Linux and macOS scoped termination now waits for observable suspension under
+  one operation-wide deadline and tracks which stop transitions it observed.
+  Cleanup after refusal or failed delivery leaves a pre-stopped process untouched;
+  after successful `SIGTERM` delivery it guardedly continues even a pre-stopped
+  target so the pending termination can execute. Concurrent external
+  `SIGSTOP`/`SIGCONT` can still race stop-state attribution.
+- Windows tree termination now reconciles every live pinned descendant with the
   frozen Job Object immediately before termination and thaws on every refusal.
-- TUI startup, undersized confirmation dialogs, terminal signal restoration,
-  Docker named-pipe validation, macOS dual-stack decoding, protected-process
-  matching, terminal sanitization, and broken-pipe handling are more robust.
+- Hidden TUI confirmations are cancelled on undersized terminals, terminal state
+  is restored before SIGTERM/SIGHUP is re-raised, the previous panic hook is
+  restored after the TUI, and initial collection happens before raw mode.
+- Windows Docker named-pipe validation now rejects remote, traversal, encoded,
+  and normalization-ambiguous endpoints instead of relying on a string prefix.
+- Corrected macOS dual-stack decoding and protected-process title matching,
+  Windows snapshot and long-path diagnostics, terminal escape stripping,
+  wrapped confirmation budgeting, Docker details clipping, filter help, and
+  help/version broken-pipe handling.
+
+- The macOS release-profile watch journey no longer fails when the host gives a
+  partial observation for every attempt. That journey has two correct outcomes
+  and the host decides which one: process-first `libproc` collection sees a
+  partial machine-wide socket set whenever a protected process holds a socket,
+  and watch then refuses to publish a baseline it cannot vouch for. Both paths
+  are asserted — a complete observation must prove the baseline and release
+  contract, a partial one must prove exit code 1, the exact refusal message, and
+  zero emitted records — so the journey stops depending on which processes a
+  shared runner happens to be running.
 
 ## [1.3.0] - 2026-07-24
 
 ### Added
 
-- `watch`, a bounded polling view that streams `baseline`, `bind`, `release`,
-  `replacement`, and `collection_gap` events as terminal output or versioned
-  `kickoutchi.watch_event/1` NDJSON. Intervals are `100ms..=60s`, optional
-  durations are `100ms..=7d`, and Ctrl-C, duration expiry, and a closed consumer
-  all exit cleanly.
-- `why PORT`, which combines one native snapshot with immediate TCP/UDP bind
-  probes to explain whether an exact endpoint is bindable right now. It reports
-  bindable, occupied, permission denied, address unavailable, unsupported, and
-  retained OS errors, each with ordered evidence and a certainty of `proven`,
-  `estimated`, `heuristic`, or `unknown`.
-- `list --snapshot-json`, one `kickoutchi.snapshot/1` document holding the
-  complete in-scope native observation: every TCP state, owner identity,
-  completeness, process metadata, evidence gaps, scope limitations, and labels.
-  Snapshot mode bypasses list filters, sorting, and system-row hiding, and does
-  not serialize full command lines.
-- Endpoint labels configured with up to 256 `[[ports]]` selectors. Exact
-  addresses beat `"*"` wildcards, IPv6 scopes are matched by numeric
-  `scope_id`, and labels are validated safe Unicode of at most 128 bytes.
-  Labels appear in the CLI, wide TUI tables, search, filters, legacy JSON,
-  snapshots, watch events, and why output.
-- Shared `label:`, `address:`, `scope_id:`, and `family:` filters across list,
-  TUI search, and watch, plus the watch-only `state:` vocabulary covering every
-  native TCP state.
+- Native Linux, macOS, and Windows release gates now run formatting, strict
+  lints, tests, doctests, dual-binary optimized builds, and real-binary journeys
+  on the exact release commit before cargo-dist packaging or publication.
+- Deterministic unit, contract, and real-binary coverage for observation
+  completeness, metadata budgets, labels and filters, watch recovery and event
+  ordering, bind diagnostics, output schemas, configuration boundaries, safe
+  termination revalidation, and socket-helper cleanup across protocol, address
+  family, wildcard, dual-stack, and shared-endpoint modes.
+- `list --snapshot-json`, which emits one versioned `kickoutchi.snapshot/1`
+  document containing the bounded full-state native socket observation,
+  declared scope, completeness, owner attribution, process identities and
+  metadata, evidence gaps, and configured labels. Unlike legacy `list --json`,
+  snapshot mode bypasses list filters, sorting, and system-row hiding and does
+  not serialize complete process command lines.
+- Shared additive serialized contracts for endpoint labels, snapshots,
+  `kickoutchi.watch_event/1` NDJSON, and `kickoutchi.why/1` documents, including
+  bounded reusable endpoint, owner, process-identity, scope, evidence, gap,
+  certainty, and operational-code shapes. The existing `kickoutchi.list/1`
+  top-level array remains the compatibility interface and adds only its nullable
+  `label` field.
+- Native dependency contract tests for the approved socket lifecycle across TCP,
+  UDP, IPv4, IPv6, wildcard, reuse-address, IPv6-only, and dual-stack modes,
+  including immediate close and exact endpoint rebinding.
+- Validated endpoint labels configured through exact literal-address or wildcard
+  `[[ports]]` selectors, with exact-before-wildcard resolution and bounded safe
+  Unicode labels. Labels appear in CLI and sufficiently wide TUI tables, list,
+  snapshot, watch, and Why output, plain search, and `label:` filters.
+- Shared AND-composed plain and structured filters across list, TUI, and watch,
+  including normalized `address:`, numeric `scope_id:`, `family:ipv4|ipv6`, and
+  label matching. Watch additionally supports the complete native `state:`
+  vocabulary and uncertainty-preserving indeterminate matches.
+- A bounded `watch` command that emits deterministic baseline, bind, release,
+  replacement, and collection-gap events from full-state native socket snapshots.
+  It supports human output or versioned `kickoutchi.watch_event/1` NDJSON,
+  endpoint and full-state filters, configurable polling intervals and duration,
+  clean Ctrl-C and broken-pipe termination, and explicit recovery from transient
+  collection failures without fabricating releases.
+- Exact TCP and UDP bind diagnostics across IPv4 and IPv6, with validated scope,
+  reuse-address, IPv6-only, and dual-stack controls. Results distinguish current
+  bindability, address conflicts, permission denial, unavailable addresses,
+  unsupported native behavior, and other retained OS errors; every probe closes
+  its socket immediately and makes no promise about a later bind race.
+- A bounded `why` command that evaluates exact endpoint matrices from one native
+  snapshot and sequential bind probes. Human and versioned `kickoutchi.why/1`
+  JSON output report deterministic verdicts, certainty, labels, evidence,
+  evidence gaps, omitted counts, and aggregate exit status without collecting
+  full process command lines. Why does not request Docker enrichment or spawn a
+  Docker process.
 
 ### Changed
 
-- List, TUI, inspect, and kill now read one bounded, consistency-checked native
-  snapshot. Unprivileged `kill --port` keeps working when the endpoint has one
-  verified owner; unrelated unreadable host processes no longer turn the
-  flagship port-kill path into a root-only operation.
-- Windows tree kill freezes the committed Job Object for its final validation
-  sweep, closing the descendant-spawn window before whole-job termination. A
-  live member that cannot join the job now withholds all termination instead of
-  receiving racy individual fallback termination.
-- `list --json` documents `child_pids` as what it always was: a frozen `1.x`
-  compatibility field that is `[]` on every row and platform. The wire output is
-  unchanged.
-- Structured output states permanent platform limits rather than implying
-  machine-wide visibility. Linux excludes other network namespaces, native
-  Windows excludes the WSL network stack, macOS is process-first, watch polling
-  can miss transient activity, and a why probe cannot reserve an endpoint.
+- Documented `child_pids` in `list --json` as what it has always been: a frozen
+  `1.x` compatibility field that is `[]` on every row and every platform, with
+  no backing data. The wire output is unchanged; the field it mirrored is gone,
+  so the empty array can no longer drift from a value behind it.
+- Every lint suppression now states a reason, enforced by
+  `clippy::allow_attributes_without_reason`. Suppressions that always apply use
+  `expect`, which reports itself once it is no longer needed; `allow` is kept
+  only where a suppression is target-specific. Adopting this removed three
+  suppressions that no longer applied to the code they guarded.
+- Replaced the Python release-archive validator and its tests with a test-only
+  Rust target. CI and cargo-dist retain bounded checksum, path, archive-layout,
+  member-type, expanded-size, permission, version, dual-entrypoint, timeout, and
+  extracted-binary journey checks without requiring Python in the repository.
+- Expanded installation, update, and security documentation to distinguish
+  GitHub installers and archives, Homebrew, Scoop, Nix, Cargo Git installs, and
+  future AUR packages, including their independent trust and update boundaries.
+- Added a durable release runbook for exact-candidate qualification,
+  publication approval, package synchronization, AUR preparation, and website
+  deployment; the completed one-off feature checklist was removed.
+- Reworked collection behind the existing list, TUI, inspect, and kill surfaces
+  around one bounded, consistency-checked snapshot. Unprivileged `kill --port`
+  remains supported when the selected endpoint has one verified owner; unrelated
+  unreadable host processes no longer turn the flagship port-kill path into a
+  root-only operation, while observed target-local ambiguity still refuses. On
+  Linux, an unreadable same-inode co-holder can remain undiscovered and keep the
+  port bound after the visible genuine owner is terminated; post-kill polling
+  reports that accepted limitation.
+- Windows tree kill now freezes the committed Job Object for its final bounded
+  validation sweep through private information class 18, closing the
+  descendant-spawn window before whole-job termination. An empty disposable job
+  proves freeze/thaw support before target assignment. A live member that cannot
+  join the job now withholds all termination instead of receiving racy individual
+  fallback termination. Assignment, freeze, or final-validation failure reports
+  that strict tree closure was not established and attempts thaw when required.
+- Pinned `socket2` 0.6.5 with its empty default feature set for exact bind
+  probes. Its dependency graph, license, MSRV, unsafe call surface, binary-size
+  impact, and Linux, macOS, and Windows behavior were reviewed and accepted
+  before probe implementation.
+- Reorganized the CLI implementation into focused list, single-process kill,
+  and scoped tree/group kill modules without changing command behavior, and
+  documented the host-byte-order handling used by the Linux socket parser.
+- Froze Linux TCP timer evidence and UDP-bound semantics before full native-state
+  collection, and clarified watch interval, clock-failure, replacement, and full
+  snapshot filtering contracts.
+- Completed native full-state collection for Linux, macOS, and Windows while
+  preserving the listener/bound-only legacy and destructive projections. Unknown
+  native states retain their numeric code, and Linux snapshots retain typed TCP
+  timer evidence without treating timer movement as socket replacement.
+- Strengthened Darwin ABI validation with exact LP64 layout and offset checks,
+  made process-first enumeration loss explicit socket-set evidence, and added
+  complete raw IP Helper table fixtures for every Windows address-family and
+  protocol combination.
+- Documented the exact shipped target matrix, configuration, exit codes,
+  checksum limits, and structured-output privacy.
+- Endpoint selector matching now canonicalizes IPv4-mapped IPv6 addresses,
+  preserves numeric IPv6 scope identity, applies exact matches before wildcard
+  matches, and rejects unsafe Unicode before any terminal rendering.
+- Structured snapshots and diagnostics now state permanent platform and timing
+  limits instead of treating in-scope completeness as machine-wide visibility:
+  Linux excludes other network namespaces and can have PID/procfs ownership
+  gaps, native Windows excludes the WSL network stack, macOS is process-first,
+  watch polling can miss transient activity, and Why's temporary bind and later
+  close cannot reserve an endpoint or eliminate the post-probe race.
 
 ### Fixed
 
 - Tree and group cleanup no longer reports a member that exited under the freeze
-  as a thaw failure; only a refused `SIGCONT` leaves a process that may still be
-  stopped.
-- macOS termination distinguishes a process that exits between `SIGTERM` and the
-  guarded identity check from an unreadable or recycled PID, and resumes a
-  detected PID-reuse replacement without signalling it.
-- Inspect joins process, port, and command-line observations by PID and start
-  identity, refusing a changed port owner instead of attributing sockets to a
-  recycled PID.
-- Confirmation input applies its 128-byte limit to the entered UTF-8 payload
-  rather than counting the terminal line ending.
-- Linux treats restricted or unverifiable procfs and PID-namespace visibility as
-  partial ownership instead of a false complete empty result, and parses the
-  bounded ASCII tail of `/proc/<pid>/stat` from bytes so a non-UTF-8 process name
-  cannot abort collection.
-- Windows converts IPv6 scope IDs from network byte order, normalizes
-  IPv4-mapped endpoints, retains ownerless rows as partial evidence, and never
-  treats PID `0` as a process.
-- Docker enrichment stops retaining at the first byte past each cap, hands
-  timed-out children to capped cleanup workers that own them through confirmed
-  reap, and keeps IPv4 and IPv6 publications separate.
+  as a thaw failure. Among Kickoutchi's cleanup results, a refused `SIGCONT` is
+  the result that proves a process may still be stopped, so only refusals are
+  named; concurrent external stop signals remain outside that attribution. A
+  member the kernel reports as gone is not something the user can resume. This
+  matches the classification the
+  delivery paths and single-process termination already used, so a refusal such
+  as a root that exits mid-freeze no longer prints a cleanup error naming a PID
+  that no longer exists.
+- macOS normal termination now distinguishes a process that exits between
+  `SIGTERM` delivery and the guarded `SIGCONT` identity check from an unreadable
+  or recycled PID, avoiding a false cleanup failure without signaling a new
+  process.
+- macOS release-profile watch journeys retry only the exact partial-initial-socket
+  condition with a fixed three-attempt budget. The shared runner uses
+  noninteractive elevation for that fixture-owned journey and now fails unless
+  one attempt proves the baseline and release event contract.
+- The public `kickoutchi::run()` entrypoint now preserves an embedding process's
+  tracing subscriber, and repeated calls no longer panic during diagnostics
+  initialization.
+- Windows replacement coverage creates the replacement listener in a distinct
+  process, proving changed owner identity instead of depending on incidental
+  partial ownership from the host socket table.
+- Confirmation input now applies its 128-byte limit to the entered UTF-8 payload
+  rather than counting the terminal line ending, keeping CLI and TUI boundaries
+  consistent while still rejecting the first excess payload byte.
+- Real-binary test helpers now use bounded process and reader cleanup, own and
+  verify every member of deep process-chain fixtures, and require broken-output
+  watch tests to terminate through the closed consumer rather than duration.
+- Release workflow contracts now require pinned Actions, credential-free
+  checkout, exact-commit native gates, tag-only publication, and step-scoped
+  repository and Homebrew credentials.
+- macOS single-process termination now records the identity observed after
+  `SIGSTOP` and uses that identity for guarded rollback, so a detected PID-reuse
+  replacement is resumed without receiving the unauthorized terminating signal.
+- Tree and process-group termination now captures rollback identity immediately
+  after every successful stop and uses the same process snapshot to prove both
+  sweep convergence and final frozen-set identity.
+- Single-process confirmation content is bounded to the modal height without
+  wrapping long process or port text over the actionable prompt, input, error,
+  and cancellation lines.
+- Linux and macOS related-process diagnostics now inspect at most 64 command
+  lines and match tokens without a token index or per-token allocation. Windows
+  retains its separately bounded process-snapshot path.
+- Inspect now joins process, port, and command-line observations by PID and start
+  identity, refusing a changed port owner instead of attributing sockets or
+  metadata to a recycled PID. Human watch output now preserves IPv6 interface
+  scope and explicitly reports unavailable scope.
+- Docker enrichment stops reading each output pipe at the first byte beyond its
+  retention cap and hands each timed-out direct child to a capped cleanup worker
+  that terminates it and retains ownership through confirmed reap. An indeterminate
+  wait permanently consumes its bounded slot instead of releasing ownership,
+  preventing stuck waits from blocking the caller or accumulating unbounded work.
+- macOS tree and group rollback now resumes the post-stop process identity when
+  PID reuse is detected, while still withholding termination from identities the
+  user did not authorize.
+- Linux ownership collection now treats unreadable or unprovable procfs mount
+  visibility as partial, and exact-fit procfs executable links no longer lose
+  metadata because magic symlinks report a zero size.
+- Why output now streams every legal bounded result shape instead of rejecting a
+  valid document above 256 KiB, and its evidence order consistently keeps owner
+  and kernel facts before the exact probe and supporting timer evidence.
+- Docker enrichment no longer associates explicit IPv4 and IPv6 publications
+  across address families, and oversized Linux privilege status is detected with
+  a limit-plus-one read before any Docker command can run.
+- Real-binary contract runners now enforce process and pipe-drain deadlines.
+- Windows tree kills now reapply `--yes` warning authorization during every
+  committed containment sweep and withhold all termination when a late child
+  requires fresh review. Windows custom protected names and protected-name
+  confirmation also use allocation-free Unicode-aware case matching.
+- Linux full-state collection no longer applies the independently bounded
+  legacy-row projection limit. Linux identity data, macOS aggregate FD limits,
+  and Windows IP Helper buffer limits now retain their exact stable operational
+  error categories.
+- TUI kills invalidate an in-flight pre-kill refresh and queue exactly one fresh
+  snapshot after it drains. Overlong confirmation input now stops after the
+  bounded limit-plus-one read instead of draining an unbounded stream.
+- Optional Docker enrichment now pins the CLI to a bounded local Unix socket or
+  Windows named pipe and removes ambient host, context, and TLS selectors. A
+  remote Docker context can no longer receive local port-diagnostic queries or
+  be presented as local container ownership.
+- Linux socket collection now rejects empty, malformed, and headerless procfs
+  tables while accepting the kernel's family-specific IPv4 and IPv6 headers.
+  Ownership remains explicitly partial when a nested or unverifiable PID
+  namespace could hide an ancestor-namespace socket owner.
+- macOS process enumeration now distinguishes genuine empty results from
+  zero-plus-errno failures, reports IPv6 scope as unavailable instead of
+  retaining an unsupported interface index, and classifies bounded parent-name
+  omissions without exceeding the metadata allowance.
+- Windows socket collection now converts IPv6 scope IDs from network byte order,
+  normalizes IPv4-mapped IPv6 endpoints, and retains ownerless TCP and UDP
+  endpoints as partial rather than treating PID zero as a process. Authoritative socket rows
+  also survive Toolhelp metadata-enumeration failures through bounded direct
+  owner-identity reads, while destructive tree collection remains fail closed.
+- Linux process identity now parses the bounded ASCII tail of `/proc/<pid>/stat`
+  from bytes, so a valid non-UTF-8 `comm` cannot abort collection. Restricted or
+  incomplete procfs PID enumeration now marks global ownership partial instead
+  of producing a false complete empty owner set.
+- Destructive authority ignores non-listening TCP states, preserving existing
+  kill semantics while native snapshots retain established and transitional
+  connections.
+- CLI, config, and startup diagnostics sanitize terminal controls and bidi
+  formatting before output. Changed final protection evidence now exits as an
+  operational failure while still proving zero signal delivery.
+- TUI post-kill refresh schedules one authoritative snapshot instead of first
+  materializing and discarding a complete legacy projection.
+- macOS FD reads enforce the remaining aggregate allowance before allocation and
+  reject native returned lengths beyond their supplied buffers.
+- Docker cleanup and dual-stream draining use bounded shared deadlines; segment
+  65 rejects its row and match truncation starts only when a ninth match exists.
 
 ### Security
 
-- Docker enrichment is pinned to a bounded local Unix socket or Windows named
-  pipe, with ambient host, context, and TLS selectors removed. A remote Docker
-  context can no longer be presented as local container ownership.
-- Release jobs install an exact locked cargo-dist version, Homebrew validation
-  runs without tap credentials, and repository and tap tokens exist only on the
-  specific steps that plan or publish.
+- Release jobs install an exact locked cargo-dist version. Homebrew validation
+  runs without tap credentials; validation failures stop before formula staging,
+  and the tap token is introduced only for the final authenticated push. Release
+  planning is read-only, and explicit repository-token environment values exist
+  only on the three commands that plan or publish a release.
 - Added a private vulnerability-reporting policy and documented the sensitivity
   of command lines exposed by the legacy JSON compatibility interface.
 
@@ -780,59 +1144,114 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Windows tree-kill reports now retain normalized PID lists for Job Object
-  delivery, verified fallback termination, already-exited members, and members
-  not confirmed terminated.
+- Windows tree-kill reports now retain normalized PID lists instead of counters
+  for Job Object delivery, verified individual fallback, and already-exited
+  members. Partial-result output names every PID and counts every observed
+  process without duplicating or losing state.
 
 ### Fixed
 
-- Release publication now waits for Linux, Windows, macOS, and supply-chain
-  checks on the exact tag SHA before publishing artifacts.
-- CLI confirmations reject and drain lines beyond the 128-byte cap instead of
-  truncating them into a potentially valid destructive confirmation.
-- Config files fail closed past a 64 KiB byte cap.
-- Linux collection caches process metadata once per PID and enforces aggregate
-  PID, file-descriptor traversal, and emitted-row limits.
-- Windows parent links with equal creation timestamps remain explicitly
-  unverified; tree completion uses one shared deadline and disjoint PID outcome
-  reporting.
-- Failed Windows Job Object termination retains the complete partial-action
-  report and refreshes confirmed target ports before returning failure.
-- TUI details collection is single-flight, with one bounded latest-request slot
-  and stale result rejection.
-- Docker enrichment drains stdout and stderr concurrently, bounds retained
-  output and drain waits, and caps stuck drain workers globally.
-- CLI table columns align by terminal display width for accented and CJK names.
-- Human-facing command diagnostics sanitize bidi and zero-width controls.
-- Tree confirmation budgeting accounts for terminal word wrapping and reserves
-  enough vertical space for prompts, errors, and the cancel hint.
-- Windows tree sweeps report unexpected process-open failures accurately instead
-  of mislabeling them as permission denied.
+- Release publication now waits for Linux, Windows, and macOS tests plus the
+  supply-chain policy on the exact tag SHA. Every artifact builder explicitly
+  installs and selects Rust 1.95.0, and pull requests build/package cargo-dist
+  artifacts instead of stopping at a plan.
+- Regression coverage now exercises the production config-loading, Linux
+  collector-limit, Windows snapshot, Windows failure-reporting, Docker
+  privilege, and fully rendered modal paths instead of testing disconnected
+  helpers. Locally executable release regressions were mutation-checked by
+  restoring their prior faulty behavior and confirming the relevant test fails
+  for the intended reason; Windows-only paths are compiled here and run in CI.
+- CLI confirmations now reject and drain any line past the 128-byte cap instead
+  of truncating it into a potentially valid destructive confirmation.
+- Config files now fail closed past a 64 KiB byte cap rather than allowing a
+  large file or special device to drive unbounded reads and allocation.
+- Linux collection caches process metadata once per PID and fails closed at
+  explicit aggregate file-descriptor traversal and emitted-row limits, bounding
+  shared-socket owner fanout without collapsing ambiguous ownership.
+- Windows tree parent links with equal child and parent creation timestamps are
+  now marked unverified and refused instead of silently omitted. Completion uses
+  one shared five-second deadline and reports each PID in exactly one outcome.
+- Windows installer documentation now uses the `cargo-dist` PowerShell command
+  with process-scoped `-ExecutionPolicy Bypass`, avoiding failures on the default
+  restricted execution policy.
+- A failed Windows `TerminateJobObject` call after containment commit now
+  returns the complete partial-action report: fallback-terminated and
+  already-exited PIDs remain visible, assigned members are explicitly marked
+  unconfirmed, prior post-commit issues are preserved, and the CLI refreshes the
+  confirmed target ports before exiting with failure.
+- TUI process-details collection is now strictly single-flight. A different-row
+  request occupies one bounded latest-request slot until the active worker
+  drains, stale refresh-era results are ignored, and closing or cancelling the
+  modal drops pending work instead of accumulating background threads and
+  Docker processes.
+- Docker enrichment now drains stdout and stderr concurrently from process
+  start, retains at most 256 KiB per stream while continuing to drain overflow,
+  and keeps the existing timeout/kill/reap behavior. Valid output larger than an
+  OS pipe buffer no longer deadlocks into a false timeout, and the wait for the
+  drain itself is bounded to 250 ms, so a grandchild that inherited the pipe
+  (Docker Desktop shims, credential helpers) cannot stall the details view
+  indefinitely. Stuck drain workers remain charged against a global cap so
+  repeated inherited pipes cannot grow the process's thread count without bound.
+- CLI table columns now align by terminal display width instead of byte
+  length, so accented and CJK process names no longer shift the PROCESS and
+  STATE columns in `list` output. Uses `unicode-width`, which was already in
+  the dependency tree via ratatui.
+- Port diagnostics now replace bidirectional-override and zero-width
+  characters inside quoted command lines, matching the policy every other
+  human-facing surface already applied; a process's command line can no longer
+  visually reorder the hint text on the terminal.
+- The tree-kill confirmation modal's preview budget now measures word-wrapped
+  rows in terminal columns rather than estimating from character counts, so
+  long unbroken process names at small modal sizes can no longer push the
+  typed-word instruction, input echo, or Esc hint below the fold. The tree modal
+  also reserves additional vertical space for wrapped warnings and validation
+  errors at the minimum supported terminal size.
+- Windows tree sweeps now report an unexpected OS error while opening a
+  late-discovered child as a snapshot failure instead of mislabeling it as
+  permission denied.
+- The protected-process list size error now breaks its count into configured
+  entries and built-in defaults, so the reported total matches something the
+  user can see in their config file.
 
 ### Security
 
-- PATH-resolved Docker enrichment is disabled while Kickoutchi is elevated,
-  including Unix root/set-ID/capability contexts and elevated Windows tokens.
-- Release installer assets are downloaded and SHA-256 verified before execution,
-  and workflow tag values are passed through environment variables rather than
-  inline shell interpolation.
-- Linux `/proc` stat and status reads fail closed past their byte caps instead of
-  silently truncating identity metadata.
+- PATH-resolved Docker enrichment is now disabled while Kickoutchi is elevated,
+  preventing a user-writable executable search path from becoming privileged
+  code execution on Windows or Unix setuid/setgid/root sessions.
+- Release jobs no longer execute cargo-dist installer assets directly from the
+  network. Both v0.32.0 shell and PowerShell installers are downloaded to a
+  temporary file and verified against repository-pinned SHA-256 values on every
+  Linux, macOS, and Windows release builder before execution.
+- Release workflow scripts now receive the tag ref through environment
+  variables instead of inline `${{ }}` interpolation, closing a
+  script-injection shape that was reachable only by users who can already push
+  tags.
+- Linux `/proc` stat and status reads now fail closed past their byte caps
+  instead of silently truncating — a truncated stat line could otherwise parse
+  a prefix of the start-time identity marker as a valid but wrong value. The
+  status cap is sized so even a pathologically long `Groups:` line still fits,
+  and the `/proc` PID scan carries an explicit fail-closed cap matching the
+  macOS collector.
 
 ## [1.1.2] - 2026-07-07
 
 ### Added
 
-- Homebrew tap publishing for releases. The generated formula lands in
-  `nuggocto/homebrew-tap`, so Homebrew users can install with
-  `brew install nuggocto/tap/kickoutchi`.
-- Scoop bucket packaging for Windows. The live `nuggocto/scoop-bucket` manifest
-  auto-updates from GitHub Release assets and their `.sha256` sidecars.
+- Homebrew tap publishing for releases. `cargo-dist` now generates the formula,
+  and the release workflow publishes it to `nuggocto/homebrew-tap` so macOS and
+  Linux users can install with `brew install nuggocto/tap/kickoutchi`.
+- Scoop bucket packaging for Windows. The repository now carries a seed manifest
+  and Excavator workflow under `packaging/scoop/`, with the live bucket at
+  `nuggocto/scoop-bucket` auto-updating from GitHub Release assets and their
+  `.sha256` sidecars.
 
 ### Changed
 
-- Install documentation now lists Homebrew and Scoop as available package-manager
-  paths while keeping AUR marked as publication-paused.
+- Install documentation now lists Homebrew, Scoop, AUR, Nix, Cargo, installers,
+  and direct archives as supported release paths.
+- The release workflow now waits for Homebrew publishing before announcing a
+  release, keeps the tap push behind `HOMEBREW_TAP_TOKEN`, and skips unchanged
+  Homebrew commits on safe reruns.
 
 ## [1.1.1] - 2026-07-05
 
@@ -872,80 +1291,229 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Windows `kick inspect --pid <PID>` / `--port <PORT>` now prints the read-only
-  family view: ancestors, descendants, siblings, ports, command lines, and the
-  matching `kick kill --pid <root> --tree` hint. Windows omits the POSIX
-  process-group section, reports parent links only after creation-time sanity
-  checks, and states the native WSL2 limitation plainly.
-- Windows CLI `kick kill --port <PORT> --tree` / `--pid <PID> --tree` now
-  terminates descendant trees through Job Object containment. Normal `kick kill`
-  remains single-PID precise, `--group` stays Unix-only, and the Windows TUI
-  still does not bind or advertise `t`/`T` tree keys.
-- Windows tree termination preflights before assigning the root to a Job Object,
-  treats root assignment as the irreversible commit boundary, verifies the root
-  handle against the confirmed creation marker, then hard-terminates contained
-  members. Partial containment and not-terminated members are reported honestly.
-- Windows parent links with missing creation-time metadata now fail closed when
-  they could point into the confirmed tree, so `--tree` refuses as incomplete
-  metadata instead of silently omitting a possible descendant.
+- Windows `kickoutchi inspect --pid <PID>` / `--port <PORT>`: the read-only
+  family view is available on Windows. It shows ancestors, descendants,
+  siblings, ports, command lines, and the matching `kick kill --pid <root> --tree`
+  hint without signalling anything. Windows reports parent links only
+  after creation-time sanity checks, omits the POSIX process-group section, and
+  states the native WSL2 limitation plainly. The Windows inspect renderer reuses
+  one process snapshot for command-line lookups within a report instead of
+  rebuilding process metadata per displayed PID.
+- Windows CLI `kickoutchi kill --port <PORT> --tree` (and `--pid`, `--force`):
+  terminates the descendant tree through Job Object containment. Normal
+  `kick kill` remains single-PID precise, `--group` stays Unix-only, and the
+  Windows TUI still does not bind or advertise `t`/`T` tree keys.
+  - The Windows path preflights side-effect-free before assigning the root to a
+    Job Object, treats that root assignment as the irreversible commit boundary,
+    converges descendants under containment, then uses explicit
+    `TerminateJobObject` for contained members. The root handle is verified
+    against the user-confirmed creation marker before the Job Object commit, so
+    a recycled PID cannot retarget the kill between confirmation and execution.
+  - Windows tree termination is hard termination only. Members that cannot join
+    the job after commit fall back to verified individual `TerminateProcess`
+    handles when possible, and partial containment/not-terminated results are
+    reported honestly instead of being collapsed into success. Post-commit
+    convergence failures now keep their specific reason in the report, including
+    protected descendants, unsafe PIDs, cap overflows, incomplete metadata, and
+    snapshot failures.
+  - Windows parent links with missing creation-time metadata now fail closed when
+    they could point into the confirmed tree, so `--tree` refuses as incomplete
+    metadata instead of silently omitting a possible descendant. Post-commit
+    reporting also distinguishes already-exited pinned members and protected
+    late children already contained by the job from real survivors.
 
 ## [1.0.1] - 2026-07-04
 
 ### Fixed
 
-- macOS scoped kills now narrow process-table snapshots to the active tree or group during execution,
-  so unrelated system `EPERM` rows do not hide real target-scope safety failures while unreadable
-  in-scope members still fail closed.
-- The TUI status line now sanitizes every value it renders — the active filter text and the
-  filter-error, error, and kill-status fields — so a process name or error message carrying control
-  or escape bytes cannot redraw the terminal or fake output through the status bar.
-- The "no confirmed socket" port diagnostic now sanitizes the related process's name before printing
-  it. This closes the one hint path where a process that named itself with terminal escape sequences
-  could reach stderr unsanitized; the quoted command line in the same message was already escaped.
+- macOS scoped kills now narrow process-table snapshots to the active tree or
+  group during execution, so unrelated system `EPERM` rows do not hide real
+  target-scope safety failures while unreadable in-scope members still fail
+  closed.
+- The TUI status line now sanitizes every value it renders — the active filter
+  text and the filter-error, error, and kill-status fields — so a process name
+  or error message carrying control or escape bytes cannot redraw the terminal
+  or fake output through the status bar.
+- The "no confirmed socket" port diagnostic now sanitizes the related
+  process's name before printing it. This closes the one hint path where a
+  process that named itself with terminal escape sequences could reach stderr
+  unsanitized; the quoted command line in the same message was already
+  escaped.
 
 ## [1.0.0] - 2026-07-03
 
 ### Added
 
-- Linux and macOS `kick kill --port <PORT> --tree` / `--pid <PID> --tree` now
-  terminates the whole descendant tree rooted at the confirmed target, not just
-  one process. Normal `kick kill` is unchanged and still signals exactly one PID.
-- Linux and macOS `kick kill --port <PORT> --group` / `--pid <PID> --group` now
-  terminates every visible member of the target's POSIX process group. This is
-  the explicit tool for reparented workers, double-forked helpers, and cases
-  where tree scope would leave survivors behind.
-- Linux and macOS `kick inspect --port <PORT>` / `--pid <PID>` now prints a
-  read-only family report: target command line, visible ports, ancestor chain,
-  siblings, bounded descendant tree, process-group members, and the matching
-  `--tree` or `--group` command when useful.
-- The TUI now supports tree cleanup on Linux/macOS: `t` terminates the selected
-  process tree and `T` force-kills it. The preview runs in the background, shows
-  the bounded tree before confirmation, and execution always re-collects fresh.
+- Linux and macOS `kickoutchi kill --port <PORT> --tree` (and `--pid`,
+  `--force`) terminates the whole process tree rooted at the target, not just
+  the single port-owning process — for cleaning up dev servers, agents, and
+  runners that leave worker children behind. It is opt-in: normal `kick kill`
+  is unchanged and still signals exactly one PID.
+  - Tree kill does a fresh bounded tree count before any signal is sent, then
+    freezes before it kills: it `SIGSTOP`s the root first to prevent ordinary
+    child creation while the root remains stopped, sweeps descendants toward a
+    bounded fixed point, and re-verifies every process's identity before
+    signalling. External stop/continue actors can still race this sequence; it
+    is not an atomic kernel transaction.
+  - It signals leaves-first, root last, sending `SIGTERM` then `SIGCONT` for a
+    normal kill (or `SIGKILL` for `--force`). Any refusal after freezing —
+    identity drift, a protected descendant, an unsafe PID, or exceeding the
+    256-process cap — thaws each process it observed transition into stopped and
+    sends no termination. A process already stopped is left untouched on
+    refusal; after successful `SIGTERM`, it is continued so the pending signal
+    can execute.
+  - Interactive confirmation requires typing `tree` (or `force` for
+    `--force`); a protected root requires typing its PID or name and then the
+    tree confirmation word. `--yes` only skips the prompt for an all-clear tree,
+    cannot bypass a protected root, and is refused if the fresh execution-time
+    scan would have required warnings to be reviewed — a condition that is
+    applied once more to the final frozen member set, because a tree can grow
+    between the skip and the end of the freeze.
+  - Root protection is decided from both readers, not just the socket row: a
+    root whose port row has no readable name but whose process-table entry is
+    on the protected list still requires the protected confirmation, and
+    execution re-checks the fresh scan's root classification — a root that
+    turns out protected only at kill time (for example after an `exec` into a
+    protected name, which keeps its PID and start marker) is refused unless
+    the protected confirmation was actually completed. Both the CLI and the
+    TUI share this gate.
+  - A tree that exceeds the process cap is refused rather than partially
+    killed, so a runaway fork bomb is reported and left intact instead of half
+    signalled. The `--tree` flag exists only on Linux and macOS builds;
+    Windows has no freeze primitive, so it does not get a weaker tree kill
+    under the same name.
+  - On Linux every member is pinned with a pidfd before its first `SIGSTOP`,
+    and the same handle is used for thaw and final delivery. macOS has no
+    pidfd, so delivery is layered instead: every member is stopped and
+    identity-verified first (a stopped process cannot fork, exec, or exit on
+    its own), and the verified start marker is re-checked immediately before
+    each terminating signal, so a PID that was recycled under an external
+    `SIGKILL` is reported as exited rather than signalled.
+  - `kill --pid <PID> --tree` can start from a live parent PID even when that
+    root owns no visible port, so cases where a child owns the port but the
+    parent supervises the tree can be cleaned up from the parent. The banner
+    for such a root carries the same ownership warning as a port-owning one
+    when the process belongs to another user.
+- The TUI now has tree kill too: `t` requests tree termination of the selected
+  row's process and `T` (Shift) requests a tree force-kill, mirroring the
+  `x`/`X` convention including its Caps Lock handling. The confirmation modal
+  enumerates the tree on a background worker (the table stays responsive and
+  shows the count once the scan lands), lists the members with depth
+  indentation, shows the same warnings as the CLI banner, and requires typing
+  `tree` (or `force`); a protected root asks for its PID or name first and the
+  word second, exactly like the CLI. Execution never trusts the previewed
+  tree: it revalidates the root identity and re-runs the bounded pre-flight
+  gates against a fresh scan before the first freeze signal. The header and
+  help modal advertise the keys only on Linux/macOS builds, and the normal
+  `x`/`X` kill flow is unchanged. The modal budgets its member preview from
+  the terminal height, so the typed-word instruction, the input echo, and the
+  Esc hint stay visible even at the smallest supported size.
 
-### Safety
+- Linux and macOS `kickoutchi inspect --pid <PID>` / `--port <PORT>`: a
+  strictly read-only family view for picking the right root before a tree
+  kill. It shows the target with its command line, ports, and process group;
+  the ancestor chain nearest-first with command lines (so a supervisor like an
+  agent or package runner is identifiable); siblings; the bounded descendant
+  tree with per-member ports; and the process-group members with the ones
+  _outside_ the descendant tree called out — exactly the processes a tree kill
+  from that target would leave alive. Protected names are marked, every
+  OS-provided string is sanitized, all sections are display-capped with honest
+  "and N more" lines, and the report ends with the matching
+  `kick kill --pid <root> --tree` command. It never signals anything: killing
+  upward stays a human decision made with the family in view.
+  - `inspect --port` follows the same resolution rules as `kill --port`
+    (refuses ambiguous multi-owner ports, reports unreadable owners as a
+    permission problem), while `inspect --pid` accepts any live PID including
+    portless supervisors — and, being read-only, even PID 1.
+  - Tree snapshots now also carry the process group ID (from `stat` on Linux
+    and `proc_bsdinfo` on macOS, read in the same pass as before). Because
+    group kill derives its membership from this field, it is read as
+    fail-closed as the start marker: a live process whose group cannot be read
+    fails the scan, and the kernel's own group `0` maps to "no targetable
+    group". The read-only inspect view renders an untargetable group as
+    unknown.
+  - When the process group has members outside the descendant tree — exactly
+    the processes a tree kill would leave alive — the inspect report's footer
+    now also offers the matching `kick kill --pid <root> --group` command.
 
-- Tree/group kill use a freeze-first Unix pipeline: stop the root first, sweep to
-  a fixed point, verify every stopped member's identity, refuse uncertain scopes,
-  and thaw everything on every abort path.
-- Linux tree/group delivery opens pidfds before `SIGSTOP` and reuses them for
-  thaw and final signal delivery, keeping every member pinned from freeze to
-  finish.
-- Normal group termination queues every `SIGTERM` before any stopped member is
-  continued, so parent-like group members cannot wake up and spawn survivors
-  while other members are still frozen.
-- `--yes` is stricter for scoped kills: it can skip only all-clear prompts, never
-  protected-root confirmation, and fresh execution-time scans can still refuse if
-  the scope grew or warnings appeared after the original preview.
+- Linux and macOS `kickoutchi kill --port <PORT> --group` (and `--pid`,
+  `--force`): terminates the target's whole POSIX process group — every
+  process sharing its group ID — instead of its parent-link tree. This is the
+  honest tool for the two cases tree scope cannot cover: survivors that
+  reparented away from the tree (double-fork daemons, orphaned workers whose
+  spawner exited) and runaway spawners whose tree outgrows the 256-process
+  tree cap. `--group` conflicts with `--tree` at parse time, exists only on
+  Linux/macOS builds like `--tree`, and leaves normal `kick kill` unchanged.
+  - Same freeze-first pipeline and refusal gates as tree kill: the confirmed
+    root is `SIGSTOP`ped first, members are swept to a fixed point, every
+    frozen member's identity is re-verified while stopped, and any refusal
+    thaws members Kickoutchi observed transition into stopped. Group membership
+    is re-proven after every stop (a
+    member whose group changed under the freeze refuses the whole kill), but
+    a member whose _parent_ died mid-kill is fine — reparenting does not
+    change group membership, which is the point of the scope.
+  - Normal group termination queues `SIGTERM` to every frozen member before any
+    `SIGCONT`, so parent-like group members cannot wake up and spawn survivors
+    while other members are still only frozen.
+  - It is deliberately never implemented as `kill(-pgid, ...)`: every member
+    is enumerated, frozen, verified, and signalled individually through the
+    same delivery path as tree kill (per-member pidfds on Linux), so the
+    unsafe-PID, protected-process, and identity gates apply to every PID. If
+    Kickoutchi itself sits in the target group (a plain `sh -c` script puts
+    everything in one group), the kill refuses before anything is stopped.
+  - The group cap is 512 processes — double the tree cap, because group scope
+    is the designated tool for over-cap spawner trees — and past it the kill
+    refuses rather than executing partially.
+  - Interactive confirmation requires typing `group` (or `force` for
+    `--force`) after a banner that names the group ID and lists **every**
+    member: a process group can contain unrelated commands launched from the
+    same shell, so the full blast radius is always shown. A protected root
+    requires its PID or name first; a protected member refuses the whole group.
+    `--yes` is stricter than tree scope: it only skips the prompt for a group
+    of at most 8 members with no warnings anywhere, and both the fresh
+    execution-time scan and the final frozen member set must still pass that
+    same all-clear gate (size cap included), because a group has no structural
+    tie to the confirmed target and can grow mid-freeze.
+  - Execution revalidates the root against a fresh scan and additionally
+    requires it to still sit in the confirmed group — a root that moved
+    groups between confirmation and execution would silently retarget the
+    sweep, so it refuses instead.
 
-### Platform notes
+### Changed
 
-- Windows keeps the existing safe single-process behavior in 1.0: native IP
-  Helper listing and handle-based `TerminateProcess` delivery. `--tree`,
-  `--group`, `inspect`, and TUI `t`/`T` are intentionally Linux/macOS-only until
-  the Windows Job Object containment design receives implementation and manual
-  Windows QA.
-- Release metadata now targets `1.0.0`, including Cargo and Nix package version
-  metadata.
+- Cargo metadata now declares `rust-version = "1.95.0"`, matching the README,
+  `mise.toml`, and GitHub Actions, so crates.io consumers get the same
+  machine-readable MSRV as local and CI builds.
+- Nix release installs are prepared for reproducible builds with a committed
+  `flake.lock` instead of a floating `nixos-unstable` input.
+- AUR packaging notes now make the release order explicit: keep package
+  metadata pinned to the last published assets until the `v1.0.0` GitHub
+  Release exists, then update checksums and `.SRCINFO`; actual AUR publication
+  still waits for account creation to reopen.
+- Internal restructure, no behavior change: system/service process
+  classification now lives in a shared `SystemProcessCheck` fields struct in
+  the model, and `PortEntry::is_system_process` delegates to it. Kill-time
+  process-tree nodes reuse the exact same policy without duplicating it, and
+  the named fields keep the same-typed PID and name pairs from being silently
+  swapped at call sites.
+
+### Fixed
+
+- Portless `--pid --tree` and `--pid --group` root revalidation now refuses a
+  missing start-time marker before any freeze signal is sent, even across test
+  seams. The real Linux/macOS snapshots already fail closed, but the shared CLI
+  safety gate now enforces the same identity contract directly.
+- macOS tree/group kills and `inspect` no longer abort when `proc_listallpids`
+  exposes protected system PIDs whose BSD info is denied to the current user;
+  those restricted rows are skipped while the selected target is still
+  revalidated before signalling.
+- CLI kill success reporting no longer races process shutdown: after a
+  successful termination (single-process or tree), the post-kill port check
+  now polls for up to about one second before deciding between "confirmed
+  target ports are no longer visible" and the still-visible warning. `SIGTERM`
+  teardown is asynchronous, so the immediate re-collect could warn about a
+  still-visible port on perfectly successful kills; a port that genuinely
+  stays open is still reported honestly after the settle window.
 
 ## [0.1.2] - 2026-06-28
 
@@ -1029,7 +1597,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   an unescaped `)` inside `comm` cannot be mistaken for the field terminator.
 - The `KillTarget` construction invariants are now release assertions instead of
   debug-only ones: the target must contain at least one row, and every row's PID
-  must match the target PID. A future caller that builds a kill target from no
+  must match the target PID. Another caller that builds a kill target from no
   rows, or from rows owned by another PID, now fails fast on the termination path
   instead of carrying a degenerate, port-less, or mis-targeted target forward.
 - Linux collector owner resolution now only records owners for socket inodes
@@ -1090,9 +1658,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its ancestors, avoiding false hints for the parent PowerShell/cargo command
   that launched `kick list --port <PORT>`.
 
-- CLI `kill --yes` now prints the target banner • identity, ports, equivalent
+- CLI `kill --yes` now prints the target banner — identity, ports, equivalent
   command, and any safety warnings (system/service process, ownership by another
-  uid, partial metadata, child processes) • to stderr before signalling, instead
+  uid, partial metadata, child processes) — to stderr before signalling, instead
   of showing them only on the interactive confirmation path. `--yes` opts out of
   the prompt, not the warnings; the protected-process and unsafe-PID gates are
   unchanged, and stdout and exit codes are untouched so scripts are unaffected.
@@ -1134,7 +1702,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   target; both still refuse to send a signal.
 - Removed the stale `#[allow(dead_code)]` from `ExitReason`; every variant is
   now constructed by the CLI exit path, so the lint suppression would have
-  hidden genuinely unreachable variants in future refactors.
+  hidden genuinely unreachable variants in later refactors.
 - TUI `Esc` no longer quits when a filter is still applied after search editing
   finished: with no modal open and a non-empty filter, `Esc` now clears the
   filter and only quits on a second press once nothing is left to clear. An open
@@ -1219,7 +1787,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   refusal without sending a signal.
 - GitHub Actions CI now runs on Linux pushes and pull requests, using the pinned
   Rust toolchain to check formatting, strict Clippy, and the full test suite.
-  Release/CD automation remains deferred to the dedicated `cargo-dist` workflow.
+  Release/CD automation is handled by the dedicated `cargo-dist` workflow.
 - CLI contract integration tests now exercise script-facing `list` behavior with
   the real binary: human no-match diagnostics go to stderr, `list --json` stays
   unpolluted, and explicit no-match filters exit `3`. The helper process uses
@@ -1231,7 +1799,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   process, stale confirmed target, unsafe PID, and unknown failure. Real signal
   delivery is Linux-only until native non-Linux collectors exist.
 - Shared kill command rendering in `command.rs` shows the equivalent user-facing
-  command (`kill <PID>`, `kill -9 <PID>`, or future platform equivalents) in both
+  command (`kill <PID>`, `kill -9 <PID>`, or platform-specific equivalents) in both
   CLI and TUI confirmation flows.
 - CLI `kickoutchi kill --pid <PID>` and `kickoutchi kill --port <PORT>` now use
   the same safety rules as the TUI: PID `0`, PID `1`, and Kickoutchi's own PID
@@ -1330,7 +1898,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Shared domain model: `PortEntry` with the full
   protocol/address/port/state/process/parent/permission shape, plus the
   `Protocol`, `SocketState`, `Platform`, `PermissionStatus`, and `SortMode`
-  vocabulary shared by the CLI, TUI, and future collectors.
+  vocabulary shared by the CLI, TUI, and additional collectors.
 - `Collector` trait with a deterministic `FakeCollector` covering full
   metadata, permission-restricted partial rows, IPv6, bound UDP, and a
   default-protected process name.

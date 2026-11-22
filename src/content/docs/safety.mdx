@@ -44,13 +44,18 @@ shell command, and any warnings.
   candidates and makes you choose with `--pid` instead of guessing.
 - **A port with no readable owner is not killable** • it exits `4` (permission denied) rather than
   acting on incomplete information.
-- **Incomplete Linux ownership scans also block `kill --port`.** Even when one owner is visible,
-  Kickoutchi signals nothing if restricted process visibility could hide a co-owner of that port.
-  The refusal comes before any prompt and names the `kick kill --pid PID` command for the verified
-  owner.
-- **A batch is all or nothing before delivery.** When several targets are given, each one is
-  resolved and authorized first. One refusal stops the batch, and protected processes must be killed
-  on their own.
+- **Incomplete Linux ownership scans handle `kill --port` in three ways:**
+  - If the port has no readable owner at all, Kickoutchi refuses before any prompt and exits `4`.
+  - If two or more visible PIDs own the port, Kickoutchi refuses ambiguity and lists candidates.
+  - If the port has one verified owner and only unreadable processes elsewhere on the host prevent a
+    host-wide proof, Kickoutchi prints a note, targets that verified owner while retaining the
+    original port selector for revalidation (still refusing if a second visible owner appears), and
+    checks afterward whether the port cleared.
+- **Batch planning is all or nothing before confirmation.** When several targets are given, each one
+  is resolved and authorized first — one planning refusal stops the batch before any prompt, and
+  protected processes must be killed on their own. During delivery, each confirmed target is
+  revalidated individually against a fresh snapshot: a target that changed or failed revalidation is
+  skipped and sets the final exit code without blocking other confirmed targets.
 - **Scoped kills are bounded.** Over-cap or non-converging trees/groups refuse instead of partially
   killing a moving target.
 

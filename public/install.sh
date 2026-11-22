@@ -24,19 +24,19 @@ has_local 2>/dev/null || alias local=typeset
 set -u
 
 APP_NAME="kickoutchi"
-APP_VERSION="1.7.0"
+APP_VERSION="1.7.1"
 if [ -n "${KICKOUTCHI_DOWNLOAD_URL:-}" ]; then
     ARTIFACT_DOWNLOAD_URLS="$KICKOUTCHI_DOWNLOAD_URL"
 elif [ -n "${INSTALLER_DOWNLOAD_URL:-}" ]; then
     ARTIFACT_DOWNLOAD_URLS="$INSTALLER_DOWNLOAD_URL"
 elif [ -n "${KICKOUTCHI_INSTALLER_GHE_BASE_URL:-}" ]; then
     INSTALLER_BASE_URL="$KICKOUTCHI_INSTALLER_GHE_BASE_URL"
-    ARTIFACT_DOWNLOAD_URLS="${INSTALLER_BASE_URL}/nuggocto/kickoutchi/releases/download/v1.7.0"
+    ARTIFACT_DOWNLOAD_URLS="${INSTALLER_BASE_URL}/nuggocto/kickoutchi/releases/download/v1.7.1"
 elif [ -n "${KICKOUTCHI_INSTALLER_GITHUB_BASE_URL:-}" ]; then
     INSTALLER_BASE_URL="$KICKOUTCHI_INSTALLER_GITHUB_BASE_URL"
-    ARTIFACT_DOWNLOAD_URLS="${INSTALLER_BASE_URL}/nuggocto/kickoutchi/releases/download/v1.7.0"
+    ARTIFACT_DOWNLOAD_URLS="${INSTALLER_BASE_URL}/nuggocto/kickoutchi/releases/download/v1.7.1"
 else
-    ARTIFACT_DOWNLOAD_URLS="https://github.com/nuggocto/kickoutchi/releases/download/v1.7.0"
+    ARTIFACT_DOWNLOAD_URLS="https://github.com/nuggocto/kickoutchi/releases/download/v1.7.1"
 fi
 if [ -n "${KICKOUTCHI_PRINT_VERBOSE:-}" ]; then
     PRINT_VERBOSE="$KICKOUTCHI_PRINT_VERBOSE"
@@ -66,7 +66,7 @@ fi
 AUTH_TOKEN="${KICKOUTCHI_GITHUB_TOKEN:-}"
 
 read -r RECEIPT <<EORECEIPT
-{"install_prefix":"AXO_INSTALL_PREFIX","install_layout":"unspecified","binaries":["CARGO_DIST_BINS"],"cdylibs":["CARGO_DIST_DYLIBS"],"cstaticlibs":["CARGO_DIST_STATICLIBS"],"source":{"release_type":"github","owner":"nuggocto","name":"kickoutchi","app_name":"kickoutchi"},"version":"1.7.0","provider":{"source":"cargo-dist","version":"0.34.0"},"binary_aliases":{},"modify_path":true}
+{"install_prefix":"AXO_INSTALL_PREFIX","install_layout":"unspecified","binaries":["CARGO_DIST_BINS"],"cdylibs":["CARGO_DIST_DYLIBS"],"cstaticlibs":["CARGO_DIST_STATICLIBS"],"source":{"release_type":"github","owner":"nuggocto","name":"kickoutchi","app_name":"kickoutchi"},"version":"1.7.1","provider":{"source":"cargo-dist","version":"0.34.0"},"binary_aliases":{},"modify_path":true}
 EORECEIPT
 
 # Some Linux distributions don't set HOME
@@ -120,10 +120,10 @@ usage() {
     cat <<EOF
 kickoutchi-installer.sh
 
-The installer for kickoutchi 1.7.0
+The installer for kickoutchi 1.7.1
 
 This script detects what platform you're on and fetches an appropriate archive from
-https://github.com/nuggocto/kickoutchi/releases/download/v1.7.0
+https://github.com/nuggocto/kickoutchi/releases/download/v1.7.1
 then unpacks the binaries and installs them to
 
     \$CARGO_HOME/bin (or \$HOME/.cargo/bin)
@@ -219,6 +219,7 @@ download_binary_and_run_installer() {
     local _arch
     local _checksum_style
     local _checksum_value
+    local _updater_checksum_value=""
 
     # destructure selected archive info into locals
     case "$_artifact_name" in 
@@ -226,7 +227,7 @@ download_binary_and_run_installer() {
             _arch="aarch64-apple-darwin"
             _zip_ext=".tar.xz"
             _checksum_style="sha256"
-            _checksum_value="1a09686446b316c6460427ec01ada50f80b3265cf03202ed821f58d83ca0552f"
+            _checksum_value="1a55dd2286c6a2548f0287454cecee61d2931d546cc0d4d7b78d8e0ff53ab34f"
             _bins="kick kickoutchi"
             _bins_js_array='"kick","kickoutchi"'
             _libs=""
@@ -234,13 +235,14 @@ download_binary_and_run_installer() {
             _staticlibs=""
             _staticlibs_js_array=""
             _updater_name="kickoutchi-aarch64-apple-darwin-update"
+            _updater_checksum_value="7705981dcc8b8c5508d1fa68126c37360b4c9450a449ee242e4a1fdfbf4c345a"
             _updater_bin="kickoutchi-aarch64-apple-darwin-update"
             ;;
         "kickoutchi-aarch64-unknown-linux-gnu.tar.xz")
             _arch="aarch64-unknown-linux-gnu"
             _zip_ext=".tar.xz"
             _checksum_style="sha256"
-            _checksum_value="ec096482f48aab088a7f809a638d15d6aea21e82195cd7a77980b0adeb32f575"
+            _checksum_value="e8b228edd0bc1ee14a20da773236f47179a4119a00385254fd6e3ce3e11ba55d"
             _bins="kick kickoutchi"
             _bins_js_array='"kick","kickoutchi"'
             _libs=""
@@ -248,13 +250,14 @@ download_binary_and_run_installer() {
             _staticlibs=""
             _staticlibs_js_array=""
             _updater_name="kickoutchi-aarch64-unknown-linux-gnu-update"
+            _updater_checksum_value="70239f64917f28f8597b0a0ba7c0ec9ff2527608fa721cefd4e511014dcab20b"
             _updater_bin="kickoutchi-aarch64-unknown-linux-gnu-update"
             ;;
         "kickoutchi-x86_64-apple-darwin.tar.xz")
             _arch="x86_64-apple-darwin"
             _zip_ext=".tar.xz"
             _checksum_style="sha256"
-            _checksum_value="f0ce39786c44d6a349604afed7d58ac6675b2ac29975851cdf25204349bda4c1"
+            _checksum_value="e5b9af7308ee8dbb8168c11b1f89999d3b89cb7834b6bced4c066c4fcc7d9349"
             _bins="kick kickoutchi"
             _bins_js_array='"kick","kickoutchi"'
             _libs=""
@@ -262,13 +265,14 @@ download_binary_and_run_installer() {
             _staticlibs=""
             _staticlibs_js_array=""
             _updater_name="kickoutchi-x86_64-apple-darwin-update"
+            _updater_checksum_value="0061c7a38e97ed0f4e8c5fb295a0a4f638fd4592b5ec3e87cc7f193993508f17"
             _updater_bin="kickoutchi-x86_64-apple-darwin-update"
             ;;
         "kickoutchi-x86_64-pc-windows-msvc.zip")
             _arch="x86_64-pc-windows-msvc"
             _zip_ext=".zip"
             _checksum_style="sha256"
-            _checksum_value="a75cc847fa00e546c4019eb462cb6437c96cc40cfb45ecd086cb370e8de1ac01"
+            _checksum_value="8539184c256244d25ac376ad0e7f82b387fbd6f423f652bd6a8fe55b73ef30ae"
             _bins="kick.exe kickoutchi.exe"
             _bins_js_array='"kick.exe","kickoutchi.exe"'
             _libs=""
@@ -276,13 +280,14 @@ download_binary_and_run_installer() {
             _staticlibs=""
             _staticlibs_js_array=""
             _updater_name="kickoutchi-x86_64-pc-windows-msvc-update"
+            _updater_checksum_value="37573baba94d73f43ca2ccd9b3cd02b4edc2eb536337a7770815a5dfb4bd5361"
             _updater_bin="kickoutchi-x86_64-pc-windows-msvc-update"
             ;;
         "kickoutchi-x86_64-unknown-linux-gnu.tar.xz")
             _arch="x86_64-unknown-linux-gnu"
             _zip_ext=".tar.xz"
             _checksum_style="sha256"
-            _checksum_value="575210d806c91347a76171ec678e80a4ac48db72bd78da040a768b1dc224d8c1"
+            _checksum_value="b893ab31b8cd20590e76de02bfef1f24b64b98a7483bec3dc1c360d3ea455f66"
             _bins="kick kickoutchi"
             _bins_js_array='"kick","kickoutchi"'
             _libs=""
@@ -290,6 +295,7 @@ download_binary_and_run_installer() {
             _staticlibs=""
             _staticlibs_js_array=""
             _updater_name="kickoutchi-x86_64-unknown-linux-gnu-update"
+            _updater_checksum_value="10cd386fe7f29b5b02353c50024ab7f3944ebe19201202a93aaad016515ba09b"
             _updater_bin="kickoutchi-x86_64-unknown-linux-gnu-update"
             ;;
         *)
@@ -329,11 +335,10 @@ download_binary_and_run_installer() {
             continue
         fi
 
-        if [ -n "${_checksum_style:-}" ]; then
-            verify_checksum "$_file" "$_checksum_style" "$_checksum_value"
-        else
-            say "no checksums to verify" 1>&2
+        if [ "${_checksum_style:-}" != "sha256" ] || [ -z "${_checksum_value:-}" ]; then
+            checksum_err "missing embedded SHA-256 checksum for $_artifact_name"
         fi
+        verify_checksum "$_file" "$_checksum_style" "$_checksum_value" "$_artifact_name"
 
         # ...and then the updater, if it exists
         if [ -n "$_updater_name" ] && [ "$INSTALL_UPDATER" = "1" ]; then
@@ -346,6 +351,11 @@ download_binary_and_run_installer() {
                 say "failed to download $_updater_url"
                 continue
             fi
+
+            if [ -z "${_updater_checksum_value:-}" ]; then
+                checksum_err "missing embedded SHA-256 checksum for $_updater_name"
+            fi
+            verify_checksum "$_updater_file" "sha256" "$_updater_checksum_value" "$_updater_name"
 
             # Add the updater to the list of binaries to install
             _bins="$_bins $APP_NAME-update"
@@ -1697,80 +1707,54 @@ downloader() {
     fi
 }
 
+checksum_err() {
+    printf 'ERROR: %s\n' "$1" >&2
+    exit 1
+}
+
+verify_release_sha256() {
+    local _file="$1"
+    local _artifact="$2"
+    local _digest
+
+    if check_cmd sha256sum; then
+        _digest="$(sha256sum < "$_file" | awk '{print $1}')" || checksum_err "failed to compute SHA-256 for $_artifact using sha256sum"
+    elif check_cmd shasum; then
+        _digest="$(shasum -a 256 < "$_file" | awk '{print $1}')" || checksum_err "failed to compute SHA-256 for $_artifact using shasum"
+    elif check_cmd openssl; then
+        _digest="$(openssl dgst -sha256 < "$_file" | awk '{print $NF}')" || checksum_err "failed to compute SHA-256 for $_artifact using openssl"
+    else
+        checksum_err "cannot verify SHA-256 checksum for $_artifact: install sha256sum, shasum, or openssl"
+    fi
+
+    RETVAL="$(printf '%s' "$_digest" | tr 'A-F' 'a-f')"
+}
+
 verify_checksum() {
     local _file="$1"
     local _checksum_style="$2"
     local _checksum_value="$3"
+    local _artifact="${4:-$_file}"
+    local _expected_checksum
     local _calculated_checksum
 
-    if [ -z "$_checksum_value" ]; then
-        return 0
+    if [ "$_checksum_style" != "sha256" ]; then
+        checksum_err "unsupported checksum style for $_artifact: $_checksum_style"
     fi
-    case "$_checksum_style" in
-        sha256)
-            if ! check_cmd sha256sum; then
-                say "skipping sha256 checksum verification (it requires the 'sha256sum' command)"
-                return 0
-            fi
-            _calculated_checksum="$(sha256sum -b "$_file" | awk '{printf $1}')"
-            ;;
-        sha512)
-            if ! check_cmd sha512sum; then
-                say "skipping sha512 checksum verification (it requires the 'sha512sum' command)"
-                return 0
-            fi
-            _calculated_checksum="$(sha512sum -b "$_file" | awk '{printf $1}')"
-            ;;
-        sha3-256)
-            if ! check_cmd openssl; then
-                say "skipping sha3-256 checksum verification (it requires the 'openssl' command)"
-                return 0
-            fi
-            _calculated_checksum="$(openssl dgst -sha3-256 "$_file" | awk '{printf $NF}')"
-            ;;
-        sha3-512)
-            if ! check_cmd openssl; then
-                say "skipping sha3-512 checksum verification (it requires the 'openssl' command)"
-                return 0
-            fi
-            _calculated_checksum="$(openssl dgst -sha3-512 "$_file" | awk '{printf $NF}')"
-            ;;
-        blake2s)
-            if ! check_cmd b2sum; then
-                say "skipping blake2s checksum verification (it requires the 'b2sum' command)"
-                return 0
-            fi
-            # Test if we have official b2sum with blake2s support
-            local _well_known_blake2s_checksum="93314a61f470985a40f8da62df10ba0546dc5216e1d45847bf1dbaa42a0e97af"
-            local _test_blake2s
-            _test_blake2s="$(printf "can do blake2s" | b2sum -a blake2s | awk '{printf $1}')" || _test_blake2s=""
-
-            if [ "X$_test_blake2s" = "X$_well_known_blake2s_checksum" ]; then
-                _calculated_checksum="$(b2sum -a blake2s "$_file" | awk '{printf $1}')" || _calculated_checksum=""
-            else
-                say "skipping blake2s checksum verification (installed b2sum doesn't support blake2s)"
-                return 0
-            fi
-            ;;
-        blake2b)
-            if ! check_cmd b2sum; then
-                say "skipping blake2b checksum verification (it requires the 'b2sum' command)"
-                return 0
-            fi
-            _calculated_checksum="$(b2sum "$_file" | awk '{printf $1}')"
-            ;;
-        false)
+    _expected_checksum="$(printf '%s' "$_checksum_value" | tr 'A-F' 'a-f')"
+    case "$_expected_checksum" in
+        [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f])
             ;;
         *)
-            say "skipping unknown checksum style: $_checksum_style"
-            return 0
+            checksum_err "invalid embedded SHA-256 checksum for $_artifact"
             ;;
     esac
 
-    if [ "$_calculated_checksum" != "$_checksum_value" ]; then
-        err "checksum mismatch
-            want: $_checksum_value
-            got:  $_calculated_checksum"
+    verify_release_sha256 "$_file" "$_artifact"
+    _calculated_checksum="$RETVAL"
+
+    if [ "$_calculated_checksum" != "$_expected_checksum" ]; then
+        checksum_err "SHA-256 mismatch for $_artifact (expected $_expected_checksum, got $_calculated_checksum)"
     fi
 }
 

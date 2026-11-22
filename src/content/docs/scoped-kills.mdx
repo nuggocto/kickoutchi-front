@@ -90,7 +90,8 @@ equivalent:
 - Terminate contained members with `TerminateJobObject`. Windows tree termination is hard
   termination only.
 - Report delivered, already-exited, unconfirmed, and not-terminated PIDs honestly instead of
-  collapsing them into success, and attempt thaw when a post-commit step fails.
+  collapsing them into success, and withhold `TerminateJobObject` when a post-commit containment
+  check fails.
 
 ## Process-group kill
 
