@@ -22,7 +22,7 @@ const styleFor = (category: string) =>
 
 <Layout
   title="Changelog"
-  description="Release notes for Kickoutchi • what changed in each version."
+  description="Release notes for Kickoutchi: what changed in each version."
 >
   <section class="mx-auto max-w-3xl px-4 pt-14 pb-8">
     <p class="eyebrow">Changelog</p>
@@ -38,7 +38,7 @@ const styleFor = (category: string) =>
       {
         releases.map((release) => (
           <article
-            id={`v${release.version}`}
+            id={release.unreleased ? "unreleased" : `v${release.version}`}
             class="pocket-panel min-w-0 scroll-mt-24 p-6"
           >
             <header class="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-dashed border-border-strong pb-4">

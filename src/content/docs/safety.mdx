@@ -12,134 +12,133 @@ related:
 
 import Callout from "../../components/Callout.astro";
 
-A port can change owners between inspection and termination. Kickoutchi resolves and checks the
-target again before signaling it. This page documents those checks and their limits.
+A port can change owners between the moment you look and the moment you kill. Kickoutchi resolves
+and checks the target again before signalling it. This page lists those checks and their limits.
 
 ## Confirmations
 
-Nothing is terminated without a confirmation step, and the prompt scales with the risk:
+Nothing is terminated without a confirmation, and what you type grows with the risk:
 
-- **Normal kill** • type `y`.
-- **Force kill** • type the word `force` (unless you set `confirm_force_kill = false`).
-- **Tree kill** • type `tree` for normal scoped termination, or `force` for force tree kill.
-- **Group kill** • type `group` for normal scoped termination, or `force` for force group kill.
-- **Protected process** • type the **PID** or the **process name**. The name is offered only when
-  it can be typed as displayed; an empty answer never confirms.
+- Normal kill: type `y`.
+- Force kill: type `force`, unless you set `confirm_force_kill = false`.
+- Tree kill: type `tree`, or `force` for a force tree kill.
+- Group kill: type `group`, or `force` for a force group kill.
+- Protected process: type its PID or its process name. The name is offered only when it can be
+  typed exactly as shown, and an empty answer never confirms.
 
-Before any prompt, Kickoutchi prints the target's identity, the affected ports, the equivalent
-shell command, and any warnings.
+Before any prompt, Kickoutchi prints the target, the affected ports, the equivalent shell command,
+and any warnings.
 
 <Callout type="safety" title="--yes skips the question, not the safety">
-  `--yes` skips the **normal** prompt for a target you trust. It still prints the banner and all
-  warnings, and it can never bypass protected-process confirmation. For tree/group kills, the fresh
-  execution-time scan must still be all-clear; if the scope changed into something that needs
-  review, Kickoutchi refuses and signals nothing.
+  `--yes` skips the normal prompt for a target you trust. It still prints the banner and every
+  warning, and it can never skip protected-process confirmation. For tree and group kills, the fresh
+  scan at execution time must still be all-clear; if the scope changed into something that needs
+  your review, Kickoutchi refuses and signals nothing.
 </Callout>
 
-## Hard guardrails
+## Hard limits
 
-- **PID 0, PID 1, Kickoutchi's own PID, and Windows PID 4 are blocked** outright • they can't be
-  targeted at all.
-- **`kill --port` refuses ambiguous ports.** If two PIDs own the same port, Kickoutchi lists the
-  candidates and makes you choose with `--pid` instead of guessing.
-- **A port with no readable owner is not killable** • it exits `4` (permission denied) rather than
-  acting on incomplete information.
-- **Incomplete Linux ownership scans handle `kill --port` in three ways:**
-  - If the port has no readable owner at all, Kickoutchi refuses before any prompt and exits `4`.
-  - If two or more visible PIDs own the port, Kickoutchi refuses ambiguity and lists candidates.
-  - If the port has one verified owner and only unreadable processes elsewhere on the host prevent a
-    host-wide proof, Kickoutchi prints a note, targets that verified owner while retaining the
-    original port selector for revalidation (still refusing if a second visible owner appears), and
-    checks afterward whether the port cleared.
-- **Batch planning is all or nothing before confirmation.** When several targets are given, each one
-  is resolved and authorized first — one planning refusal stops the batch before any prompt, and
-  protected processes must be killed on their own. During delivery, each confirmed target is
-  revalidated individually against a fresh snapshot: a target that changed or failed revalidation is
-  skipped and sets the final exit code without blocking other confirmed targets.
-- **Scoped kills are bounded.** Over-cap or non-converging trees/groups refuse instead of partially
-  killing a moving target.
+- PID 0, PID 1, Kickoutchi's own PID, and the Windows System process (PID 4) can't be targeted at
+  all.
+- `kill --port` refuses a port two PIDs share. It lists the candidates and makes you pick one with
+  `--pid`.
+- A port with no readable owner can't be killed. Kickoutchi exits `4` (permission denied) rather
+  than act on incomplete information.
+- On Linux, when Kickoutchi can't read every process on the host, `kill --port` behaves like this:
+  - If the port has no readable owner, it refuses before any prompt and exits `4`.
+  - If two or more visible PIDs own the port, it refuses and lists them.
+  - If the port has exactly one verified owner and only unrelated processes are unreadable, it
+    prints a note and targets that owner. Before sending, it checks the port again and refuses if a
+    second visible owner appeared. Afterwards it checks whether the port cleared.
+- With several targets, Kickoutchi resolves and authorizes every one before asking anything. A
+  single refusal stops the whole batch before the prompt, and protected processes must be killed on
+  their own. After you confirm, it re-checks each target against a fresh snapshot. A target that
+  changed is skipped and sets the exit code, without blocking the others.
+- Tree and group kills have size limits. A tree or group over the limit, or one that keeps changing,
+  is refused rather than partly killed.
 
 ## Protected processes
 
-Some processes are load-bearing: init, your database, Docker, core OS services. These are
-marked **protected** and require typing the PID or name to confirm • force or `--yes` can't shortcut
-it. The built-in list includes Docker owners such as `dockerd`, `docker-proxy`, and
-`com.docker.backend`, and it is [extensible via config](/docs/config#protected-processes).
+Some processes hold everything else up: init, your database, Docker, core OS services. These are
+protected. Killing one means typing its PID or name, and neither `--force` nor `--yes` can shortcut
+that. The built-in list includes Docker processes such as `dockerd`, `docker-proxy`, and
+`com.docker.backend`, and you can [add your own names](/docs/config#protected-processes).
 
-On Linux, process names truncated by the kernel midway through a Unicode character use the same
-bounded decoding for listing, protection matching, and final validation. A truncated character
-alone no longer blocks termination; ownership and process identity checks still apply.
+On Linux, the kernel can cut a process name in the middle of a Unicode character. Kickoutchi decodes
+that cut name the same way when listing, matching protection, and running the final check, so a
+truncated character alone doesn't block a kill; the ownership and identity checks still apply.
 
-On macOS, a configured name also matches the executable basename exactly. Tree and group kills
-and `inspect` apply that rule to the root and every descendant, through planning and the final
+On macOS, a configured name also matches the executable's file name exactly. Tree and group kills
+and `inspect` apply that rule to the root and every descendant, from planning through the final
 check before any signal.
 
-Human-facing output also sanitizes OS-provided names, paths, and status text before rendering them,
-including control bytes, ANSI escapes, bidi controls, and zero-width display controls.
+Everything shown to a person is sanitized first. Names, paths, and status text from the OS lose
+control bytes, ANSI escapes, bidi controls, and zero-width characters before they reach your
+terminal.
 
 ## The target can't wander off
 
-This is the important one. After you confirm, Kickoutchi **re-validates the target right before it
-signals**:
+This is the important one. After you confirm, Kickoutchi checks the target again right before it
+signals:
 
-- It re-collects ports and checks the confirmed target still matches.
-- If the port's owner changed, it aborts • **no termination is sent**.
-- If the owner became unreadable, it aborts as ownership-unavailable (exit `4`).
-- If the target became protected in the meantime, it aborts (exit `6`).
+- It collects ports again and checks the confirmed target still matches.
+- If the port's owner changed, it stops, and nothing is sent.
+- If the owner became unreadable, it stops with "ownership unavailable" (exit `4`).
+- If the target became protected in the meantime, it stops (exit `6`).
 
-For normal process scope, only the **confirmed PID** is ever signalled. For tree/group scope, only
-the explicitly confirmed scope is signalled, after a fresh scan and verification.
+A normal kill only ever signals the PID you confirmed. A tree or group kill only signals the scope
+you confirmed, after a fresh scan and verification.
 
-## Scoped-kill safety on Linux/macOS
+## Tree and group kills on Linux and macOS
 
-Tree and group kill are ogre-sized controls: broader than one PID, so they use a stricter pipeline:
+Tree and group kills are ogre-sized: they reach past one PID, so they go through stricter steps:
 
-- They are opt-in: `--tree`, `--group`, or TUI `t`/`T` for tree scope.
-- They count before signalling; cap refusals happen with zero side effects.
-- They freeze the root first, then sweep members to a fixed point.
-- They verify every stopped member's identity where PID reuse is impossible, and pin that post-stop
-  identity for rollback, so a recycled PID is resumed rather than signalled.
-- They thaw everything on any refusal, permission problem, identity drift, protected descendant, or
-  partial metadata, and a cleanup error names only processes whose `SIGCONT` was refused.
-- Group termination queues every `SIGTERM` before any `SIGCONT`, so parent-like members cannot wake
-  up early and spawn survivors.
+- You opt in with `--tree`, `--group`, or the TUI's `t` / `T` for a tree.
+- Kickoutchi counts members before signalling anything, so a refusal over the limit has no side
+  effects.
+- It freezes the root first, then sweeps the members until the set stops changing.
+- It checks each member's identity once it's stopped, when its PID can't be recycled, and keeps that
+  identity for rollback, so a recycled PID gets resumed, never signalled.
+- It thaws everything on any refusal, permission problem, identity change, protected descendant, or
+  incomplete metadata. A cleanup error names only the processes whose `SIGCONT` was refused.
+- A group kill queues every `SIGTERM` before any `SIGCONT`, so a parent-like member can't wake up
+  early and start survivors.
 
-Read the full flow in [Scoped kills](/docs/scoped-kills).
+[Scoped kills](/docs/scoped-kills) walks through the full flow.
 
-## Scoped-kill safety on Windows
+## Tree kills on Windows
 
-Windows tree kill uses Job Object containment rather than a freeze-first signal pipeline:
+Windows tree kills contain the tree in a Job Object instead of freezing it first:
 
-- It preflights the confirmed root and observed tree before any Job Object assignment.
-- It refuses before commit for unsafe PIDs, protected descendants, incomplete metadata, identity
-  drift, or an over-cap tree.
-- It treats assigning the root to the Job Object as the irreversible commit boundary. Children
-  that members start after that join the job automatically.
-- It re-proves the final job membership, identities, and names, and reapplies `--yes` warning
-  authorization, before terminating the job.
-- It withholds all termination when a live member cannot join the job, rather than terminating that
-  process individually and reopening the containment gap.
-- It terminates contained members with hard termination and reports delivered, already-exited,
-  unconfirmed, and not-terminated members separately.
-- It fails closed when missing creation-time metadata could hide a descendant inside the confirmed
-  tree.
+- Kickoutchi checks the confirmed root and the tree it saw before assigning anything to the Job
+  Object.
+- It refuses before that point for unsafe PIDs, protected descendants, incomplete metadata, identity
+  changes, or a tree over the limit.
+- Assigning the root to the Job Object is the point of no return. Any child a member starts after
+  that joins the job automatically.
+- Before terminating the job, it proves the final membership, identities, and names again, and
+  re-applies the warning check for `--yes`.
+- If a live member can't join the job, it terminates nothing, rather than kill that process on its
+  own and leave a gap in the containment.
+- It terminates the contained members outright and reports delivered, already exited, unconfirmed,
+  and not terminated members separately.
+- It refuses when missing creation-time data could hide a descendant inside the confirmed tree.
 
-## Platform specifics
+## Platform details
 
 In a nested Linux PID namespace, a process outside the namespace may still hold the same socket.
-Kickoutchi marks that ownership evidence as partial and refuses termination when the required
-ownership checks cannot be completed, even if one owner is visible.
+Kickoutchi marks that ownership as partial and refuses to kill when it can't complete the required
+ownership checks, even if one owner is visible.
 
-| Platform    | How termination stays honest                                                                                                                          |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Linux**   | Uses `pidfd` on kernel 5.3+ for delivery. Tree/group kill opens pidfds before `SIGSTOP`, then reuses them for thaw/final signals.                     |
-| **macOS**   | No pidfd, so tree/group kill uses stop-verify: once a process is stopped, its verified PID cannot be recycled before the signal lands.                |
-| **Windows** | Uses process handles for precise single-PID termination and Job Objects for CLI tree kill. `inspect` is available; `--group` and TUI `t`/`T` are not. |
+| Platform | How termination stays honest                                                                                                                          |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Linux    | Delivers through `pidfd` (kernel 5.3+). Tree and group kills open pidfds before `SIGSTOP`, then reuse them to thaw and for the final signals.         |
+| macOS    | No pidfd, so tree and group kills stop, then verify: once a process is stopped, its verified PID can't be recycled before the signal lands.           |
+| Windows  | Process handles for exact single-PID termination, and Job Objects for CLI tree kills. `inspect` works; `--group` and the TUI's `t` / `T` don't exist. |
 
 ## After the kick
 
-After a successful termination, Kickoutchi performs a best-effort re-collection and reports whether
-the confirmed ports disappeared.
+After a termination, Kickoutchi collects ports once more and reports whether the confirmed ports
+disappeared.
 
-See the [exit codes](/docs/commands#exit-codes) for how each of these outcomes is reported to
-scripts.
+The [exit codes](/docs/commands#exit-codes) show how each of these outcomes reaches a script.

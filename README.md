@@ -1,11 +1,11 @@
 # kickoutchi.com
 
-The public website for [Kickoutchi](https://github.com/nuggocto/kickoutchi) • a TUI and CLI port
-janitor that shows what owns your local ports, inspects process families, and helps you terminate
-stale dev servers safely ;D
+The public website for [Kickoutchi](https://github.com/nuggocto/kickoutchi), a TUI and CLI port
+janitor that shows what owns your local ports, inspects process families, and stops stale dev
+servers without hitting the wrong process ;D
 
-Built with **Astro v7**, **Tailwind CSS v4**, MDX content collections, and a light
-"swamp motel" theme. Static-first, deployed to **Cloudflare Pages**.
+Built with Astro 7, Tailwind CSS 4, and MDX content collections in a dark theme.
+It's a static site deployed to Cloudflare Pages.
 
 ## Develop
 
@@ -31,8 +31,8 @@ pnpm dev          # http://localhost:4321
 ```text
 public/              # favicons, OG image, robots.txt, _headers, install.sh, manifest
 src/
-  assets/logo/       # logo + mark source images (Astro-optimised)
-  components/         # UI components (Header, VacancyBoard, Terminal, CommandBlock…)
+  assets/logo/       # logo + mark source images (Astro-optimized)
+  components/         # UI components (Header, SquatterScene, Terminal, CommandBlock…)
   content/docs/       # docs as MD/MDX (content collection)
   data/               # typed, Zod-validated site data (install, links, nav…)
   layouts/            # Layout.astro, DocsLayout.astro
@@ -46,8 +46,8 @@ astro.config.mjs
 
 ## Content accuracy
 
-Docs are grounded in the real `kickoutchi` source (CLI parser, TUI keys, scoped kill behavior,
-config, exit codes) • not invented. The bundled `src/data/CHANGELOG.md` drives `/changelog`.
+The docs follow the real `kickoutchi` source (CLI parser, TUI keys, scoped kill behavior, config,
+exit codes); nothing is invented. `/changelog` renders the bundled `src/data/CHANGELOG.md`.
 
 ## Releasing a new kickoutchi version
 
@@ -68,8 +68,10 @@ config, exit codes) • not invented. The bundled `src/data/CHANGELOG.md` drives
 
 ## Deploy (Cloudflare Pages)
 
-- **Build command:** `pnpm build`
-- **Output directory:** `dist`
-- **Production branch:** `shrek`
+| Setting           | Value        |
+| ----------------- | ------------ |
+| Build command     | `pnpm build` |
+| Output directory  | `dist`       |
+| Production branch | `shrek`      |
 
-Static output, no adapter needed. Pull requests get preview deployments.
+The output is static, so no adapter is needed. Pull requests get preview deployments.

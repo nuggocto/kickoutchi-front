@@ -99,7 +99,7 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
   },
   {
     id: "aur-bin",
-    name: "AUR • kickoutchi-bin",
+    name: "AUR (kickoutchi-bin)",
     status: "available",
     platforms: ["linux"],
     group: "package",
@@ -111,10 +111,10 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     id: "homebrew",
     name: "Homebrew",
     status: "available",
-    platforms: ["macos"],
+    platforms: ["macos", "linux"],
     group: "package",
     summary:
-      "Install from the Homebrew tap • one formula, both binaries, and brew upgrade keeps them current.",
+      "Install from the Homebrew tap. One formula installs both binaries, and brew upgrade keeps them current.",
     commands: [{ code: "brew install nuggocto/tap/kickoutchi", lang: "sh" }],
     note: "The formula is generated and pushed to the tap automatically on every release.",
   },
@@ -124,7 +124,8 @@ export const INSTALL_METHODS: InstallMethod[] = z.array(installMethodSchema).par
     status: "available",
     platforms: ["windows"],
     group: "package",
-    summary: "Install from the Scoop bucket • both binaries, and scoop update keeps them current.",
+    summary:
+      "Install from the Scoop bucket. Installs both binaries, and scoop update keeps them current.",
     commands: [
       {
         code: "scoop bucket add nuggocto https://github.com/nuggocto/scoop-bucket",

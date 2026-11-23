@@ -14,13 +14,13 @@ import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 import Terminal from "../../components/Terminal.astro";
 
-`why` combines one process snapshot with a short-lived bind probe. `watch` compares successive
-native snapshots. Neither command sends signals.
+`why` takes one snapshot and then tries a quick bind. `watch` compares snapshots over time. Neither
+sends signals.
 
-## `why` • the real reason a bind fails
+## `why`: the real reason a bind fails
 
-`Address already in use` is a symptom with at least four different causes. `why` separates them by
-taking one snapshot, then **attempting the exact bind** and closing it immediately.
+`Address already in use` has at least four different causes. `why` tells them apart by taking one
+snapshot, then trying the exact bind and releasing it at once.
 
 <Terminal
   title="kick why 3000"
@@ -42,15 +42,15 @@ taking one snapshot, then **attempting the exact bind** and closing it immediate
   ]}
 />
 
-Note the two rows. `127.0.0.1:3000` is taken; `[::1]:3000` is free. A tool that reports "port 3000
-is busy" hides exactly that distinction. The default output is one line per endpoint; `--verbose`
-adds the probe result, evidence, and gaps behind each verdict, and `--json` emits the same facts as
-one `kickoutchi.why/1` document.
+Look at the two rows: `127.0.0.1:3000` is taken and `[::1]:3000` is free. A tool that just says
+"port 3000 is busy" hides that. By default you get one line per endpoint. `--verbose` adds the probe
+result, evidence, and gaps behind each verdict, and `--json` prints the same facts as one
+`kickoutchi.why/1` document.
 
 ### Which endpoints get probed
 
-The default query is **TCP on `127.0.0.1`, then `::1`** • the two addresses a local dev server
-usually means. Widen it explicitly:
+By default `why` probes TCP on `127.0.0.1`, then `::1`, the two addresses a local dev server
+usually means. Widen it with flags:
 
 <CommandBlock
   code={
@@ -59,53 +59,53 @@ usually means. Widen it explicitly:
   label="why examples"
 />
 
-- `--tcp` / `--udp` / `--all-protocols` • protocol selection. TCP is ordered before UDP.
-- `--address ADDR` • one literal local IP. No `%zone` syntax • use `--scope-id` instead.
-- `--all-addresses` • `127.0.0.1`, `0.0.0.0`, `::1`, then `::`. It does **not** enumerate your
+- `--tcp`, `--udp`, and `--all-protocols` pick the protocols. TCP comes before UDP.
+- `--address ADDR` probes one literal local IP. `%zone` syntax isn't accepted; use `--scope-id`.
+- `--all-addresses` probes `127.0.0.1`, `0.0.0.0`, `::1`, then `::`. It doesn't list your
   interfaces.
-- `--scope-id ID` • a nonzero IPv6 interface index; requires one explicit IPv6 `--address`.
-- `--ipv6-only` / `--dual-stack` • mutually exclusive, and valid only when every address is IPv6.
+- `--scope-id ID` takes a nonzero IPv6 interface index and needs one explicit IPv6 `--address`.
+- `--ipv6-only` and `--dual-stack` can't be combined, and work only when every address is IPv6.
   With neither, you get the OS default.
-- `--reuse-address` • probe with address reuse enabled.
+- `--reuse-address` probes with address reuse turned on.
 
-The matrix is protocol-major and capped at **eight endpoints**.
+`why` goes protocol by protocol and probes at most eight endpoints.
 
 ### Verdicts and certainty
 
-Every endpoint gets a verdict and a `certainty` that belongs to _that specific claim_:
+Every endpoint gets a verdict and a `certainty` that applies to that claim alone:
 
-| Certainty   | Means                                                          |
-| ----------- | -------------------------------------------------------------- |
-| `proven`    | Directly observed • a probe result or a verified owner.        |
-| `estimated` | Derived from a bounded calculation, such as a Linux TCP timer. |
-| `heuristic` | Inferred from a pattern rather than a fact.                    |
-| `unknown`   | Not established • usually a scope or permission limit.         |
+| Certainty   | Means                                                     |
+| ----------- | --------------------------------------------------------- |
+| `proven`    | Seen directly: a probe result or a verified owner.        |
+| `estimated` | Calculated, for example from a Linux TCP timer.           |
+| `heuristic` | Inferred from a pattern rather than a fact.               |
+| `unknown`   | Not established, usually because of scope or permissions. |
 
-Verdicts distinguish bindable, occupied, permission denied, address unavailable, unsupported
-behaviour, and other retained OS errors. Each one carries ordered `evidence` lines and, where
+The verdicts tell apart bindable, in use, permission denied, address unavailable, unsupported, and
+other OS errors. Each one carries ordered `evidence` lines and, where
 something couldn't be established, `gap` lines naming what's missing.
 
-An occupied endpoint is `owned` when a verified process holds it. It is `owner_hidden` when the
-holder can't be seen, typically another user's daemon that your account can't read. On Linux the
+An endpoint in use is `owned` when a verified process holds it, and `owner_hidden` when the holder
+can't be seen, typically another user's daemon your account can't read. On Linux the
 evidence then names the UID that created the socket, for example `uid 970 created the socket`.
 `kernel_state_observed` is reserved for sockets no process holds after every process was read,
 and for TCP states such as `TIME_WAIT`.
 
 <Callout type="warning" title="A successful probe is not a reservation">
-  `verdict=bindable_now` means the exact bind succeeded **and was immediately closed**. It is a fact
-  about one instant. Another process can take the endpoint a millisecond later, and `why` makes no
-  claim otherwise.
+  `verdict=bindable_now` means the exact bind worked and was released at once. It's a fact about one
+  instant. Another process can take the endpoint a millisecond later, and `why` doesn't claim
+  otherwise.
 </Callout>
 
 ### Exit codes
 
-`why` uses the shared [exit-code contract](/docs/commands#exit-codes) with one extra rule: for a
-multi-endpoint query, the aggregate is the worst result present. Precedence is `1`, then `4`, then
-`3`, and `0` only when **every** endpoint proved bindable.
+`why` uses the shared [exit codes](/docs/commands#exit-codes), with one extra rule: when it probes
+several endpoints, the exit code is the worst result, in the order `1`, `4`, `3`. It's `0` only when
+every endpoint proved bindable.
 
-## `watch` • ports changing hands
+## `watch`: ports changing hands
 
-`watch` polls full-state snapshots and emits an event whenever something changes.
+`watch` takes snapshots on an interval and prints an event whenever something changes.
 
 <Terminal
   title="kick watch --tcp --port 3000"
@@ -139,9 +139,9 @@ multi-endpoint query, the aggregate is the worst result present. Precedence is `
 | `replacement`    | The same endpoint is now held by a different owner identity.          |
 | `collection_gap` | A poll failed. The last valid snapshot is kept rather than discarded. |
 
-`replacement` exists because a PID alone isn't identity. Kickoutchi compares PID **plus** a
-start marker, so a recycled PID on the same port is reported as a replacement instead of silently
-looking like nothing happened.
+`replacement` exists because a PID alone doesn't identify a process. Kickoutchi compares the PID
+and its start time, so a recycled PID on the same port shows up as a replacement instead of looking
+like nothing happened.
 
 ### Timing
 
@@ -152,22 +152,22 @@ looking like nothing happened.
 
 <Callout type="note" title="Polling, not a kernel event feed">
   A socket that opens and closes between two polls is never seen, several changes can collapse into
-  one net difference, and the observation times bracket a **collection attempt** rather than the
-  exact kernel event. Tighten `--interval` to narrow the window; you can't close it.
+  one net difference, and the times bracket a collection attempt, not the exact moment of the
+  change. A shorter `--interval` narrows that window but can't close it.
 </Callout>
 
 ### Failure and recovery
 
-Collection can fail transiently. `watch` is explicit about it rather than fabricating events:
+A collection can fail now and then. `watch` says so instead of inventing events:
 
-- A failed **initial** collection emits nothing and exits `1`.
-- After a valid baseline, a failed poll emits `collection_gap`, **keeps the last valid snapshot**,
-  and retries. Recovery compares against that retained snapshot, so a transient failure can't
-  manufacture a wave of false `release` events.
-- The **third consecutive** failure flushes its gap and exits `1`.
-- Collection gaps bypass endpoint filters • you always learn that you stopped seeing.
+- If the first collection fails, it prints nothing and exits `1`.
+- After a good baseline, a failed poll prints `collection_gap`, keeps the last good snapshot, and
+  retries. It compares the next snapshot against that one, so a passing failure can't turn into a
+  wave of false `release` events.
+- The third failure in a row prints its gap and exits `1`.
+- Collection gaps ignore your filters, so you always learn when watch stopped seeing.
 
-Ctrl-C, duration expiry, and a closed stdout consumer (`kick watch --json | head`) all exit
+Ctrl-C, the end of `--duration`, and a closed stdout (`kick watch --json | head`) all exit
 successfully.
 
 ### Filtering
@@ -183,14 +183,13 @@ field covering every native TCP state:
   label="state: values"
 />
 
-When a filter depends on a fact Kickoutchi couldn't read • an owner PID, a process name • the event
-is emitted with `filter=indeterminate` rather than being dropped. A definite non-match is still
-suppressed. You are told when a filter _might_ have hidden something.
+When a filter depends on something Kickoutchi couldn't read, such as an owner PID or a process
+name, watch prints the event with `filter=indeterminate` instead of dropping it. A definite
+non-match is still hidden. That way you know when a filter might have hidden something.
 
-That makes a narrow filter noisy on an unprivileged desktop: following one PID can also print every
-socket whose owner you can't read. Add `--matched-only` to keep only definite matches. The trade-off
-is explicit: a match behind a permission boundary is then not reported. Collection gaps are always
-emitted.
+On a normal desktop this makes a narrow filter noisy: following one PID can also print every socket
+whose owner you can't read. Add `--matched-only` to keep only definite matches, at the cost of
+missing a match behind a permission boundary. Collection gaps always print.
 
 <CommandBlock code={"kick watch --filter pid:18422 --matched-only"} label="definite matches only" />
 

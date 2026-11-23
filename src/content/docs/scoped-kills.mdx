@@ -13,21 +13,21 @@ related:
 import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 
-Most port janitors kill one PID. That is still Kickoutchi's default. Scoped kill is the explicit
-path for the cases where one PID is not the whole mess: dev servers with workers, package runners,
-agent shells, file watchers, and process groups that leave orphans behind.
+Most port janitors kill one PID, and that's still Kickoutchi's default. Scoped kills are for when
+one PID isn't the whole mess: dev servers with workers, package runners, agent shells, file
+watchers, and process groups that leave orphans behind.
 
 <Callout type="safety" title="Default kill is unchanged">
   `kick kill --port 3000` and `kick kill --pid 18422` still target exactly one confirmed PID. You
-  only get broader scope when you ask for `--tree`, Linux/macOS `--group`, or the Linux/macOS TUI
-  `t`/`T` tree action.
+  only get a wider scope when you ask for it: `--tree`, `--group` (Linux and macOS), or the TUI's
+  `t` / `T` keys (Linux and macOS).
 </Callout>
 
 ## Inspect first
 
-`inspect` is read-only. It never signals anything. Use it when you need to see whether the port
-owner is the real root, whether a parent is supervising it, and on Linux/macOS whether
-process-group members sit outside the descendant tree.
+`inspect` is read-only; it never signals anything. Use it to see whether the port's owner is the
+real root, whether a parent supervises it, and, on Linux and macOS, whether members of its process
+group sit outside its tree.
 
 <CommandBlock
   code={"kick inspect --port 3000\nkick inspect --pid 18422"}
@@ -46,8 +46,8 @@ The report shows:
 
 ## Tree kill
 
-Tree kill targets the confirmed root and its descendants. It is the right tool when a stale dev
-server owns the port and has workers underneath it.
+A tree kill targets the confirmed root and its descendants. Reach for it when a stale dev server
+owns the port and has workers underneath it.
 
 <CommandBlock
   code={
@@ -56,48 +56,46 @@ server owns the port and has workers underneath it.
   label="tree scope"
 />
 
-Interactive tree kill requires typing `tree` for normal termination or `force` for force kill. A
-protected root still requires the PID/name confirmation first. A protected descendant refuses the
-whole tree.
+An interactive tree kill asks you to type `tree`, or `force` for a force kill. A protected root
+still needs its PID or name typed first. A protected descendant refuses the whole tree.
 
-On Linux and macOS, the execution path is freeze-first:
+On Linux and macOS, Kickoutchi freezes the tree before it signals anything:
 
 - Re-check the confirmed root right before acting.
-- Count the tree before any signal; over the cap refuses with zero side effects.
+- Count the tree before any signal; a tree over the limit is refused with no side effects.
 - `SIGSTOP` the root first, then sweep descendants to a fixed point.
 - Verify each stopped member's identity before delivering a terminating signal.
 - Send `SIGTERM`, then `SIGCONT`, leaves first and root last. `--force` sends `SIGKILL` instead.
 - If anything becomes uncertain before delivery, resume only processes Kickoutchi stopped and
   send no termination. Processes that were already stopped stay stopped on abort.
 
-A cleanup error after a thaw names only processes whose `SIGCONT` was **refused** • those are the
-ones that may still be stopped. A member that exited under the freeze cannot be resumed, so it is
-not reported as a thaw failure.
+A cleanup error after a thaw names only the processes whose `SIGCONT` was refused, since those may
+still be stopped. A member that exited while frozen can't be resumed, so it isn't reported as a
+thaw failure.
 
-On Windows, tree kill uses Job Object containment instead of pretending there is a `SIGSTOP`
-equivalent:
+Windows has no `SIGSTOP`, so a tree kill there contains the tree in a Job Object instead:
 
 - Re-check the confirmed root and tree before the Job Object commit.
-- Refuse before commit for unsafe PIDs, protected descendants, incomplete metadata, identity drift,
-  or an over-cap tree.
-- Assign the root to a Job Object as the irreversible commit boundary, then converge descendants
-  into the same containment. Children that members start after that join the job automatically.
-- Re-prove the final job membership, identities, and names, and reapply `--yes` warning
-  authorization, before termination. A late child that needs fresh review, or a tree that keeps
+- Refuse before commit for unsafe PIDs, protected descendants, incomplete metadata, identity
+  changes, or a tree over the limit.
+- Assign the root to a Job Object. That's the point of no return. Then bring the descendants into
+  the same job. Children that members start after that join the job automatically.
+- Prove the final job membership, identities, and names again, and re-apply the warning check for
+  `--yes`, before termination. A late child that needs fresh review, or a tree that keeps
   changing during this check, withholds the whole termination.
-- Withhold all termination if a live member cannot join the job. Terminating it individually would
-  reopen the containment gap, so nothing is signalled instead.
+- Terminate nothing if a live member can't join the job. Killing that process on its own would
+  leave a gap in the containment, so nothing is signalled.
 - Terminate contained members with `TerminateJobObject`. Windows tree termination is hard
   termination only.
-- Report delivered, already-exited, unconfirmed, and not-terminated PIDs honestly instead of
-  collapsing them into success, and withhold `TerminateJobObject` when a post-commit containment
-  check fails.
+- Report delivered, already exited, unconfirmed, and not terminated PIDs separately instead of
+  calling them all a success, and skip `TerminateJobObject` when a containment check after commit
+  fails.
 
 ## Process-group kill
 
-Group kill targets every visible process sharing the target's POSIX process group. It is Linux/macOS
-CLI-only and exists for cases a descendant tree cannot cover: double-forked helpers, reparented
-workers, or runaway trees where group membership is the more honest blast radius.
+A group kill targets every visible process in the target's POSIX process group. It's CLI-only, on
+Linux and macOS, and covers what a descendant tree can't: double-forked helpers, reparented workers,
+or runaway trees where the process group is the truer boundary.
 
 <CommandBlock
   code={
@@ -106,19 +104,20 @@ workers, or runaway trees where group membership is the more honest blast radius
   label="group scope"
 />
 
-Group scope is stronger than tree scope:
+A group kill reaches wider than a tree kill, so it asks more of you:
 
 - It conflicts with `--tree`.
 - It lists every visible member before confirmation.
 - It warns that process groups can include unrelated commands from the same shell.
-- It requires typing `group` or `force` unless `--yes` passes the strict all-clear group gate.
-- During normal termination, every `SIGTERM` is queued before any stopped member is continued, so a
-  parent-like member cannot wake up and spawn survivors while siblings are still frozen.
+- It asks you to type `group` or `force`, unless you pass `--yes` and the group clears the stricter
+  all-clear check.
+- In a normal termination, every `SIGTERM` is queued before any stopped member resumes, so a
+  parent-like member can't wake up and start survivors while its siblings are still frozen.
 
 ## TUI support
 
-The TUI exposes tree scope on Linux/macOS. Windows supports CLI `--tree`, but the Windows TUI still
-omits these keys:
+On Linux and macOS the TUI offers tree kills. Windows has CLI `--tree`, but its TUI leaves out the
+tree keys:
 
 | Key | Action                               |
 | --- | ------------------------------------ |
@@ -127,17 +126,16 @@ omits these keys:
 | `t` | Terminate the selected process tree  |
 | `T` | Force-kill the selected process tree |
 
-Tree preview runs on a background worker so the table stays responsive. The preview is informational:
-execution re-collects the tree fresh, re-checks the root, and refuses if the fresh tree no longer
-passes the same gates.
+The tree preview loads in the background, so the table stays responsive. The preview is for your
+eyes only. When you confirm, Kickoutchi collects the tree again, re-checks the root, and refuses if
+the fresh tree no longer passes the same checks.
 
 ## Windows specifics
 
-Windows supports read-only `inspect` and CLI `kill --tree`. It keeps normal `kick kill` precise to
-one confirmed PID, and it keeps `--group` unavailable because Windows has no POSIX process-group
-analog.
+Windows has read-only `inspect` and CLI `kill --tree`. A normal `kick kill` still targets exactly
+one confirmed PID, and `--group` doesn't exist, because Windows has no POSIX process groups.
 
-Windows parent links are accepted only after creation-time sanity checks. If metadata is missing and
-could hide a descendant inside the confirmed tree, `--tree` fails closed as incomplete metadata
-instead of silently omitting that process. Native Windows collection also cannot see individual Linux
+Kickoutchi trusts a Windows parent link only after checking process creation times. If missing data
+could hide a descendant inside the confirmed tree, `--tree` refuses with an incomplete-metadata error
+instead of quietly leaving that process out. Native Windows collection also cannot see individual Linux
 processes inside WSL2; use the Linux build inside WSL2 for those trees.

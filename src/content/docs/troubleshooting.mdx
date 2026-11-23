@@ -17,24 +17,23 @@ permissions, or a safety check refusing an uncertain target.
 
 ## A port shows in another tool but not in Kickoutchi
 
-`list` and the TUI show **listening TCP** sockets and **bound UDP** sockets • the socket states that
-occupy a local port. Established and transitional connections are deliberately not in that view, so
-a port you see in a connection-oriented tool may not be a listener. Kickoutchi also uses
-native collectors rather than parsing `ss`, `netstat`, or `lsof`, so output can differ from those
-tools by design.
+`list` and the TUI show listening TCP and bound UDP sockets, the states that hold a local port.
+They leave out established and in-between connections on purpose, so a port another tool shows may
+not be a listener. Kickoutchi also reads the OS directly instead of parsing `ss`, `netstat`, or
+`lsof`, so its output can differ from theirs.
 
-The full native state _is_ collected • it just isn't in the legacy view.
+Kickoutchi does collect every socket state; the table just doesn't show them all.
 [`kick list --snapshot-json`](/docs/structured-output) and
-[`kick watch`](/docs/watch-and-why) both retain every native TCP state, including `established`,
-`time_wait`, and the transitional ones.
+[`kick watch`](/docs/watch-and-why) both keep every TCP state, including `established`,
+`time_wait`, and the in-between ones.
 
 ## Process metadata is missing (shows `-`)
 
-The socket is visible but its owner or some process metadata wasn't readable • usually because the
-process belongs to another user. `kick list` explains every `-` row in notes on stderr: a socket
-that belongs to another user (named by account on Linux, such as `root (uid 0)`), a socket whose
-owner wasn't attributed, or a socket no readable process holds, which is normal for kernel-held
-sockets. Re-run with higher privileges to fill in the owners. JSON keeps the row, with `null`
+The socket is visible, but Kickoutchi couldn't read its owner or some of the owner's details,
+usually because the process belongs to another user. `kick list` explains every `-` row in notes on
+stderr: a socket that belongs to another user (named by account on Linux, such as `root (uid 0)`), a
+socket whose owner wasn't attributed, or a socket no readable process holds, which is normal for
+kernel-held sockets. Run again with `sudo` to fill in the owners. JSON keeps the row, with `null`
 fields and `"permission": "partial"`.
 
 ## `kill --port` prints a note about unreadable processes
@@ -47,8 +46,8 @@ port whose owner itself can't be read is still refused, with the reason.
 
 ## Permission denied when killing
 
-You don't have the rights to signal that process (exit `4`). On Linux/macOS, try `sudo`; on Windows,
-use an **elevated terminal**. If a `--port` target has no readable owning PID, Kickoutchi reports
+You don't have the rights to signal that process (exit `4`). On Linux and macOS, try `sudo`; on
+Windows, use an elevated terminal. If a `--port` target has no readable owning PID, Kickoutchi reports
 permission denied rather than guessing, and says why, for example that the socket belongs to
 another user.
 
@@ -69,9 +68,9 @@ also stops the process's children, so check them first with `kick inspect --pid 
 
 ## A batch kill sent nothing
 
-When several targets are given, every one is resolved and authorized before any signal. If a single
-target can't be resolved, is protected, or can't be proven to own its port, the whole batch is
-refused and each refusal is listed. Fix or drop those targets and rerun. Kill protected processes
+With several targets, Kickoutchi resolves and authorizes every one before sending any signal. If a
+single target is unresolved, protected, or can't be shown to own its port, it refuses the whole
+batch and lists each refusal. Fix or drop those targets and rerun. Kill protected processes
 on their own so they can be confirmed by PID or name.
 
 ## A process "runs an executable that was deleted or replaced"
@@ -84,122 +83,130 @@ exited and left it orphaned.
 
 ## A protected process asks for stronger confirmation
 
-That's protection working. Type the **PID** or the **process name** to confirm. If a process is
-protected that you'd rather treat normally, adjust your
-[`protected_processes`](/docs/config#protected-processes) • but the built-in safety names are there
-for good reasons.
+That's protection working. Type the PID or the process name to confirm. You can add names with
+[`protected_processes`](/docs/config#protected-processes), but you can't remove the built-in ones,
+and they're there for good reasons.
 
 ## `kill --port` says the target is ambiguous
 
-Two or more PIDs own that port, so Kickoutchi refuses to guess. It prints the candidates; re-run
-with `--pid` and the one you mean.
+Two or more PIDs own that port, so Kickoutchi won't guess. It prints the candidates; run again with
+`--pid` and the one you mean.
 
 ## `why` says the port is free, but my server still can't bind
 
-Three usual causes, and `why` distinguishes them if you read the per-endpoint rows:
+There are three usual causes, and the per-endpoint rows tell you which:
 
-- **Different address.** `why 3000` defaults to `127.0.0.1` and `::1`. Your server may be binding
-  `0.0.0.0` or a LAN address. Re-run with `--all-addresses` or an explicit `--address`.
-- **Different protocol.** The default is TCP. Add `--udp` or `--all-protocols`.
-- **A race.** A successful probe binds and immediately closes. It proves the endpoint was free at
-  that instant; it does not reserve it. Something else can take it a millisecond later.
+- A different address. `why 3000` checks `127.0.0.1` and `::1` by default, but your server may bind
+  `0.0.0.0` or a LAN address. Run again with `--all-addresses` or an explicit `--address`.
+- A different protocol. The default is TCP; add `--udp` or `--all-protocols`.
+- A race. A successful probe binds and releases at once. It proves the endpoint was free at that
+  instant but doesn't reserve it, and something else can take it a millisecond later.
 
 ## `why` says `owner_hidden`
 
-The endpoint is occupied, and a process probably holds it, but your account can't see which one,
-typically because it belongs to another user. On Linux the evidence names the UID that created the
-socket. Rerun with `sudo` to identify the owner.
+The endpoint is in use and a process probably holds it, but your account can't see which one,
+usually because it belongs to another user. On Linux the evidence names the UID that created the
+socket. Run again with `sudo` to find the owner.
 
 ## `why` exits `4` for a low port
 
-Ports below 1024 usually need elevation to bind, so the probe is refused before it can learn
-anything. `permission_denied` is reported honestly rather than being turned into "free" or "busy" •
-current bindability is genuinely unknown. Re-run with elevation if you need a real answer.
+Binding a port below 1024 usually needs elevation, so the OS refuses the probe before it learns
+anything. Kickoutchi reports `permission_denied` rather than guessing "free" or "busy", because it
+really doesn't know. Run it elevated if you need an answer.
 
 ## `watch` printed `collection_gap`
 
-A poll failed. Kickoutchi keeps the last valid snapshot rather than discarding it, so the failure
-can't manufacture a wave of false `release` events, and it retries. If three consecutive polls fail,
-`watch` flushes the third gap, prints why it stopped on stderr, and exits `1`. Gaps ignore your endpoint filters on purpose • you
-always find out that you stopped seeing.
+A poll failed. Kickoutchi keeps the last good snapshot and retries, so the failure can't turn into a
+wave of false `release` events. If three polls in a row fail, `watch` prints the third gap, explains
+on stderr why it stopped, and exits `1`. Gaps ignore your filters on purpose, so you always find out
+when watch stopped seeing.
 
 ## `watch` shows `filter=indeterminate`
 
-Your filter needed a fact Kickoutchi couldn't read • usually an owner PID or a process name behind
-a permission boundary. Rather than silently dropping the event, it's emitted and marked
-indeterminate, so you know a filter _might_ have hidden something. Definite non-matches are still
-suppressed. If you only care about definite matches, for example while following one PID, add
-`--matched-only` to drop the indeterminate events.
+Your filter needed something Kickoutchi couldn't read, usually an owner PID or a process name behind
+a permission boundary. Instead of dropping the event, watch prints it marked indeterminate, so you
+know a filter might have hidden something. Definite non-matches are still hidden. If you only care
+about definite matches, for example while following one PID, add `--matched-only` to drop the
+indeterminate events.
 
 ## `watch` missed a port that definitely opened
 
-`watch` polls; it is not a kernel event feed. A socket that opens and closes between two polls is
-never observed, and several changes can collapse into one net difference. Lower `--interval` (down
-to `100ms`) to narrow the window • you cannot close it.
+`watch` polls; it doesn't receive kernel events. A socket that opens and closes between two polls is
+never seen, and several changes can collapse into one net difference. A lower `--interval` (down to
+`100ms`) narrows that window but can't close it.
 
 ## My label isn't showing up
 
 - The CLI and TUI only show a `LABEL` column when at least one label is configured. The TUI also
   needs a wide enough terminal. Structured output always carries the label.
-- Selectors are **exact**: `protocol`, `address`, and `port` all have to match, and TCP and UDP are
-  separate. Use `address = "*"` for a protocol-and-port wildcard.
+- Selectors are exact: `protocol`, `address`, and `port` must all match, and TCP and UDP are
+  separate. Use `address = "*"` to match any address for a protocol and port.
 - An exact selector always wins over a wildcard for the same endpoint.
-- Hostnames, CIDR ranges, interface names, and `%zone` syntax are rejected • use `scope_id` for an
+- Hostnames, CIDR ranges, interface names, and `%zone` syntax are rejected; use `scope_id` for an
   IPv6 scope.
 
 See [Endpoint labels](/docs/config#endpoint-labels) for the validation rules.
 
 ## Linux: kernel too old for pidfd termination
 
-Listing ports works on older kernels, but safe `pidfd`-based termination needs **Linux 5.3+**. On a
-newer kernel, the signal is tied to a process handle so a recycled PID can't be hit by mistake.
+Listing ports works on older kernels, but stopping a process needs Linux 5.3 or newer, because
+Kickoutchi sends the signal through a `pidfd`. That ties the signal to the exact process, so a
+recycled PID can't be hit by mistake.
 
 ## Windows: some processes need an elevated terminal
 
-Higher-privilege processes can hide metadata or reject termination from a normal shell. Re-open your
-terminal **as administrator** and try again.
+Higher-privilege processes can hide their details or refuse termination from a normal shell. Open
+your terminal as administrator and try again.
 
 ## macOS: process identity changed before termination
 
 macOS has no pidfd, so Kickoutchi re-checks the process identity right before signalling. If the PID
-was reused by a different process between your confirmation and the signal, it refuses and sends
-nothing. Re-list and try again.
+now belongs to a different process than the one you confirmed, it refuses and sends nothing. List
+again and retry.
 
 ## Linux/macOS tree/group kill says it thawed everything
 
-That means the scoped kill hit a safety refusal after freezing began: permission denied, identity
-drift, protected descendant, incomplete metadata, cap overflow, or a sweep that would not converge.
-Kickoutchi sent `SIGCONT` to every member it had stopped and sent no termination signal.
+The tree or group kill hit a safety refusal after it started freezing: permission denied, a changed
+identity, a protected descendant, incomplete metadata, a scope over the limit, or a membership that
+kept changing. Kickoutchi sent `SIGCONT` to every member it had stopped and sent no termination
+signal.
 
-If a cleanup error names PIDs, those are processes whose `SIGCONT` was **refused** and which may
-still be stopped • check them. A member that exited during the freeze is not reported, because
-there is nothing left to resume.
+If a cleanup error names PIDs, their `SIGCONT` was refused and they may still be stopped, so check
+them. A member that exited while frozen isn't listed, because there's nothing left to resume.
 
 ## Windows tree kill reports incomplete metadata or partial containment
 
-Windows tree kill has no `SIGSTOP` equivalent. It preflights before the Job Object commit and fails
-closed if missing creation-time metadata could hide a descendant. After commit it re-proves the
-final job membership before termination, and if a live member can't join the job it withholds
-termination entirely rather than terminating that one process individually • doing so would let
-that process's children escape the job. A tree that keeps starting processes during the final
-check is refused; run the kill again. Delivered, already-exited, unconfirmed, and not-terminated
-PIDs are all reported separately instead of collapsing into "success".
+Windows has no `SIGSTOP`, so a tree kill checks everything before it assigns the tree to a Job
+Object, and refuses if missing creation-time data could hide a descendant. After that it proves the
+final job membership again before terminating. If a live member can't join the job, it terminates
+nothing, because killing that one process on its own would let its children escape the job. A tree
+that keeps starting processes during the final check is refused; run the kill again. Delivered,
+already exited, unconfirmed, and not terminated PIDs are reported separately instead of all as
+"success".
 
 ## Windows: `--group` or TUI `t`/`T` is unavailable
 
-That's expected. Windows supports read-only `inspect` and CLI `--tree`, but `--group` is a POSIX
-process-group feature and the Windows TUI still omits the tree keys. If `inspect` or CLI `--tree` is
+That's expected. Windows has read-only `inspect` and CLI `--tree`, but `--group` needs POSIX
+process groups, and the Windows TUI leaves out the tree keys. If `inspect` or CLI `--tree` is
 unknown on Windows, run `kick --version` and update to the latest release.
+
+## The TUI kept running after I closed its terminal
+
+Kickoutchi 1.3.1 through 1.7.1 could survive a closed terminal window, spin a CPU core, and ignore
+`SIGTERM`, which made a reboot wait for systemd's stop timeout before it sent `SIGKILL`. The next
+release fixes this. Until you upgrade, quit with `q` before closing the window, or end a leftover
+with `pkill -KILL -x kick` (or `kickoutchi`). A TUI started with `SIGHUP` ignored, for example
+under `nohup`, can still linger after its window closes.
 
 ## The TUI says "Terminal too small"
 
-The table needs at least **80×20**. Resize the window (or zoom out your terminal font) and the UI
+The table needs at least 80×20. Make the window bigger (or zoom out your terminal font) and the UI
 comes back.
 
 ## `kickoutchi-update` is missing
 
-The updater shipped with the installer starting at a certain release. If you installed earlier,
-rerun the latest installer once to opt in • future upgrades can then use `kickoutchi-update`.
+The installer has shipped the updater since 0.1.2. If you installed earlier, or another way, run
+the latest installer once; after that, `kickoutchi-update` handles upgrades.
 
 <Callout type="note" title="Still stuck?">
   If something here doesn't match what you're seeing, it's worth a bug report. Include your OS, the

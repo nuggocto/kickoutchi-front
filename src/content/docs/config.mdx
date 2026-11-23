@@ -1,6 +1,6 @@
 ---
 title: Configuration
-description: The optional config file • location, precedence, every key, endpoint labels, and the protected-process list.
+description: The optional config file, where it lives, how settings layer, every key, endpoint labels, and the protected-process list.
 section: Reference
 order: 2
 mode: general
@@ -13,14 +13,14 @@ related:
 import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 
-Kickoutchi runs fine with **no config file at all**. When you want different defaults, drop a small
-TOML file in place. The repository also ships a
-[copy-ready example](https://github.com/nuggocto/kickoutchi/blob/shrek/config.example.toml) covering
-settings and exact-before-wildcard endpoint labels.
+Kickoutchi runs fine with no config file at all. When you want different defaults, add a small
+TOML file. The repository ships a
+[ready-to-copy example](https://github.com/nuggocto/kickoutchi/blob/shrek/config.example.toml) that
+covers the settings and shows an exact label winning over a wildcard one.
 
 ## Location
 
-By default Kickoutchi looks in your platform config directory:
+By default Kickoutchi looks in your platform's config directory:
 
 | Platform | Path                                                                                   |
 | -------- | -------------------------------------------------------------------------------------- |
@@ -28,45 +28,48 @@ By default Kickoutchi looks in your platform config directory:
 | macOS    | `~/Library/Application Support/kickoutchi/config.toml`                                 |
 | Windows  | `%APPDATA%\kickoutchi\config.toml`                                                     |
 
-Point at a different file with the global `--config FILE` flag.
+The global `--config FILE` flag points at another file. In the release after 1.7.1, on Linux and
+macOS, a config file must be a regular file, a symlink to one, or `/dev/null` (an empty config). A
+FIFO, or process substitution such as `--config <(...)`, then fails at once; in 1.7.1 a FIFO with no
+writer stalls startup.
 
 ### Under sudo
 
 `sudo` normally resets `HOME`, which would point Kickoutchi at root's config. On Linux and macOS,
-`sudo kick` instead looks in the home directory of the user who ran sudo first, so your protected
-names, labels, and confirmation settings still apply. Root reads that file only if it is a regular
-file owned by that user; anything else there, such as a symlink to another user's file, is an error.
-If that user has no file, root's default path is read as before. Your own `XDG_CONFIG_HOME` is not
-visible under sudo, so pass a file kept there with `--config`.
+`sudo kick` looks in the home directory of the user who ran sudo first, so your protected names,
+labels, and confirmation settings still apply. Root reads that file only if it's a regular file
+owned by that user; anything else there, such as a symlink to another user's file, is an error. If
+that user has no file, root's default path is used. Your own `XDG_CONFIG_HOME` isn't visible under
+sudo, so pass a file kept there with `--config`.
 
-<Callout type="note" title="Missing files, two different rules">
-  No file at the **default** path just means "use the built-in defaults" • that's the normal
-  first-run state. But a file you **explicitly** pass with `--config` must exist; a missing one is
-  an error, because you asked for that exact file.
+<Callout type="note" title="Missing files: two rules">
+  No file at the default path just means "use the built-in defaults", which is the normal first-run
+  state. A file you name with `--config` must exist, though. If it's missing, that's an error,
+  because you asked for that exact file.
 </Callout>
 
 ## Precedence
 
-Settings have layers, like any self-respecting swamp: **built-in defaults** at the bottom, then the **config
-file**, then **CLI flags** on top. Most keys override their default; `protected_processes` extends
+Settings come in layers, like any self-respecting swamp: built-in defaults at the bottom, then the
+config file, then CLI flags on top. Most keys replace their default; `protected_processes` adds to
 it (see below).
 
 ## Keys
 
 Every key is optional. Anything you leave out keeps its default.
 
-| Key                        | Type             | Default       | Meaning                                                                                                            |
-| -------------------------- | ---------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `refresh_interval_seconds` | integer (1–3600) | `3`           | How often the TUI re-collects ports.                                                                               |
-| `default_sort`             | string           | `"port"`      | Default sort for the CLI and TUI. One of `port`, `pid`, `protocol`, `process`, `parent`, `scope`.                  |
-| `hide_system_processes`    | boolean          | `false`       | Hide conservative system/service rows from the default view.                                                       |
-| `confirm_force_kill`       | boolean          | `true`        | Require the typed `force` confirmation for force kills (when `--yes` is absent).                                   |
-| `check_for_updates`        | boolean          | _(ignored)_   | Deprecated compatibility key. `true` and `false` are accepted, but Kickoutchi performs no automatic release check. |
-| `protected_processes`      | string[]         | _(see below)_ | Extra process names that require stronger confirmation. **Added** to the built-in list.                            |
-| `[[ports]]`                | table array      | _(none)_      | Endpoint labels. Up to 256 selectors • see [below](#endpoint-labels).                                              |
+| Key                        | Type             | Default       | Meaning                                                                                                  |
+| -------------------------- | ---------------- | ------------- | -------------------------------------------------------------------------------------------------------- |
+| `refresh_interval_seconds` | integer (1–3600) | `3`           | How often the TUI collects ports again.                                                                  |
+| `default_sort`             | string           | `"port"`      | Default sort for the CLI and TUI. One of `port`, `pid`, `protocol`, `process`, `parent`, `scope`.        |
+| `hide_system_processes`    | boolean          | `false`       | Hide rows Kickoutchi classifies, conservatively, as system or service processes.                         |
+| `confirm_force_kill`       | boolean          | `true`        | Make force kills ask you to type `force` (unless you pass `--yes`).                                      |
+| `docker_enrichment`        | boolean          | _(ignored)_   | Old key, kept so older files load. `true` and `false` are accepted; Docker details were removed.         |
+| `check_for_updates`        | boolean          | _(ignored)_   | Old key, kept so older files load. `true` and `false` are accepted; Kickoutchi never checks for updates. |
+| `protected_processes`      | string[]         | _(see below)_ | Extra process names that need stronger confirmation. Added to the built-in list.                         |
+| `[[ports]]`                | table array      | _(none)_      | Endpoint labels, up to 256. See [below](#endpoint-labels).                                               |
 
-Config files are capped at **64 KiB**. Larger files are rejected instead of being partially parsed
-or allowed to consume unbounded memory.
+Config files can be up to 64 KiB. A larger file is rejected outright, never partly parsed.
 
 ### Example
 
@@ -87,17 +90,17 @@ label = "web dev"`}
 />
 
 <Callout type="warning" title="Typos won't pass silently">
-  Unknown keys are **rejected**, not ignored • a misspelled key like `refresh_intreval_seconds`
-  fails to load and names the offending key. The same goes for out-of-range or mistyped values (e.g.
-  a bad `default_sort`). A broken file is a hard error (exit `1`) rather than a quiet fallback that
-  hides your mistake.
+  Kickoutchi rejects unknown keys instead of ignoring them. A misspelled key like
+  `refresh_intreval_seconds` fails to load, and the error names it. The same goes for out-of-range
+  or mistyped values, such as a bad `default_sort`. A broken file is a hard error (exit `1`), not a
+  quiet fallback that hides your mistake.
 </Callout>
 
 ## Endpoint labels
 
-`5432` is a port number. `postgres` is a name you'll recognise at 2am. Each `[[ports]]` block gives
-one endpoint a label that then follows it through the CLI table, sufficiently wide TUI tables,
-plain search, filters, `list --json`, snapshots, watch events, and `why` output.
+`5432` is a port number. `postgres` is a name you'll recognize at 2am. Each `[[ports]]` block gives
+one endpoint a label that then shows up in the CLI table, wide enough TUI tables, plain search,
+filters, `list --json`, snapshots, watch events, and `why` output.
 
 <CommandBlock
   lang="toml"
@@ -132,34 +135,32 @@ label = "mDNS"`}
 
 Matching rules:
 
-- **Exact beats wildcard.** With both blocks above, `127.0.0.1:3000` resolves to `web dev` and any
-  other address on TCP 3000 resolves to `web service`.
-- **IPv4-mapped IPv6 addresses normalize to IPv4** before duplicate detection and matching.
-- **Hostnames, DNS names, CIDR ranges, interface names, and `%zone` syntax are rejected.** Use
+- Exact beats wildcard. With both TCP blocks above, `127.0.0.1:3000` shows `web dev`, and any other
+  address on TCP 3000 shows `web service`.
+- IPv4-mapped IPv6 addresses count as IPv4, both for matching and for spotting duplicates.
+- Hostnames, DNS names, CIDR ranges, interface names, and `%zone` syntax are rejected. Use
   `scope_id` for an IPv6 scope.
-- Duplicate selectors are an error, not a last-one-wins surprise.
+- Duplicate selectors are an error, so there's no "last one wins" surprise.
 
-<Callout type="note" title="Labels are validated, not just stored">
-  A label must be nonempty, safe, visible Unicode of at most **128 UTF-8 bytes**. Control
-  characters, terminal escapes, bidi controls, and zero-width text are rejected outright • a config
-  file can't smuggle terminal control sequences into your port table. Human display clips to 32
-  terminal columns; structured output keeps the complete label.
+<Callout type="note" title="Labels are checked, not just stored">
+  A label must be nonempty, visible Unicode of at most 128 UTF-8 bytes. Kickoutchi rejects control
+  characters, terminal escapes, bidi controls, and zero-width text, so a config file can't sneak
+  terminal control sequences into your port table. Tables clip labels to 32 terminal columns;
+  structured output keeps the full label.
 </Callout>
-
-Up to **256** selectors are accepted.
 
 ## Protected processes
 
-`protected_processes` is **additive**: your names are added on top of the built-in safety set, never
-instead of it. Adding `redis` can't accidentally strip protection from `systemd` or `postgres`.
+`protected_processes` adds your names on top of the built-in safety list, never instead of it.
+Adding `redis` can't strip protection from `systemd` or `postgres`.
 
-Matching is exact • **case-sensitive on Linux/macOS, case-insensitive on Windows** • and never a
-substring, so `postgres-backup-helper` doesn't inherit `postgres`'s protection. Linux also accepts
-the kernel's 15-byte `/proc/<pid>/comm` truncation for longer protected names when that is the only
-process name available.
+Matching is exact and never a substring, so `postgres-backup-helper` doesn't inherit `postgres`'s
+protection. It's case-sensitive on Linux and macOS and case-insensitive on Windows. On Linux, a
+protected name longer than 15 bytes also matches the kernel's truncated `/proc/<pid>/comm` name
+when that's the only name available.
 
-The built-in list covers load-bearing processes whose accidental termination takes your containers,
-database, init system, or desktop with them:
+The built-in list covers processes whose accidental termination takes down your containers,
+database, init system, or desktop:
 
 ```text
 docker, docker.exe, dockerd, dockerd.exe, docker-proxy, docker-proxy.exe,
@@ -168,14 +169,14 @@ postgres.exe, systemd, System, smss.exe, csrss.exe, wininit.exe, services.exe,
 lsass.exe, svchost.exe, winlogon.exe, explorer.exe, dwm.exe, WindowServer
 ```
 
-The list is capped at 256 entries and rejects empty names. See [Safety](/docs/safety) for the checks
-applied to protected processes at kill time.
+The merged list holds at most 256 names and rejects empty ones. See [Safety](/docs/safety) for the
+checks protected processes get at kill time.
 
 ## Hiding system processes
 
-With `hide_system_processes = true`, the default view drops conservative system/service rows: PID 0
-and 1, direct children of PID 1, and a short list of well-known OS process names (plus PID ≤ 4 and
-children of `services.exe` on Windows). A row whose owner is hidden has no PID to classify and stays
-visible, so the option hides more under `sudo`. It's deliberately cautious • a protected app like
-`postgres` is **not** treated as a system process just because it's protected; those are two
-different ideas.
+With `hide_system_processes = true`, the default view drops rows Kickoutchi is confident are system
+or service processes: PID 0 and 1, direct children of PID 1, and a short list of well-known OS
+process names (plus PIDs up to 4 and children of `services.exe` on Windows). A row whose owner is
+hidden has no PID to classify, so it stays visible, and the option hides more under `sudo`. The
+rule is deliberately cautious. A protected app like `postgres` isn't treated as a system process
+just because it's protected; those are separate ideas.

@@ -14,12 +14,12 @@ import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 import Terminal from "../../components/Terminal.astro";
 
-Use a named subcommand to stay in the CLI. Commands **never** open the TUI. They print to stdout or
-stderr and return a [stable code](/docs/commands#exit-codes).
+Give `kick` a subcommand and you stay in the CLI; it never opens the TUI. Commands print to stdout
+or stderr and return a [stable exit code](/docs/commands#exit-codes).
 
-There are five subcommands on every platform: `list`, `inspect`, `kill`, `watch`, and `why`. Only
-`kill` ever signals anything. Windows supports read-only `inspect` and CLI `--tree`; `--group`
-stays Linux/macOS-only. Use whichever binary you like • `kick` is shorter.
+Every platform has five subcommands: `list`, `inspect`, `kill`, `watch`, and `why`. Only `kill`
+ever signals anything. Windows has read-only `inspect` and `kill --tree`; `--group` is Linux and
+macOS only. `kick` and `kickoutchi` are interchangeable.
 
 ## Listing ports
 
@@ -34,16 +34,16 @@ stays Linux/macOS-only. Use whichever binary you like • `kick` is shorter.
   ]}
 />
 
-The table is plain, whitespace-separated text with no box-drawing • so it stays friendly to
-`grep` and `awk`. Withheld metadata shows as `-`. The `LABEL` column appears once you've configured
+The table is plain whitespace-separated text with no box drawing, so `grep` and `awk` handle it
+fine. Missing details show as `-`. The `LABEL` column appears once you configure
 [endpoint labels](/docs/config#endpoint-labels).
 
-Below the table, notes on **stderr** explain what the table can't. A `-` in the PID column gets a
-reason: the socket belongs to another user whose processes you can't read (named by account on
-Linux, for example `root (uid 0)`), its owner wasn't attributed, or no readable process holds it at
-all, which is normal for kernel-held sockets. On Linux, processes whose executable was deleted or
-replaced after they started are listed with the original path, a common sign of a stale build or a
-leftover from a package upgrade. Stdout stays a clean table.
+Notes on stderr explain what the table can't. Each `-` in the PID column gets a reason: the socket
+belongs to another user whose processes you can't read (named by account on Linux, such as
+`root (uid 0)`), its owner couldn't be attributed, or no readable process holds it at all, which is
+normal for kernel-held sockets. On Linux, a process whose executable was deleted or replaced after
+it started is listed with its original path; that usually means a stale build or a leftover from a
+package upgrade. Stdout stays a clean table.
 
 <Terminal
   title="kick list"
@@ -65,10 +65,10 @@ leftover from a package upgrade. Stdout stays a clean table.
   ]}
 />
 
-Human-readable endpoints retain IPv6 interface scope, for example `[fe80::1%3]:5353`, throughout
-the list table, TUI, inspect, watch, Why, search, diagnostics, and kill confirmations.
-Linux and macOS cannot report an interface index, so their IPv6 addresses show without a suffix. Legacy
-`list --json` remains unchanged; versioned structured output carries scope separately.
+Human-readable output keeps the IPv6 interface, as in `[fe80::1%3]:5353`, everywhere: the table,
+the TUI, `inspect`, `watch`, `why`, search, diagnostics, and kill confirmations. Linux and macOS
+can't report the interface, so their IPv6 addresses show no suffix. Legacy `list --json` doesn't
+change; the versioned JSON formats carry the scope in its own field.
 
 ### Narrowing the list
 
@@ -79,15 +79,16 @@ Linux and macOS cannot report an interface index, so their IPv6 addresses show w
   label="list options"
 />
 
-- `--port PORT` • only the rows bound to one exact port.
-- `--process TEXT` • rows whose process name contains the text.
-- `--filter TEXT` • TUI-style search text or structured filters (see [filters](/docs/commands#filters)).
-- `--sort MODE` • `port`, `pid`, `protocol`, `process`, `parent`, or `scope`.
+- `--port PORT` keeps only rows bound to that exact port.
+- `--process TEXT` keeps rows whose process name contains the text.
+- `--filter TEXT` takes the same search text or structured terms as the TUI (see
+  [filters](/docs/commands#filters)).
+- `--sort MODE` sorts by `port`, `pid`, `protocol`, `process`, `parent`, or `scope`.
 
 ## JSON for scripts
 
-`list --json` prints a stable, documented shape • the field names and enum casing are a contract,
-so it's safe to parse.
+`list --json` prints a documented shape. Its field names and enum spellings are a contract, so you
+can parse it safely.
 
 <Terminal
   title="kick list --port 3000 --json"
@@ -116,26 +117,27 @@ so it's safe to parse.
 ]
 ```
 
-Missing metadata is `null`, never an empty string. An empty result is always `[]`.
+Missing details are `null`, never an empty string. An empty result is always `[]`.
 
-For the complete in-scope observation • every native TCP state, owner identity, completeness, and
-evidence gap • use `--snapshot-json` instead:
+For everything the collector saw, including every TCP state, owner identity, completeness, and
+evidence gaps, use `--snapshot-json`:
 
 <CommandBlock code={"kick list --snapshot-json"} label="full snapshot" />
 
-Snapshot mode deliberately ignores `--port`, `--process`, `--filter`, `--sort`, and
-`hide_system_processes`, and omits full command lines. See
+Snapshot mode can't be combined with `--port`, `--process`, `--filter`, or `--sort`, ignores
+`hide_system_processes`, and leaves out full command lines. See
 [Structured output](/docs/structured-output).
 
 ## Killing by port or PID
 
-`kill` takes ports or PIDs • one target, or several at once • and asks before it does anything.
+`kill` takes ports or PIDs, one or several, and asks before it does anything.
 
 <Terminal
   title="kick kill --pid 18422"
   lines={[
     { kind: "command", text: "kick kill --pid 18422" },
     { kind: "output", text: "Terminate PID 18422 (node)" },
+    { kind: "output", text: "Scope: process" },
     { kind: "output", text: "Ports: TCP 127.0.0.1:3000" },
     { kind: "output", text: "Command: kill 18422" },
     { kind: "muted", text: "Type y to confirm, or press Enter to cancel: y" },
@@ -145,19 +147,18 @@ Snapshot mode deliberately ignores `--port`, `--process`, `--filter`, `--sort`, 
   ]}
 />
 
-A delivered signal is not an exit, and a closed listener isn't one either. After delivery, `kill`
-waits up to two seconds and reports both facts on their own lines. A server that closes its
-listener but keeps running gets a warning that it's still running, with the exact command that
-sends `SIGKILL`. While the process still owns its port that's `kick kill --pid PID --force`. Once
-the port is closed, a plain `--pid` kill no longer applies, so the hint is
-`kick kill --pid PID --tree --force`, which also stops the process's children. The exit code still
-means the signal was accepted.
+A delivered signal doesn't mean the process exited, and a closed listener doesn't either. After
+delivery, `kill` waits up to two seconds and reports both on their own lines. If a server closes
+its listener but keeps running, Kickoutchi warns you and prints the command that sends `SIGKILL`:
+`kick kill --pid PID --force` while it still owns its port, or `kick kill --pid PID --tree --force`
+once the port is closed, since a plain `--pid` kill no longer applies then. The `--tree` form also
+stops the process's children. Either way, the exit code means the signal was accepted.
 
-On Linux, an unprivileged `kill --port` usually can't inspect other users' processes to prove no
-hidden process shares the socket. If the port has no readable owner, `kill --port` refuses before
-any prompt (exit `4`). When it finds one verified owner and only unrelated processes are unreadable,
-it prints a note, targets that verified owner while still checking the port for a second visible
-owner on revalidation, and reports afterward whether the port cleared.
+On Linux, an unprivileged `kill --port` usually can't read other users' processes, so it can't
+prove that no hidden process shares the socket. If the port has no readable owner, `kill --port`
+refuses before any prompt (exit `4`). If it finds one verified owner and only unrelated processes
+are unreadable, it prints a note and targets that owner. Before sending, it checks the port again
+for a second visible owner, and afterwards it reports whether the port cleared.
 
 <CommandBlock
   code={
@@ -166,17 +167,16 @@ owner on revalidation, and reports afterward whether the port cleared.
   label="kill examples"
 />
 
-- `--force` • stronger force confirmation; Unix uses `kill -9`, while Windows delivery is hard
-  termination either way.
-- `--yes` • skip the **normal** prompt for a target you already trust.
+- `--force` asks for the stronger `force` confirmation. Unix sends `kill -9`; on Windows every kill
+  is a hard termination anyway.
+- `--yes` skips the normal prompt for a target you already trust.
 
 ### Several targets at once
 
-Repeat `--pid` or `--port`, or separate values with commas, to clean up to 128 processes in one
-command. Every target is resolved first; if any of them can't be resolved, is protected, or can't be
-proven to own its port, Kickoutchi lists the refusals and sends nothing. Otherwise you get one
-banner, one prompt, and one summary line. Only failures, survivors, and ports that stayed visible
-get their own lines.
+Repeat `--pid` or `--port`, or separate values with commas, to stop up to 128 processes in one
+command. Kickoutchi resolves every target first. If any target is unresolved, protected, or can't be
+shown to own its port, it lists the refusals and sends nothing. Otherwise you get one banner, one
+prompt, and one summary line, plus a line each for failures, survivors, and ports still open.
 
 <Terminal
   title="kick kill --pid 18422,18510,18611 --yes"
@@ -193,25 +193,25 @@ get their own lines.
   ]}
 />
 
-Each target keeps every single-process check. The exit code is the most serious outcome across
-targets. `--tree` and `--group` still take one target.
+Each target still gets every single-process check. The exit code is the most serious outcome across
+all targets. `--tree` and `--group` take a single target.
 
 <Callout type="safety" title="What --yes does and doesn't do">
-  `--yes` opts out of being *asked*, not of being *told*. The target banner and every safety warning
-  still print, and it **cannot** bypass protected-process confirmation. Protected targets with
-  `--yes` exit with code `6` and signal nothing.
+  `--yes` stops Kickoutchi from asking, not from telling. The target banner and every warning still
+  print, and it can't skip protected-process confirmation: a protected target with `--yes` exits
+  with code `6` and nothing is signalled.
 </Callout>
 
-On Linux and macOS, Ctrl-C during a kill waits for frozen-process cleanup. If delivery has not
-started, Kickoutchi aborts and resumes only processes it stopped; processes that were already
-stopped stay stopped. Once delivery starts, the bounded delivery and cleanup sequence finishes
-before the interrupt takes effect. This applies to single-process, tree, and group kills, and
-also handles SIGTERM and SIGHUP sent to the CLI.
+On Linux and macOS, Ctrl-C during a kill waits for frozen processes to be cleaned up. If delivery
+hasn't started, Kickoutchi stops and resumes only the processes it froze; anything that was already
+stopped stays stopped. Once delivery has started, it finishes delivery and cleanup before the
+interrupt takes effect. This holds for single, tree, and group kills, and for `SIGTERM` and `SIGHUP`
+sent to the CLI.
 
 ## Inspecting a process family
 
-`inspect` is the read-only way to choose the right root before a scoped kill. It shows ancestors,
-descendants, siblings, command lines, ports, and suggested tree commands. Linux/macOS also show
+`inspect` is the read-only way to pick the right root before a scoped kill. It shows ancestors,
+descendants, siblings, command lines, ports, and suggested tree commands. Linux and macOS also show
 process-group members and `--group` hints.
 
 <CommandBlock
@@ -221,24 +221,23 @@ process-group members and `--group` hints.
 
 ## Tree and group scope
 
-Normal kill still targets one PID. `--tree` adds descendant cleanup on Linux, macOS, and Windows;
-`--group` is the Linux/macOS-only POSIX process-group scope:
+A normal kill targets one PID. `--tree` also stops its descendants, on Linux, macOS, and Windows.
+`--group` stops a POSIX process group, on Linux and macOS:
 
 <CommandBlock
   code={"kick kill --port 3000 --tree\nkick kill --pid 18422 --tree\nkick kill --pid 18422 --group"}
   label="scoped kill examples"
 />
 
-- `--tree` • terminate the target and its descendants. Type `tree` to confirm, or `force` with
-  `--force`.
-- `--group` • terminate every visible member of the target's POSIX process group. Type `group` to
-  confirm, or `force` with `--force`.
-- `--tree` and `--group` conflict; pick one scope.
-- Windows rejects `--group` and does not expose TUI `t`/`T` tree keys. Windows CLI `--tree` uses
-  Job Object containment and hard termination.
+- `--tree` stops the target and its descendants. Type `tree` to confirm, or `force` with `--force`.
+- `--group` stops every visible member of the target's process group. Type `group` to confirm, or
+  `force` with `--force`.
+- `--tree` and `--group` can't be combined.
+- Windows rejects `--group` and has no TUI `t` / `T` keys. Its CLI `--tree` contains the tree in a
+  Job Object and terminates it outright.
 
-See [Scoped kills](/docs/scoped-kills) for the Unix freeze-first and Windows Job Object safety
-details.
+[Scoped kills](/docs/scoped-kills) explains how Unix freezes the tree first and how Windows uses Job
+Objects.
 
 ## Watching and explaining
 
@@ -251,30 +250,28 @@ Two read-only commands answer questions `list` can't:
   label="watch and why"
 />
 
-- `why PORT` • takes one snapshot, then attempts the exact bind and closes it immediately. It prints
-  one line per endpoint (who holds it, or `free`) and tells occupied, permission denied, address
-  unavailable, and unsupported apart. `--verbose` shows the evidence behind each verdict.
-- `watch` • polls full-state snapshots and streams `baseline`, `bind`, `release`, `replacement`, and
-  `collection_gap` events, as terminal output or NDJSON.
+- `why PORT` takes one snapshot, tries an exact bind, and releases it at once. It prints one line
+  per endpoint (who holds it, or `free`) and tells apart in use, permission denied, address
+  unavailable, and unsupported. `--verbose` shows the evidence behind each verdict.
+- `watch` polls snapshots and streams `baseline`, `bind`, `release`, `replacement`, and
+  `collection_gap` events, as text or NDJSON.
 
-Neither one signals a process. Full walkthrough:
-[Watch & Why](/docs/watch-and-why).
+Neither one signals a process. The full walkthrough is in [Watch & Why](/docs/watch-and-why).
 
 ## How the CLI behaves
 
-- **An empty unfiltered list is success** (exit `0`) • a quiet machine isn't an error.
-- **An empty filtered result is no-match** (exit `3`) • so `kick list --port 3000 && echo busy`
-  works as an occupancy probe.
-- **`kill --port` refuses ambiguous ports** • if two PIDs own one port, it lists the candidates and
-  asks you to pick with `--pid` instead of guessing.
-- **A port with no readable owner** exits `4` (permission denied) rather than pretending it can act,
-  and says why, for example that the socket belongs to another user.
+- An empty unfiltered list is a success (exit `0`). A quiet machine isn't an error.
+- An empty filtered result is a no-match (exit `3`), so `kick list --port 3000 && echo busy` works
+  as a quick "is this port taken?" check.
+- `kill --port` refuses a port two PIDs share. It lists the candidates and asks you to pick one
+  with `--pid`.
+- A port with no readable owner exits `4` (permission denied) and says why, such as "the socket
+  belongs to another user".
 
-When a `--port` lookup finds no socket but a process _mentions_ that port on its command line,
-Kickoutchi prints a "possible related process" hint to **stderr** so JSON on stdout stays clean.
+When `--port` finds no socket but some process mentions that port on its command line, Kickoutchi
+prints a "possible related process" hint on stderr, so JSON on stdout stays clean.
 
 ## Next
 
-Want the terse index of every flag, filter, and exit code? See the
-[command reference](/docs/commands). Parsing the output? See
-[Structured output](/docs/structured-output).
+The [command reference](/docs/commands) lists every flag, filter, and exit code. Parsing the output?
+See [Structured output](/docs/structured-output).

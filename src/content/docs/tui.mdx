@@ -13,20 +13,23 @@ related:
 import Callout from "../../components/Callout.astro";
 import CommandBlock from "../../components/CommandBlock.astro";
 
-Run either binary **with no subcommand** to open the terminal UI.
+Run either binary with no subcommand to open the terminal UI.
 
 <CommandBlock code={"kickoutchi\nkick"} label="open the TUI" />
 
-Both names do the same thing • `kickoutchi` is canonical, `kick` is the short one.
+Both names run the same program. `kickoutchi` is the full name and `kick` the short one.
 
 ## The layout
 
-The screen is split into four regions, top to bottom:
+The screen has four parts, top to bottom:
 
-- **Header** • the title and a one-line key hint (`r refresh / search s sort x/X kill t/T tree ? help q quit` on Linux/macOS; Windows omits the tree keys).
-- **Open Ports table** • one row per confirmed socket, with a `>>` marker on the selected row.
-- **Details panel** • live context for whatever row is selected.
-- **Status line** • visible/total port counts, last refresh age, current sort, active filter, and the result of your last kill.
+- The header shows the title and a one-line key hint:
+  `r refresh / search s sort x/X kill t/T tree ? help q quit` on Linux and macOS, without the
+  tree keys on Windows.
+- The Open Ports table has one row per socket, with `>>` marking the selected row.
+- The details panel shows live context for the selected row.
+- The status line shows visible and total port counts, how long ago the table refreshed, the sort,
+  the filter, and the result of your last kill.
 
 ### Table columns
 
@@ -36,34 +39,32 @@ The screen is split into four regions, top to bottom:
 | `ADDRESS` | The bound local address                                          |
 | `PORT`    | The local port                                                   |
 | `PID`     | Owning process ID, or `-` when the OS won't say                  |
-| `PROCESS` | Process name, or `-` when withheld                               |
+| `PROCESS` | Process name, or `-` when the OS won't say                       |
 | `STATE`   | `LISTEN` or `BOUND`                                              |
 | `SCOPE`   | `public`, `local`, or `loopback`                                 |
 | `LABEL`   | Your configured endpoint label, when the terminal is wide enough |
 
 <Callout type="note" title="Reading IPv4 and IPv6 rows">
-  `127.0.0.1` and `::1` are loopback addresses. `0.0.0.0` and `::` are wildcard addresses for
-  every applicable interface. An address beginning with `fe80::` is IPv6 link-local. A suffix such
-  as `%3` identifies an interface. Linux and macOS cannot report that index, so their IPv6 rows show
-  the plain address.
+  `127.0.0.1` and `::1` are loopback addresses. `0.0.0.0` and `::` listen on every interface. An
+  address starting with `fe80::` is IPv6 link-local. A suffix such as `%3` names an interface;
+  Linux and macOS can't report it, so their IPv6 rows show the plain address.
 
-`public` describes a wildcard bind, not proven Internet reachability. `local` means a concrete
-non-loopback address, and `loopback` is machine-only. A `-` under `PID` or `PROCESS` means
-ownership metadata was unavailable, not that the socket has no owner.
+`public` means a wildcard bind, not that the Internet can reach it. `local` is a concrete
+non-loopback address, and `loopback` stays on this machine. A `-` under `PID` or `PROCESS` means
+Kickoutchi couldn't read the owner, not that there is none.
 
 </Callout>
 
 Row styles tell you what you can act on:
 
-- **Bold** • the owner could be read. These are usually your own processes.
-- **Plain** • the owner is hidden. The socket is visible, but the process holding it could not be
-  read, usually because it belongs to another user. `sudo kick` shows these owners.
-- **Yellow** • the PID is known, but some of its details could not be read.
-- **Red** • a protected process. Killing one asks you to type its PID or name.
+- Bold rows have an owner Kickoutchi could read, usually one of your own processes.
+- Plain rows have a hidden owner. The socket is visible, but the process holding it belongs to
+  someone Kickoutchi can't read, usually another user. `sudo kick` shows these owners.
+- Yellow rows have a known PID with some details unreadable.
+- Red rows are protected processes. Killing one asks you to type its PID or name.
 
-Bold and plain rows use your terminal's default foreground, and yellow and red come from its ANSI
-palette, so the table follows your terminal theme. Set `NO_COLOR` to drop the colours; bold and
-reverse video remain. The help modal (`?`) repeats this legend.
+The colors come from your terminal's palette, so the table follows your theme. Set `NO_COLOR` to
+drop them; bold and reverse video stay. The help modal (`?`) repeats this legend.
 
 ## Moving around
 
@@ -78,13 +79,13 @@ reverse video remain. The help modal (`?`) repeats this legend.
 
 ## Search and filter
 
-Press `/` to start editing the filter, then type. The table narrows on every keypress.
+Press `/` and type. The table narrows with every key.
 
 - `Enter` keeps the filter and returns to the table.
 - `Esc` clears it.
 
-Plain text matches across port, address, PID, process, path, command line, parent, and label. You
-can also use the same structured filters as the CLI:
+Plain text matches the port, address, PID, process, path, command line, parent, and label. The
+structured filters from the CLI work here too:
 
 <CommandBlock
   code={
@@ -94,77 +95,81 @@ can also use the same structured filters as the CLI:
   label="filter syntax"
 />
 
-Terms combine with AND, and `address:` compares parsed addresses rather than text. `state:` is
-reserved for `kick watch` and is rejected here rather than being treated as a plain search word.
-See the [command reference](/docs/commands#filters) for the full grammar.
+Every term must match, and `address:` compares parsed addresses, not text. `state:` belongs to
+`kick watch`; here it's an error, not a plain search word. The
+[command reference](/docs/commands#filters) has the full grammar.
 
 ## Sorting
 
-Press `s` to cycle the sort mode. The order steps through **port → pid → protocol → process →
-parent → scope**, then wraps. Sorting by `scope` surfaces `public` binds first • the ones most
-worth a second look.
+Press `s` to cycle the sort: port, pid, protocol, process, parent, scope, and back to port. Sorting
+by `scope` puts `public` binds first, which are the ones worth a second look.
 
 ## Refreshing
 
-Kickoutchi re-collects ports automatically (every few seconds by default • tune it with
-`refresh_interval_seconds` in your [config](/docs/config)). Press `r` to refresh immediately. The
-status line shows how long ago the last refresh happened.
+Kickoutchi collects ports again every 3 seconds by default; change it with
+`refresh_interval_seconds` in your [config](/docs/config). Press `r` to refresh now. The status
+line shows how long ago the last refresh was.
 
 ## Details
 
-The details panel always reflects the selected row. Press `Enter` for the full **details modal**,
-which also lazily loads the owner UID, the process's children, and any protected-process warnings.
-The UID and children appear only when they were read from the same process as the row, so a reused
-PID never mixes two processes in one view.
-When a row's owner belongs to another user, the panel says the owner is hidden and suggests `sudo`.
+The details panel follows the selected row. Press `Enter` for the full details modal, which also
+loads the owner's UID, the process's children, and any protected-process warnings. The UID and
+children show only when they came from the same process as the row, so a reused PID never mixes
+two processes in one view. When the owner belongs to another user, the panel says so and suggests
+`sudo`.
 
 ## Kicking a process out
 
 | Key               | Action                                             |
 | ----------------- | -------------------------------------------------- |
-| `x`               | Terminate the selected process (normal)            |
+| `x`               | Terminate the selected process                     |
 | `X` (`Shift`+`x`) | Force-kill the selected process                    |
 | `t`               | Terminate the selected process tree (Linux/macOS)  |
 | `T` (`Shift`+`t`) | Force-kill the selected process tree (Linux/macOS) |
 
-Either opens the **Confirm Termination** modal showing the target identity, the affected ports, and
-the equivalent shell command (e.g. `kill 18422`, or `kill -9 18422` for a force kill).
+`x` and `X` open the Confirm Termination modal. It shows the target, the affected ports, and the
+equivalent shell command, such as `kill 18422`, or `kill -9 18422` for a force kill.
 
-Tree kill opens a separate **Confirm Tree Termination** modal. Kickoutchi enumerates the bounded tree
-on a background worker, shows the process count and preview, then requires typing `tree` (or `force`
-for `T`). Execution always re-runs the tree scan fresh before the first freeze signal.
+`t` and `T` open Confirm Tree Termination instead. Kickoutchi lists the tree in the background,
+shows how many processes it holds with a preview, and asks you to type `tree` (or `force` for `T`).
+When you confirm, it scans the tree again from scratch before freezing anything.
 
-<Callout type="safety" title="Confirmations depend on the target">
-  - **Normal kill** • type `y` to confirm.
-  - **Force kill** • type the word `force` (unless you've turned that off in config).
-  - **Tree kill** • type `tree`; force tree kill still uses `force`.
-  - **Protected process** • type the **PID** or the **process name** to confirm. The name is offered
-    only when it can be typed as shown; the PID always works. This can't be skipped.
+<Callout type="safety" title="What you type depends on the target">
+  - Normal kill: type `y`.
+  - Force kill: type `force`, unless you turned that off in your config.
+  - Tree kill: type `tree`. A force tree kill still takes `force`.
+  - Protected process: type its PID or its process name. The name is offered only when it can be
+    typed exactly as shown; the PID always works. You can't skip this step.
 
-`Esc` cancels the confirmation. Kickoutchi re-checks the target right before signalling, so it
-only ever hits the PID you confirmed.
+`Esc` cancels. Kickoutchi checks the target again right before signalling, so it only ever hits
+the process you confirmed.
 
 </Callout>
 
-After a successful kick, the status area reports the outcome and the next refresh shows the port
-gone. Kill results and errors get their own wrapped rows above the routine status line. When a
-report is longer than that space, such as a cleanup failure listing many stopped PIDs, the preview
-says so and `m` opens the complete, scrollable report.
+After a kill, the status area reports the outcome, and the next refresh shows the port gone. Kill
+results and errors get their own wrapped rows above the status line. When a report doesn't fit,
+such as a cleanup failure that lists many stopped PIDs, the preview says so and `m` opens the full
+report.
 
-For process-group cleanup, use the CLI `--group` flow. The TUI intentionally exposes only tree scope,
-so the broader process-group blast radius is reviewed in a full CLI banner.
+The TUI offers tree kills only. For a process group, use the CLI's `--group`, which shows the
+whole group in a banner before you confirm.
 
-## A few edge states
+## Edge cases
 
-- **`Esc` is context-aware** • it clears the search, closes an open modal, cancels a kill
-  confirmation, or quits, depending on what's on screen.
-- **Terminal too small** • below **80×20** the TUI shows a "Terminal too small" notice instead of a
-  cramped, unreadable table. Resize and it returns.
-- **Warnings that don't fit** • a kill confirmation wraps its warnings instead of cutting them off.
-  If the terminal can't show every warning and the prompt, the confirmation is cancelled rather than
-  shown partially.
+- `Esc` depends on what's on screen. It clears the search, closes a modal, cancels a kill
+  confirmation, or quits.
+- Closing the window: in the release after 1.7.1, on Linux and macOS, closing the window ends the
+  TUI at once instead of leaving it running in the background (1.3.1 through 1.7.1 could linger;
+  see [Troubleshooting](/docs/troubleshooting#the-tui-kept-running-after-i-closed-its-terminal)).
+  A kill in progress finishes its cleanup before the TUI exits. A TUI started with `SIGHUP`
+  ignored, for example under `nohup`, can still linger. `SIGTERM`, as sent at shutdown, restores
+  the terminal before Kickoutchi exits.
+- Below 80×20 the TUI shows "Terminal too small" instead of a cramped table. Resize and it comes
+  back.
+- A kill confirmation wraps its warnings instead of cutting them off. If the terminal can't fit
+  every warning and the prompt, Kickoutchi cancels the confirmation rather than show part of it.
 
 ## Next
 
-Already know which port to clear? The [CLI walkthrough](/docs/cli) is the swamp shortcut.
-Need the big green boot? Read [Scoped kills](/docs/scoped-kills).
+Already know which port to clear? The [CLI walkthrough](/docs/cli) is the swamp shortcut. Need the
+big green boot? Read [Scoped kills](/docs/scoped-kills).
