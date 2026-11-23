@@ -24,19 +24,19 @@ has_local 2>/dev/null || alias local=typeset
 set -u
 
 APP_NAME="kickoutchi"
-APP_VERSION="1.7.1"
+APP_VERSION="1.7.2"
 if [ -n "${KICKOUTCHI_DOWNLOAD_URL:-}" ]; then
     ARTIFACT_DOWNLOAD_URLS="$KICKOUTCHI_DOWNLOAD_URL"
 elif [ -n "${INSTALLER_DOWNLOAD_URL:-}" ]; then
     ARTIFACT_DOWNLOAD_URLS="$INSTALLER_DOWNLOAD_URL"
 elif [ -n "${KICKOUTCHI_INSTALLER_GHE_BASE_URL:-}" ]; then
     INSTALLER_BASE_URL="$KICKOUTCHI_INSTALLER_GHE_BASE_URL"
-    ARTIFACT_DOWNLOAD_URLS="${INSTALLER_BASE_URL}/nuggocto/kickoutchi/releases/download/v1.7.1"
+    ARTIFACT_DOWNLOAD_URLS="${INSTALLER_BASE_URL}/nuggocto/kickoutchi/releases/download/v1.7.2"
 elif [ -n "${KICKOUTCHI_INSTALLER_GITHUB_BASE_URL:-}" ]; then
     INSTALLER_BASE_URL="$KICKOUTCHI_INSTALLER_GITHUB_BASE_URL"
-    ARTIFACT_DOWNLOAD_URLS="${INSTALLER_BASE_URL}/nuggocto/kickoutchi/releases/download/v1.7.1"
+    ARTIFACT_DOWNLOAD_URLS="${INSTALLER_BASE_URL}/nuggocto/kickoutchi/releases/download/v1.7.2"
 else
-    ARTIFACT_DOWNLOAD_URLS="https://github.com/nuggocto/kickoutchi/releases/download/v1.7.1"
+    ARTIFACT_DOWNLOAD_URLS="https://github.com/nuggocto/kickoutchi/releases/download/v1.7.2"
 fi
 if [ -n "${KICKOUTCHI_PRINT_VERBOSE:-}" ]; then
     PRINT_VERBOSE="$KICKOUTCHI_PRINT_VERBOSE"
@@ -66,7 +66,7 @@ fi
 AUTH_TOKEN="${KICKOUTCHI_GITHUB_TOKEN:-}"
 
 read -r RECEIPT <<EORECEIPT
-{"install_prefix":"AXO_INSTALL_PREFIX","install_layout":"unspecified","binaries":["CARGO_DIST_BINS"],"cdylibs":["CARGO_DIST_DYLIBS"],"cstaticlibs":["CARGO_DIST_STATICLIBS"],"source":{"release_type":"github","owner":"nuggocto","name":"kickoutchi","app_name":"kickoutchi"},"version":"1.7.1","provider":{"source":"cargo-dist","version":"0.34.0"},"binary_aliases":{},"modify_path":true}
+{"install_prefix":"AXO_INSTALL_PREFIX","install_layout":"unspecified","binaries":["CARGO_DIST_BINS"],"cdylibs":["CARGO_DIST_DYLIBS"],"cstaticlibs":["CARGO_DIST_STATICLIBS"],"source":{"release_type":"github","owner":"nuggocto","name":"kickoutchi","app_name":"kickoutchi"},"version":"1.7.2","provider":{"source":"cargo-dist","version":"0.34.0"},"binary_aliases":{},"modify_path":true}
 EORECEIPT
 
 # Some Linux distributions don't set HOME
@@ -120,10 +120,10 @@ usage() {
     cat <<EOF
 kickoutchi-installer.sh
 
-The installer for kickoutchi 1.7.1
+The installer for kickoutchi 1.7.2
 
 This script detects what platform you're on and fetches an appropriate archive from
-https://github.com/nuggocto/kickoutchi/releases/download/v1.7.1
+https://github.com/nuggocto/kickoutchi/releases/download/v1.7.2
 then unpacks the binaries and installs them to
 
     \$CARGO_HOME/bin (or \$HOME/.cargo/bin)
@@ -227,7 +227,7 @@ download_binary_and_run_installer() {
             _arch="aarch64-apple-darwin"
             _zip_ext=".tar.xz"
             _checksum_style="sha256"
-            _checksum_value="1a55dd2286c6a2548f0287454cecee61d2931d546cc0d4d7b78d8e0ff53ab34f"
+            _checksum_value="9b4343ef7070b4cb7d32558c43ca0cde85633a972d443918ed9dda1c8f672772"
             _bins="kick kickoutchi"
             _bins_js_array='"kick","kickoutchi"'
             _libs=""
@@ -242,7 +242,7 @@ download_binary_and_run_installer() {
             _arch="aarch64-unknown-linux-gnu"
             _zip_ext=".tar.xz"
             _checksum_style="sha256"
-            _checksum_value="e8b228edd0bc1ee14a20da773236f47179a4119a00385254fd6e3ce3e11ba55d"
+            _checksum_value="e2f67d7641fa02c80a53d0db3f1450b8c1204ac8c5996722b67dd677f7a26bbf"
             _bins="kick kickoutchi"
             _bins_js_array='"kick","kickoutchi"'
             _libs=""
@@ -257,7 +257,7 @@ download_binary_and_run_installer() {
             _arch="x86_64-apple-darwin"
             _zip_ext=".tar.xz"
             _checksum_style="sha256"
-            _checksum_value="e5b9af7308ee8dbb8168c11b1f89999d3b89cb7834b6bced4c066c4fcc7d9349"
+            _checksum_value="5b0d423be515021cd46fed206f19873dd8c4fb55d9bb79fdf1d3b98a927142dc"
             _bins="kick kickoutchi"
             _bins_js_array='"kick","kickoutchi"'
             _libs=""
@@ -272,7 +272,7 @@ download_binary_and_run_installer() {
             _arch="x86_64-pc-windows-msvc"
             _zip_ext=".zip"
             _checksum_style="sha256"
-            _checksum_value="8539184c256244d25ac376ad0e7f82b387fbd6f423f652bd6a8fe55b73ef30ae"
+            _checksum_value="2f896e77b9a11ab6696b443b00eef435a154f36038da3c234345143f0b3d99d0"
             _bins="kick.exe kickoutchi.exe"
             _bins_js_array='"kick.exe","kickoutchi.exe"'
             _libs=""
@@ -287,7 +287,7 @@ download_binary_and_run_installer() {
             _arch="x86_64-unknown-linux-gnu"
             _zip_ext=".tar.xz"
             _checksum_style="sha256"
-            _checksum_value="b893ab31b8cd20590e76de02bfef1f24b64b98a7483bec3dc1c360d3ea455f66"
+            _checksum_value="47020a6ce2a8768d8cfbdea22e6500de351420ccafe642198b18cf72c1f0a5e8"
             _bins="kick kickoutchi"
             _bins_js_array='"kick","kickoutchi"'
             _libs=""

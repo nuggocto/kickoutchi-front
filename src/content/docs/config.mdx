@@ -28,10 +28,10 @@ By default Kickoutchi looks in your platform's config directory:
 | macOS    | `~/Library/Application Support/kickoutchi/config.toml`                                 |
 | Windows  | `%APPDATA%\kickoutchi\config.toml`                                                     |
 
-The global `--config FILE` flag points at another file. In the release after 1.7.1, on Linux and
-macOS, a config file must be a regular file, a symlink to one, or `/dev/null` (an empty config). A
-FIFO, or process substitution such as `--config <(...)`, then fails at once; in 1.7.1 a FIFO with no
-writer stalls startup.
+The global `--config FILE` flag points at another file. Starting in 1.7.2, Kickoutchi rejects
+FIFOs, sockets, directories, and block devices as config files on Linux and macOS. This includes
+process substitution such as `--config <(...)` when it supplies a pipe. In 1.7.1, a FIFO with
+no writer stalls startup. Regular files, symlinks to them, and `/dev/null` still work.
 
 ### Under sudo
 

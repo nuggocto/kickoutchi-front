@@ -158,9 +158,9 @@ whole group in a banner before you confirm.
 
 - `Esc` depends on what's on screen. It clears the search, closes a modal, cancels a kill
   confirmation, or quits.
-- Closing the window: in the release after 1.7.1, on Linux and macOS, closing the window ends the
-  TUI at once instead of leaving it running in the background (1.3.1 through 1.7.1 could linger;
-  see [Troubleshooting](/docs/troubleshooting#the-tui-kept-running-after-i-closed-its-terminal)).
+- Starting in 1.7.2, closing the terminal window on Linux and macOS ends the TUI.
+  See [Troubleshooting](/docs/troubleshooting#the-tui-kept-running-after-i-closed-its-terminal)
+  for older versions.
   A kill in progress finishes its cleanup before the TUI exits. A TUI started with `SIGHUP`
   ignored, for example under `nohup`, can still linger. `SIGTERM`, as sent at shutdown, restores
   the terminal before Kickoutchi exits.
